@@ -1,4 +1,6 @@
 import { createContext, useContext, useState, useEffect } from "react"
+import { db } from "../firebase/config"
+import { collection, getDocs, addDoc, deleteDoc, doc, onSnapshot } from "firebase/firestore"
 
 const AppContext = createContext()
 
@@ -11,32 +13,45 @@ export const useApp = () => {
 }
 
 export const AppProvider = ({ children }) => {
-  const [players, setPlayers] = useState(() => {
-    const saved = localStorage.getItem('bcc-players')
-    return saved ? JSON.parse(saved) : [
-      { id: 1, firstName: "John", lastName: "Smith", phone: "+27 82 123 4567", team: "First Team" },
-      { id: 2, firstName: "Michael", lastName: "Johnson", phone: "+27 83 234 5678", team: "First Team" },
-      { id: 3, firstName: "David", lastName: "Williams", phone: "+27 84 345 6789", team: "Reserves" },
-    ]
-  })
+  const [players, setPlayers] = useState([])
+  const [loading, setLoading] = useState(true)
 
+  // Real-time listener for players collection
   useEffect(() => {
-    localStorage.setItem('bcc-players', JSON.stringify(players))
-  }, [players])
+    const unsubscribe = onSnapshot(collection(db, "players"), (snapshot) => {
+      const playersData = snapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data()
+      }))
+      setPlayers(playersData)
+      setLoading(false)
+    })
 
-  const addPlayer = (player) => {
-    setPlayers([...players, { ...player, id: Date.now() }])
+    return () => unsubscribe()
+  }, [])
+
+  const addPlayer = async (player) => {
+    try {
+      await addDoc(collection(db, "players"), player)
+    } catch (error) {
+      console.error("Error adding player:", error)
+    }
   }
 
-  const deletePlayer = (id) => {
-    setPlayers(players.filter(p => p.id !== id))
+  const deletePlayer = async (id) => {
+    try {
+      await deleteDoc(doc(db, "players", id))
+    } catch (error) {
+      console.error("Error deleting player:", error)
+    }
   }
 
   const value = {
     players,
     setPlayers,
     addPlayer,
-    deletePlayer
+    deletePlayer,
+    loading
   }
 
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>
