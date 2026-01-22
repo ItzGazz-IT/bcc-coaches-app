@@ -7,6 +7,7 @@ import Calendar from "./pages/Calendar"
 import Attendance from "./pages/Attendance"
 import Reviews from "./pages/Reviews"
 import Fixtures from "./pages/Fixtures"
+import InjuriesAvailability from "./pages/InjuriesAvailability"
 import Sidebar from "./components/Sidebar"
 
 export default function App() {
@@ -22,7 +23,8 @@ export default function App() {
             ["calendar", Calendar],
             ["attendance", Attendance],
             ["reviews", Reviews],
-            ["fixtures", Fixtures]
+            ["fixtures", Fixtures],
+            ["injuries", InjuriesAvailability]
           ].map(([path, Page]) => (
             <Route
               key={path}

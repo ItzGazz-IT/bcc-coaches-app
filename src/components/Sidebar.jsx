@@ -9,6 +9,7 @@ export default function Sidebar() {
       <nav className="space-y-4 text-lg font-medium">
         <Link to="/dashboard" className="block hover:text-accent">Dashboard</Link>
         <Link to="/players" className="block hover:text-accent">Players</Link>
+        <Link to="/injuries" className="block hover:text-accent">Injuries & Availability</Link>
         <Link to="/calendar" className="block hover:text-accent">Training Calendar</Link>
         <Link to="/attendance" className="block hover:text-accent">Attendance</Link>
         <Link to="/reviews" className="block hover:text-accent">Player Reviews</Link>
