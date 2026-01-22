@@ -44,29 +44,33 @@ function Players() {
   const reservesCount = players.filter(p => p.team === "Reserves").length
 
   return (
-    <div className="flex-1 p-8 bg-bg">
+    <div className="flex-1 p-10 bg-gradient-to-br from-gray-50 via-white to-blue-50 min-h-screen">
       <div className="max-w-7xl mx-auto">
-        <div className="flex items-center justify-between mb-8">
-          <div>
-            <h1 className="text-4xl font-bold text-primary mb-2">Players</h1>
-            <p className="text-gray-600">Manage your team roster</p>
-          </div>
-          <div className="flex gap-4">
-            <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-100">
-              <div className="flex items-center gap-2">
-                <Shield className="text-secondary" size={20} />
+        <div className="mb-12">
+          <h1 className="text-5xl font-black bg-gradient-to-r from-primary via-secondary to-accent bg-clip-text text-transparent mb-3">Players</h1>
+          <p className="text-gray-600 text-lg">Manage your team roster</p>
+        </div>
+        <div className="flex items-center justify-end mb-8">
+          <div className="flex gap-6">
+            <div className="bg-white rounded-3xl p-6 shadow-lg border border-gray-100 hover:shadow-2xl hover:-translate-y-1 transition-all duration-300">
+              <div className="flex items-center gap-3">
+                <div className="bg-gradient-to-br from-blue-500 to-blue-600 p-3 rounded-2xl">
+                  <Shield className="text-white" size={24} />
+                </div>
                 <div>
-                  <p className="text-xs text-gray-500">First Team</p>
-                  <p className="text-2xl font-bold text-primary">{firstTeamCount}</p>
+                  <p className="text-xs font-bold text-gray-500 uppercase tracking-wide">First Team</p>
+                  <p className="text-3xl font-black bg-gradient-to-r from-blue-600 to-blue-600 bg-clip-text text-transparent">{firstTeamCount}</p>
                 </div>
               </div>
             </div>
-            <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-100">
-              <div className="flex items-center gap-2">
-                <Users className="text-accent" size={20} />
+            <div className="bg-white rounded-3xl p-6 shadow-lg border border-gray-100 hover:shadow-2xl hover:-translate-y-1 transition-all duration-300">
+              <div className="flex items-center gap-3">
+                <div className="bg-gradient-to-br from-orange-500 to-orange-600 p-3 rounded-2xl">
+                  <Users className="text-white" size={24} />
+                </div>
                 <div>
-                  <p className="text-xs text-gray-500">Reserves</p>
-                  <p className="text-2xl font-bold text-primary">{reservesCount}</p>
+                  <p className="text-xs font-bold text-gray-500 uppercase tracking-wide">Reserves</p>
+                  <p className="text-3xl font-black bg-gradient-to-r from-orange-600 to-orange-600 bg-clip-text text-transparent">{reservesCount}</p>
                 </div>
               </div>
             </div>
@@ -149,9 +153,10 @@ function Players() {
 
               <button
                 type="submit"
-                className="w-full bg-gradient-to-r from-secondary to-accent text-white py-3 rounded-xl font-bold shadow-lg shadow-secondary/30 hover:shadow-xl hover:scale-[1.02] transition-all duration-200"
+                className="w-full bg-gradient-to-r from-secondary via-[#0D4C92] to-accent text-white py-4 rounded-2xl font-bold shadow-lg hover:shadow-2xl hover:scale-[1.02] transition-all duration-300 flex items-center justify-center gap-2 group"
               >
-                Add Player
+                <span>Add Player</span>
+                <UserPlus size={18} className="group-hover:scale-110 transition-transform" />
               </button>
             </form>
           </div>

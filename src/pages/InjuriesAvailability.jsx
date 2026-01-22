@@ -82,38 +82,44 @@ function InjuriesAvailability() {
   const availableCount = players.length - injuredCount - unavailableCount
 
   return (
-    <div className="flex-1 p-8 bg-bg">
+    <div className="flex-1 p-10 bg-gradient-to-br from-gray-50 via-white to-red-50 min-h-screen">
       <div className="max-w-7xl mx-auto">
-        <div className="flex items-center justify-between mb-8">
-          <div>
-            <h1 className="text-4xl font-bold text-primary mb-2">Injuries & Availability</h1>
-            <p className="text-gray-600">Track player injuries and availability status</p>
-          </div>
-          <div className="flex gap-4">
-            <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-100">
-              <div className="flex items-center gap-2">
-                <CheckCircle className="text-green-500" size={20} />
+        <div className="mb-12">
+          <h1 className="text-5xl font-black bg-gradient-to-r from-red-600 via-orange-600 to-yellow-600 bg-clip-text text-transparent mb-3">Injuries & Availability</h1>
+          <p className="text-gray-600 text-lg">Track player injuries and availability status</p>
+        </div>
+        <div className="flex items-center justify-end mb-8">
+          <div className="flex gap-6">
+            <div className="bg-white rounded-3xl p-6 shadow-lg border border-gray-100 hover:shadow-2xl hover:-translate-y-1 transition-all duration-300">
+              <div className="flex items-center gap-3">
+                <div className="bg-gradient-to-br from-green-500 to-emerald-600 p-3 rounded-2xl">
+                  <CheckCircle className="text-white" size={24} />
+                </div>
                 <div>
-                  <p className="text-xs text-gray-500">Available</p>
-                  <p className="text-2xl font-bold text-primary">{availableCount}</p>
+                  <p className="text-xs font-bold text-gray-500 uppercase tracking-wide">Available</p>
+                  <p className="text-3xl font-black bg-gradient-to-r from-green-600 to-emerald-600 bg-clip-text text-transparent">{availableCount}</p>
                 </div>
               </div>
             </div>
-            <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-100">
-              <div className="flex items-center gap-2">
-                <AlertTriangle className="text-red-500" size={20} />
+            <div className="bg-white rounded-3xl p-6 shadow-lg border border-gray-100 hover:shadow-2xl hover:-translate-y-1 transition-all duration-300">
+              <div className="flex items-center gap-3">
+                <div className="bg-gradient-to-br from-red-500 to-red-600 p-3 rounded-2xl">
+                  <AlertTriangle className="text-white" size={24} />
+                </div>
                 <div>
-                  <p className="text-xs text-gray-500">Injured</p>
-                  <p className="text-2xl font-bold text-primary">{injuredCount}</p>
+                  <p className="text-xs font-bold text-gray-500 uppercase tracking-wide">Injured</p>
+                  <p className="text-3xl font-black bg-gradient-to-r from-red-600 to-red-600 bg-clip-text text-transparent">{injuredCount}</p>
                 </div>
               </div>
             </div>
-            <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-100">
-              <div className="flex items-center gap-2">
-                <Clock className="text-yellow-500" size={20} />
+            <div className="bg-white rounded-3xl p-6 shadow-lg border border-gray-100 hover:shadow-2xl hover:-translate-y-1 transition-all duration-300">
+              <div className="flex items-center gap-3">
+                <div className="bg-gradient-to-br from-yellow-500 to-orange-600 p-3 rounded-2xl">
+                  <Clock className="text-white" size={24} />
+                </div>
                 <div>
-                  <p className="text-xs text-gray-500">Unavailable</p>
-                  <p className="text-2xl font-bold text-primary">{unavailableCount}</p>
+                  <p className="text-xs font-bold text-gray-500 uppercase tracking-wide">Unavailable</p>
+                  <p className="text-3xl font-black bg-gradient-to-r from-yellow-600 to-orange-600 bg-clip-text text-transparent">{unavailableCount}</p>
                 </div>
               </div>
             </div>
@@ -210,9 +216,10 @@ function InjuriesAvailability() {
               <div className="flex gap-2">
                 <button
                   type="submit"
-                  className="flex-1 bg-gradient-to-r from-secondary to-accent text-white py-3 rounded-xl font-bold shadow-lg shadow-secondary/30 hover:shadow-xl hover:scale-[1.02] transition-all duration-200"
+                  className="flex-1 bg-gradient-to-r from-red-500 via-orange-600 to-red-600 text-white py-4 rounded-2xl font-bold shadow-lg hover:shadow-2xl hover:scale-[1.02] transition-all duration-300 flex items-center justify-center gap-2"
                 >
-                  {editingId ? 'Update' : 'Report'}
+                  <span>{editingId ? 'Update' : 'Report'}</span>
+                  <AlertTriangle size={18} />
                 </button>
                 {editingId && (
                   <button

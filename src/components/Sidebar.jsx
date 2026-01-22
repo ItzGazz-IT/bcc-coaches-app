@@ -12,7 +12,6 @@ export default function Sidebar() {
     { path: "/calendar", label: "Calendar", icon: CalendarDays },
     { path: "/attendance", label: "Attendance", icon: ClipboardCheck },
     { path: "/reviews", label: "Reviews", icon: Star },
-    { path: "/fixtures", label: "Fixtures", icon: Trophy },
   ]
 
   return (

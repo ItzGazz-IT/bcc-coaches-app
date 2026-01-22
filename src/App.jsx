@@ -23,7 +23,6 @@ export default function App() {
             ["calendar", Calendar],
             ["attendance", Attendance],
             ["reviews", Reviews],
-            ["fixtures", Fixtures],
             ["injuries", InjuriesAvailability]
           ].map(([path, Page]) => (
             <Route
