@@ -1,5 +1,5 @@
 import { useState } from "react"
-import { UserPlus, Phone, Users, Shield, Trash2, Search } from "lucide-react"
+import { UserPlus, Phone, Users, Shield, Trash2, Search, CheckCircle } from "lucide-react"
 import { useApp } from "../contexts/AppContext"
 
 function Players() {
@@ -14,12 +14,15 @@ function Players() {
   
   const [searchTerm, setSearchTerm] = useState("")
   const [filterTeam, setFilterTeam] = useState("All")
+  const [showSuccess, setShowSuccess] = useState(false)
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault()
     if (formData.firstName && formData.lastName && formData.phone) {
-      addPlayer(formData)
+      await addPlayer(formData)
       setFormData({ firstName: "", lastName: "", phone: "", team: "First Team" })
+      setShowSuccess(true)
+      setTimeout(() => setShowSuccess(false), 3000)
     }
   }
 
@@ -79,6 +82,13 @@ function Players() {
               </div>
               <h2 className="text-xl font-bold text-primary">Add New Player</h2>
             </div>
+
+            {showSuccess && (
+              <div className="mb-4 bg-green-50 border border-green-200 rounded-xl p-3 flex items-center gap-2">
+                <CheckCircle className="text-green-600" size={20} />
+                <p className="text-sm font-semibold text-green-800">Player added successfully!</p>
+              </div>
+            )}
 
             <form onSubmit={handleSubmit} className="space-y-4">
               <div>
