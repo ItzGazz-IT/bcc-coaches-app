@@ -1,5 +1,5 @@
 import { useState } from "react"
-import { UserPlus, AlertTriangle, CheckCircle, Clock, Edit, Trash2, Search, UserCheck } from "lucide-react"
+import { UserPlus, AlertTriangle, CheckCircle, Clock, Edit, Trash2, Search, UserCheck, X, Heart } from "lucide-react"
 import { useApp } from "../contexts/AppContext"
 
 function InjuriesAvailability() {
@@ -16,6 +16,8 @@ function InjuriesAvailability() {
   const [editingId, setEditingId] = useState(null)
   const [searchTerm, setSearchTerm] = useState("")
   const [filterStatus, setFilterStatus] = useState("all")
+  const [showModal, setShowModal] = useState(false)
+  const [showSuccess, setShowSuccess] = useState(false)
 
   const handleSubmit = (e) => {
     e.preventDefault()
@@ -33,12 +35,16 @@ function InjuriesAvailability() {
         expectedReturn: "",
         notes: ""
       })
+      setShowModal(false)
+      setShowSuccess(true)
+      setTimeout(() => setShowSuccess(false), 3000)
     }
   }
 
   const handleEdit = (injury) => {
     setFormData(injury)
     setEditingId(injury.id)
+    setShowModal(true)
   }
 
   const handleRecover = (injuryId) => {
@@ -77,154 +83,353 @@ function InjuriesAvailability() {
     return matchesSearch && matchesFilter
   })
 
-  const injuredCount = injuries.filter(i => i.status === 'injured').length
-  const unavailableCount = injuries.filter(i => i.status === 'unavailable').length
-  const availableCount = players.length - injuredCount - unavailableCount
+  // Get set of valid player IDs
+  const validPlayerIds = new Set(players.map(p => p.id))
+  
+  // Only count injuries for players that still exist
+  const validInjuries = injuries.filter(i => validPlayerIds.has(i.playerId))
+  
+  const injuredCount = validInjuries.filter(i => i.status === 'injured').length
+  const unavailableCount = validInjuries.filter(i => i.status === 'unavailable').length
+  
+  // Count unique players who are injured or unavailable
+  const unavailablePlayerIds = new Set(
+    validInjuries
+      .filter(i => i.status === 'injured' || i.status === 'unavailable')
+      .map(i => i.playerId)
+  )
+  const availableCount = players.length - unavailablePlayerIds.size
+  const recoveredCount = validInjuries.filter(i => i.status === 'recovered').length
 
   return (
-    <div className="flex-1 p-10 bg-gradient-to-br from-gray-50 via-white to-red-50 min-h-screen">
-      <div className="max-w-7xl mx-auto">
-        <div className="mb-12">
-          <h1 className="text-5xl font-black bg-gradient-to-r from-red-600 via-orange-600 to-yellow-600 bg-clip-text text-transparent mb-3">Injuries & Availability</h1>
-          <p className="text-gray-600 text-lg">Track player injuries and availability status</p>
+    <div className="flex-1 p-6 bg-gradient-to-br from-gray-50 via-white to-blue-50 h-screen overflow-hidden">
+      <div className="max-w-7xl mx-auto h-full flex flex-col">
+        <div className="mb-6">
+          <div className="flex items-center justify-between">
+            <div>
+              <h1 className="text-4xl font-black bg-gradient-to-r from-primary via-secondary to-accent bg-clip-text text-transparent mb-2">
+                Injuries & Availability
+              </h1>
+              <p className="text-gray-600">Track player injuries and availability status</p>
+            </div>
+            <button
+              onClick={() => {
+                setShowModal(true)
+                setEditingId(null)
+                setFormData({
+                  playerId: "",
+                  type: "injury",
+                  description: "",
+                  expectedReturn: "",
+                  notes: ""
+                })
+              }}
+              className="bg-gradient-to-r from-red-500 to-orange-600 text-white px-6 py-3 rounded-xl font-bold shadow-lg hover:shadow-xl hover:scale-105 transition-all duration-300 inline-flex items-center gap-2"
+            >
+              <Heart size={20} />
+              Report Injury
+            </button>
+          </div>
         </div>
-        <div className="flex items-center justify-end mb-8">
-          <div className="flex gap-6">
-            <div className="bg-white rounded-3xl p-6 shadow-lg border border-gray-100 hover:shadow-2xl hover:-translate-y-1 transition-all duration-300">
-              <div className="flex items-center gap-3">
-                <div className="bg-gradient-to-br from-green-500 to-emerald-600 p-3 rounded-2xl">
-                  <CheckCircle className="text-white" size={24} />
-                </div>
-                <div>
-                  <p className="text-xs font-bold text-gray-500 uppercase tracking-wide">Available</p>
-                  <p className="text-3xl font-black bg-gradient-to-r from-green-600 to-emerald-600 bg-clip-text text-transparent">{availableCount}</p>
-                </div>
+
+        {/* Success Message */}
+        {showSuccess && (
+          <div className="mb-4 bg-green-50 border border-green-200 rounded-xl p-4 flex items-center gap-3 animate-fade-in">
+            <CheckCircle className="text-green-600" size={24} />
+            <p className="font-semibold text-green-800">Status updated successfully!</p>
+          </div>
+        )}
+
+        {/* Stats Cards */}
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+          <div className="bg-white rounded-2xl p-4 shadow-lg border border-gray-100">
+            <div className="flex items-center gap-3">
+              <div className="bg-gradient-to-br from-green-500 to-emerald-600 p-2.5 rounded-xl">
+                <CheckCircle className="text-white" size={20} />
+              </div>
+              <div>
+                <p className="text-xs font-bold text-gray-500 uppercase">Available</p>
+                <p className="text-2xl font-black text-green-600">{availableCount}</p>
               </div>
             </div>
-            <div className="bg-white rounded-3xl p-6 shadow-lg border border-gray-100 hover:shadow-2xl hover:-translate-y-1 transition-all duration-300">
-              <div className="flex items-center gap-3">
-                <div className="bg-gradient-to-br from-red-500 to-red-600 p-3 rounded-2xl">
-                  <AlertTriangle className="text-white" size={24} />
-                </div>
-                <div>
-                  <p className="text-xs font-bold text-gray-500 uppercase tracking-wide">Injured</p>
-                  <p className="text-3xl font-black bg-gradient-to-r from-red-600 to-red-600 bg-clip-text text-transparent">{injuredCount}</p>
-                </div>
+          </div>
+          
+          <div className="bg-white rounded-2xl p-4 shadow-lg border border-gray-100">
+            <div className="flex items-center gap-3">
+              <div className="bg-gradient-to-br from-red-500 to-red-600 p-2.5 rounded-xl">
+                <AlertTriangle className="text-white" size={20} />
+              </div>
+              <div>
+                <p className="text-xs font-bold text-gray-500 uppercase">Injured</p>
+                <p className="text-2xl font-black text-red-600">{injuredCount}</p>
               </div>
             </div>
-            <div className="bg-white rounded-3xl p-6 shadow-lg border border-gray-100 hover:shadow-2xl hover:-translate-y-1 transition-all duration-300">
-              <div className="flex items-center gap-3">
-                <div className="bg-gradient-to-br from-yellow-500 to-orange-600 p-3 rounded-2xl">
-                  <Clock className="text-white" size={24} />
-                </div>
-                <div>
-                  <p className="text-xs font-bold text-gray-500 uppercase tracking-wide">Unavailable</p>
-                  <p className="text-3xl font-black bg-gradient-to-r from-yellow-600 to-orange-600 bg-clip-text text-transparent">{unavailableCount}</p>
-                </div>
+          </div>
+
+          <div className="bg-white rounded-2xl p-4 shadow-lg border border-gray-100">
+            <div className="flex items-center gap-3">
+              <div className="bg-gradient-to-br from-amber-500 to-orange-600 p-2.5 rounded-xl">
+                <Clock className="text-white" size={20} />
+              </div>
+              <div>
+                <p className="text-xs font-bold text-gray-500 uppercase">Unavailable</p>
+                <p className="text-2xl font-black text-amber-600">{unavailableCount}</p>
+              </div>
+            </div>
+          </div>
+
+          <div className="bg-white rounded-2xl p-4 shadow-lg border border-gray-100">
+            <div className="flex items-center gap-3">
+              <div className="bg-gradient-to-br from-blue-500 to-blue-600 p-2.5 rounded-xl">
+                <UserCheck className="text-white" size={20} />
+              </div>
+              <div>
+                <p className="text-xs font-bold text-gray-500 uppercase">Showing</p>
+                <p className="text-2xl font-black text-blue-600">{filteredInjuries.length}</p>
               </div>
             </div>
           </div>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Add/Edit Injury Form */}
-          <div className="bg-white rounded-2xl shadow-lg p-6 border border-gray-100 h-fit">
-            <div className="flex items-center gap-2 mb-6">
-              <div className="bg-secondary/10 p-2 rounded-lg">
-                <UserPlus className="text-secondary" size={24} />
-              </div>
-              <h2 className="text-xl font-bold text-primary">
-                {editingId ? 'Edit Injury/Availability' : 'Report Injury/Availability'}
-              </h2>
-            </div>
+        {/* Injuries List */}
+        <div className="bg-white rounded-2xl shadow-xl border border-gray-100 overflow-hidden flex flex-col flex-1 min-h-0">
+          <div className="p-6 border-b border-gray-100">
+            <h2 className="text-xl font-bold text-gray-800 mb-4">Player Status</h2>
 
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-1.5">
-                  Player
-                </label>
-                <select
-                  required
-                  value={formData.playerId}
-                  onChange={(e) => setFormData({...formData, playerId: e.target.value})}
-                  className="w-full px-4 py-2.5 border-2 border-gray-200 rounded-xl focus:border-secondary focus:ring-2 focus:ring-secondary/20 outline-none transition-all bg-white"
-                >
-                  <option value="">Select Player</option>
-                  {players.map(player => (
-                    <option key={player.id} value={player.id}>
-                      {player.firstName} {player.lastName} ({player.team})
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-1.5">
-                  Type
-                </label>
-                <select
-                  value={formData.type}
-                  onChange={(e) => setFormData({...formData, type: e.target.value})}
-                  className="w-full px-4 py-2.5 border-2 border-gray-200 rounded-xl focus:border-secondary focus:ring-2 focus:ring-secondary/20 outline-none transition-all bg-white"
-                >
-                  <option value="injury">Injury</option>
-                  <option value="illness">Illness</option>
-                  <option value="personal">Personal Leave</option>
-                  <option value="other">Other</option>
-                </select>
-              </div>
-
-              <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-1.5">
-                  Description
-                </label>
+            <div className="flex gap-3">
+              <div className="relative flex-1">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
                 <input
                   type="text"
-                  required
-                  value={formData.description}
-                  onChange={(e) => setFormData({...formData, description: e.target.value})}
-                  placeholder="e.g., Sprained ankle, Food poisoning"
-                  className="w-full px-4 py-2.5 border-2 border-gray-200 rounded-xl focus:border-secondary focus:ring-2 focus:ring-secondary/20 outline-none transition-all"
+                  placeholder="Search players or injuries..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="w-full pl-10 pr-4 py-2.5 border-2 border-gray-200 rounded-xl focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 outline-none transition-all"
                 />
               </div>
 
-              <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-1.5">
-                  Expected Return Date
-                </label>
-                <input
-                  type="date"
-                  value={formData.expectedReturn}
-                  onChange={(e) => setFormData({...formData, expectedReturn: e.target.value})}
-                  className="w-full px-4 py-2.5 border-2 border-gray-200 rounded-xl focus:border-secondary focus:ring-2 focus:ring-secondary/20 outline-none transition-all"
-                />
-              </div>
+              <select
+                value={filterStatus}
+                onChange={(e) => setFilterStatus(e.target.value)}
+                className="px-4 py-2.5 border-2 border-gray-200 rounded-xl focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 outline-none transition-all bg-white"
+              >
+                <option value="all">All Status</option>
+                <option value="injured">Injured</option>
+                <option value="unavailable">Unavailable</option>
+                <option value="recovered">Recovered</option>
+              </select>
+            </div>
+          </div>
 
-              <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-1.5">
-                  Notes (Optional)
-                </label>
-                <textarea
-                  value={formData.notes}
-                  onChange={(e) => setFormData({...formData, notes: e.target.value})}
-                  placeholder="Additional details..."
-                  rows={3}
-                  className="w-full px-4 py-2.5 border-2 border-gray-200 rounded-xl focus:border-secondary focus:ring-2 focus:ring-secondary/20 outline-none transition-all resize-none"
-                />
+          <div className="p-6 overflow-y-auto flex-1">
+            {filteredInjuries.length === 0 ? (
+              <div className="text-center py-12">
+                <CheckCircle className="mx-auto text-green-300 mb-3" size={48} />
+                <p className="text-gray-500 font-medium">All players are available</p>
+                <p className="text-gray-400 text-sm mt-1">No injuries or unavailability reported</p>
               </div>
+            ) : (
+              <div className="space-y-3">
+                {filteredInjuries.map(injury => {
+                  const player = players.find(p => p.id === injury.playerId)
+                  if (!player) return null
 
-              <div className="flex gap-2">
+                  return (
+                    <div
+                      key={injury.id}
+                      className="flex items-center justify-between p-4 border-2 border-gray-100 rounded-xl hover:border-blue-300 hover:bg-blue-50/50 transition-all group"
+                    >
+                      <div className="flex-1">
+                        <div className="flex items-center gap-2 mb-2">
+                          <h3 className="font-bold text-gray-800 text-lg">
+                            {player.firstName} {player.lastName}
+                          </h3>
+                          <span className={`px-3 py-1 rounded-lg text-xs font-bold flex items-center gap-1 ${
+                            injury.status === 'recovered' ? 'bg-green-100 text-green-700' :
+                            injury.type === 'injury' ? 'bg-red-100 text-red-700' :
+                            'bg-amber-100 text-amber-700'
+                          }`}>
+                            {getStatusIcon(injury.status)}
+                            {injury.status === 'recovered' ? 'Recovered' :
+                             injury.type === 'injury' ? 'Injured' : 'Unavailable'}
+                          </span>
+                          <span className={`px-2 py-1 rounded text-xs font-bold ${
+                            player.team === "First Team" 
+                              ? "bg-emerald-100 text-emerald-700" 
+                              : player.team === "Reserve Team"
+                              ? "bg-orange-100 text-orange-700"
+                              : "bg-purple-100 text-purple-700"
+                          }`}>
+                            {player.team}
+                          </span>
+                        </div>
+
+                        <div className="space-y-1">
+                          <p className="text-sm text-gray-700">
+                            <strong className="text-gray-800">{injury.type.charAt(0).toUpperCase() + injury.type.slice(1)}:</strong> {injury.description}
+                          </p>
+
+                          {injury.expectedReturn && (
+                            <p className="text-sm text-gray-600 flex items-center gap-1.5">
+                              <Clock size={14} />
+                              Expected Return: {new Date(injury.expectedReturn).toLocaleDateString()}
+                            </p>
+                          )}
+
+                          {injury.notes && (
+                            <p className="text-sm text-gray-500 italic">
+                              Note: {injury.notes}
+                            </p>
+                          )}
+                        </div>
+                      </div>
+
+                      <div className="flex items-center gap-2">
+                        {injury.status !== 'recovered' && (
+                          <button
+                            onClick={() => handleRecover(injury.id)}
+                            className="p-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-all hover:scale-110"
+                            title="Mark as recovered"
+                          >
+                            <CheckCircle size={18} />
+                          </button>
+                        )}
+
+                        <button
+                          onClick={() => handleEdit(injury)}
+                          className="p-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-all hover:scale-110"
+                          title="Edit"
+                        >
+                          <Edit size={18} />
+                        </button>
+
+                        <button
+                          onClick={() => deleteInjury(injury.id)}
+                          className="p-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-all hover:scale-110"
+                          title="Delete"
+                        >
+                          <Trash2 size={18} />
+                        </button>
+                      </div>
+                    </div>
+                  )
+                })}
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Add/Edit Injury Modal */}
+        {showModal && (
+          <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+            <div className="bg-white rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+              <div className="sticky top-0 bg-white p-6 border-b border-gray-100 flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="bg-gradient-to-br from-red-500 to-orange-600 p-2.5 rounded-xl">
+                    <Heart className="text-white" size={22} />
+                  </div>
+                  <h2 className="text-xl font-bold text-gray-800">
+                    {editingId ? 'Edit Status' : 'Report Injury/Availability'}
+                  </h2>
+                </div>
                 <button
-                  type="submit"
-                  className="flex-1 bg-gradient-to-r from-red-500 via-orange-600 to-red-600 text-white py-4 rounded-2xl font-bold shadow-lg hover:shadow-2xl hover:scale-[1.02] transition-all duration-300 flex items-center justify-center gap-2"
+                  onClick={() => {
+                    setShowModal(false)
+                    setEditingId(null)
+                    setFormData({
+                      playerId: "",
+                      type: "injury",
+                      description: "",
+                      expectedReturn: "",
+                      notes: ""
+                    })
+                  }}
+                  className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
                 >
-                  <span>{editingId ? 'Update' : 'Report'}</span>
-                  <AlertTriangle size={18} />
+                  <X size={20} className="text-gray-500" />
                 </button>
-                {editingId && (
+              </div>
+
+              <form onSubmit={handleSubmit} className="p-6 space-y-4">
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">
+                    Player *
+                  </label>
+                  <select
+                    required
+                    value={formData.playerId}
+                    onChange={(e) => setFormData({...formData, playerId: e.target.value})}
+                    className="w-full px-4 py-2.5 border-2 border-gray-200 rounded-xl focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 outline-none transition-all bg-white"
+                  >
+                    <option value="">Select Player</option>
+                    {players.map(player => (
+                      <option key={player.id} value={player.id}>
+                        {player.firstName} {player.lastName} ({player.team})
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">
+                    Type
+                  </label>
+                  <select
+                    value={formData.type}
+                    onChange={(e) => setFormData({...formData, type: e.target.value})}
+                    className="w-full px-4 py-2.5 border-2 border-gray-200 rounded-xl focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 outline-none transition-all bg-white"
+                  >
+                    <option value="injury">Injury</option>
+                    <option value="illness">Illness</option>
+                    <option value="personal">Personal Leave</option>
+                    <option value="other">Other</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">
+                    Description *
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    value={formData.description}
+                    onChange={(e) => setFormData({...formData, description: e.target.value})}
+                    placeholder="e.g., Sprained ankle, Food poisoning"
+                    className="w-full px-4 py-2.5 border-2 border-gray-200 rounded-xl focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 outline-none transition-all"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">
+                    Expected Return Date
+                  </label>
+                  <input
+                    type="date"
+                    value={formData.expectedReturn}
+                    onChange={(e) => setFormData({...formData, expectedReturn: e.target.value})}
+                    className="w-full px-4 py-2.5 border-2 border-gray-200 rounded-xl focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 outline-none transition-all"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">
+                    Notes (Optional)
+                  </label>
+                  <textarea
+                    value={formData.notes}
+                    onChange={(e) => setFormData({...formData, notes: e.target.value})}
+                    placeholder="Additional details..."
+                    rows={3}
+                    className="w-full px-4 py-2.5 border-2 border-gray-200 rounded-xl focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 outline-none transition-all resize-none"
+                  />
+                </div>
+
+                <div className="flex gap-3 pt-4">
                   <button
                     type="button"
                     onClick={() => {
+                      setShowModal(false)
                       setEditingId(null)
                       setFormData({
                         playerId: "",
@@ -234,133 +439,22 @@ function InjuriesAvailability() {
                         notes: ""
                       })
                     }}
-                    className="px-4 py-3 border-2 border-gray-200 text-gray-600 rounded-xl font-semibold hover:border-gray-300 transition-all"
+                    className="flex-1 px-6 py-3 border-2 border-gray-200 text-gray-700 rounded-xl font-bold hover:bg-gray-50 transition-all"
                   >
                     Cancel
                   </button>
-                )}
-              </div>
-            </form>
-          </div>
-
-          {/* Injuries List */}
-          <div className="lg:col-span-2 bg-white rounded-2xl shadow-lg border border-gray-100">
-            <div className="p-6 border-b border-gray-100">
-              <h2 className="text-xl font-bold text-primary mb-4">Player Status</h2>
-
-              <div className="flex gap-3">
-                <div className="relative flex-1">
-                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
-                  <input
-                    type="text"
-                    placeholder="Search players or injuries..."
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                    className="w-full pl-10 pr-4 py-2 border-2 border-gray-200 rounded-xl focus:border-secondary focus:ring-2 focus:ring-secondary/20 outline-none transition-all"
-                  />
+                  <button
+                    type="submit"
+                    className="flex-1 bg-gradient-to-r from-red-500 to-orange-600 text-white px-6 py-3 rounded-xl font-bold shadow-lg hover:shadow-xl hover:scale-[1.02] transition-all duration-300 inline-flex items-center justify-center gap-2"
+                  >
+                    <Heart size={18} />
+                    {editingId ? 'Update' : 'Report'}
+                  </button>
                 </div>
-
-                <select
-                  value={filterStatus}
-                  onChange={(e) => setFilterStatus(e.target.value)}
-                  className="px-4 py-2 border-2 border-gray-200 rounded-xl focus:border-secondary focus:ring-2 focus:ring-secondary/20 outline-none transition-all bg-white"
-                >
-                  <option value="all">All Status</option>
-                  <option value="injured">Injured</option>
-                  <option value="unavailable">Unavailable</option>
-                  <option value="recovered">Recovered</option>
-                </select>
-              </div>
-            </div>
-
-            <div className="p-6">
-              {filteredInjuries.length === 0 ? (
-                <div className="text-center py-12">
-                  <CheckCircle className="mx-auto text-green-300 mb-3" size={48} />
-                  <p className="text-gray-500">All players are available</p>
-                </div>
-              ) : (
-                <div className="space-y-3">
-                  {filteredInjuries.map(injury => {
-                    const player = players.find(p => p.id === injury.playerId)
-                    if (!player) return null
-
-                    return (
-                      <div
-                        key={injury.id}
-                        className="flex items-center justify-between p-4 border-2 border-gray-100 rounded-xl hover:border-secondary/30 hover:bg-gray-50 transition-all"
-                      >
-                        <div className="flex-1">
-                          <div className="flex items-center gap-3 mb-2">
-                            <h3 className="font-bold text-primary text-lg">
-                              {player.firstName} {player.lastName}
-                            </h3>
-                            <span className={`px-3 py-1 rounded-full text-xs font-semibold flex items-center gap-1 ${
-                              injury.status === 'recovered' ? 'bg-green-100 text-green-800' :
-                              injury.type === 'injury' ? 'bg-red-100 text-red-800' :
-                              'bg-yellow-100 text-yellow-800'
-                            }`}>
-                              {getStatusIcon(injury.status)}
-                              {injury.status === 'recovered' ? 'Recovered' :
-                               injury.type === 'injury' ? 'Injured' : 'Unavailable'}
-                            </span>
-                            <span className="px-2 py-1 bg-gray-100 text-gray-600 rounded text-xs">
-                              {player.team}
-                            </span>
-                          </div>
-
-                          <p className="text-sm text-gray-600 mb-1">
-                            <strong>{injury.type.charAt(0).toUpperCase() + injury.type.slice(1)}:</strong> {injury.description}
-                          </p>
-
-                          {injury.expectedReturn && (
-                            <p className="text-sm text-gray-600">
-                              <strong>Expected Return:</strong> {new Date(injury.expectedReturn).toLocaleDateString()}
-                            </p>
-                          )}
-
-                          {injury.notes && (
-                            <p className="text-sm text-gray-500 mt-1 italic">
-                              {injury.notes}
-                            </p>
-                          )}
-                        </div>
-
-                        <div className="flex items-center gap-2">
-                          {injury.status !== 'recovered' && (
-                            <button
-                              onClick={() => handleRecover(injury.id)}
-                              className="p-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-all"
-                              title="Mark as recovered"
-                            >
-                              <CheckCircle size={18} />
-                            </button>
-                          )}
-
-                          <button
-                            onClick={() => handleEdit(injury)}
-                            className="p-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-all"
-                            title="Edit"
-                          >
-                            <Edit size={18} />
-                          </button>
-
-                          <button
-                            onClick={() => deleteInjury(injury.id)}
-                            className="p-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-all"
-                            title="Delete"
-                          >
-                            <Trash2 size={18} />
-                          </button>
-                        </div>
-                      </div>
-                    )
-                  })}
-                </div>
-              )}
+              </form>
             </div>
           </div>
-        </div>
+        )}
       </div>
     </div>
   )
