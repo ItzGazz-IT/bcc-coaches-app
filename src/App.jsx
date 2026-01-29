@@ -1,4 +1,4 @@
-import { BrowserRouter, Routes, Route } from "react-router-dom"
+import { HashRouter, Routes, Route } from "react-router-dom"
 import { AppProvider } from "./contexts/AppContext"
 import Login from "./pages/Login"
 import Dashboard from "./pages/Dashboard"
@@ -18,7 +18,7 @@ import Sidebar from "./components/Sidebar"
 export default function App() {
   return (
     <AppProvider>
-      <BrowserRouter>
+      <HashRouter>
         <Routes>
           <Route path="/" element={<Login />} />
 
@@ -48,7 +48,7 @@ export default function App() {
             />
           ))}
         </Routes>
-      </BrowserRouter>
+      </HashRouter>
     </AppProvider>
   )
 }
