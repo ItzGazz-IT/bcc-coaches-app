@@ -108,13 +108,15 @@ export default function Sidebar() {
 
   return (
     <>
-    {/* Mobile Menu Button */}
-    <button
-      onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-      className="md:hidden fixed top-4 left-4 z-50 bg-primary text-white p-3 rounded-xl shadow-lg"
-    >
-      {mobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
-    </button>
+    {/* Mobile Menu Button - Only show when menu is closed */}
+    {!mobileMenuOpen && (
+      <button
+        onClick={() => setMobileMenuOpen(true)}
+        className="md:hidden fixed top-4 left-4 z-50 bg-primary text-white p-3 rounded-xl shadow-lg hover:scale-105 transition-transform"
+      >
+        <Menu size={24} />
+      </button>
+    )}
 
     {/* Overlay for mobile */}
     {mobileMenuOpen && (
@@ -137,6 +139,15 @@ export default function Sidebar() {
       transition-transform duration-300
       ${mobileMenuOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'}
     `}>
+      {/* Close button for mobile */}
+      {mobileMenuOpen && (
+        <button
+          onClick={() => setMobileMenuOpen(false)}
+          className="md:hidden absolute top-4 right-4 text-white/70 hover:text-white p-2 rounded-lg hover:bg-white/10 transition-colors"
+        >
+          <X size={24} />
+        </button>
+      )}
       <div className="mb-5">
         <div className="bg-white/10 backdrop-blur-md rounded-xl p-3 border border-white/20">
           <img src={logo} className="w-20 mx-auto" />
