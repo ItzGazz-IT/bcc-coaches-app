@@ -154,7 +154,7 @@ export default function Dashboard() {
           <p className="text-sm md:text-base text-gray-600">BCC Team Management</p>
         </div>
 
-        <div className="grid grid-cols-2 lg:grid-cols-7 gap-3 mb-4 md:mb-6">
+        <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-3 md:gap-4 mb-6">
           <StatCard 
             title="Total Players" 
             value={totalPlayers.toString()} 
@@ -216,99 +216,107 @@ export default function Dashboard() {
           />
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-          <Link to="/attendance" className="bg-white rounded-2xl shadow-xl p-5 border border-gray-100 hover:shadow-2xl transition-all duration-300 flex flex-col cursor-pointer hover:-translate-y-1">
-            <div className="flex items-center gap-3 mb-4">
-              <div className="bg-gradient-to-br from-green-500 to-emerald-600 p-2.5 rounded-xl">
-                <ClipboardCheck className="text-white" size={22} />
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4 md:gap-5">
+          <Link to="/attendance" className="bg-white rounded-2xl shadow-xl p-6 border border-gray-100 hover:shadow-2xl transition-all duration-300 flex flex-col cursor-pointer hover:-translate-y-1">
+            <div className="flex items-center gap-3 mb-5">
+              <div className="bg-gradient-to-br from-green-500 to-emerald-600 p-3 rounded-xl shadow-lg">
+                <ClipboardCheck className="text-white" size={24} />
               </div>
-              <h2 className="text-lg font-bold text-gray-800">
+              <h2 className="text-xl font-bold text-gray-800">
                 Next Session
               </h2>
             </div>
-            <div className="space-y-2 flex-grow">
-              <div className="bg-green-50 rounded-xl p-3 border border-green-100">
+            <div className="space-y-3 flex-grow">
+              <div className="bg-green-50 rounded-xl p-4 border border-green-100">
                 <p className="text-green-800 font-bold text-lg">{nextTraining.day}, {nextTraining.date}</p>
-                <p className="text-green-600 text-sm">{nextTraining.time} - {nextTraining.type}</p>
-                <p className="text-green-500 text-xs mt-1">BCC Grounds</p>
+                <p className="text-green-600 text-sm mt-1">{nextTraining.time} - {nextTraining.type}</p>
+                <p className="text-green-500 text-xs mt-2">BCC Grounds</p>
               </div>
             </div>
-            <div className="mt-4">
-              <span className="text-sm text-green-600 font-semibold">Mark Attendance →</span>
+            <div className="mt-5 pt-4 border-t border-gray-100">
+              <span className="text-sm text-green-600 font-semibold flex items-center gap-1">
+                Mark Attendance 
+                <span className="text-lg">→</span>
+              </span>
             </div>
           </Link>
 
-          <Link to="/players" className="bg-white rounded-2xl shadow-xl p-5 border border-gray-100 hover:shadow-2xl transition-all duration-300 flex flex-col cursor-pointer hover:-translate-y-1">
-            <div className="flex items-center gap-3 mb-4">
-              <div className="bg-gradient-to-br from-blue-500 to-indigo-600 p-2.5 rounded-xl">
-                <UserPlus className="text-white" size={22} />
+          <Link to="/players" className="bg-white rounded-2xl shadow-xl p-6 border border-gray-100 hover:shadow-2xl transition-all duration-300 flex flex-col cursor-pointer hover:-translate-y-1">
+            <div className="flex items-center gap-3 mb-5">
+              <div className="bg-gradient-to-br from-blue-500 to-indigo-600 p-3 rounded-xl shadow-lg">
+                <UserPlus className="text-white" size={24} />
               </div>
-              <h2 className="text-lg font-bold text-gray-800">
+              <h2 className="text-xl font-bold text-gray-800">
                 Quick Actions
               </h2>
             </div>
-            <div className="space-y-2 flex-grow">
-              <button className="w-full text-left px-3 py-2.5 bg-blue-50 hover:bg-blue-100 rounded-lg text-sm font-medium text-blue-700 transition-colors">
+            <div className="space-y-3 flex-grow">
+              <button className="w-full text-left px-4 py-3 bg-blue-50 hover:bg-blue-100 rounded-xl text-sm font-medium text-blue-700 transition-colors">
                 + Add New Player
               </button>
-              <button className="w-full text-left px-3 py-2.5 bg-emerald-50 hover:bg-emerald-100 rounded-lg text-sm font-medium text-emerald-700 transition-colors">
+              <button className="w-full text-left px-4 py-3 bg-emerald-50 hover:bg-emerald-100 rounded-xl text-sm font-medium text-emerald-700 transition-colors">
                 ✓ Take Attendance
               </button>
             </div>
-            <div className="mt-4">
-              <span className="text-sm text-blue-600 font-semibold">More Actions →</span>
+            <div className="mt-5 pt-4 border-t border-gray-100">
+              <span className="text-sm text-blue-600 font-semibold flex items-center gap-1">
+                More Actions 
+                <span className="text-lg">→</span>
+              </span>
             </div>
           </Link>
 
-          <Link to="/reviews" className="bg-white rounded-2xl shadow-xl p-5 border border-gray-100 hover:shadow-2xl transition-all duration-300 flex flex-col cursor-pointer hover:-translate-y-1">
-            <div className="flex items-center gap-3 mb-4">
-              <div className="bg-gradient-to-br from-purple-500 to-pink-600 p-2.5 rounded-xl">
-                <Star className="text-white" size={22} />
+          <Link to="/reviews" className="bg-white rounded-2xl shadow-xl p-6 border border-gray-100 hover:shadow-2xl transition-all duration-300 flex flex-col cursor-pointer hover:-translate-y-1">
+            <div className="flex items-center gap-3 mb-5">
+              <div className="bg-gradient-to-br from-purple-500 to-pink-600 p-3 rounded-xl shadow-lg">
+                <Star className="text-white" size={24} />
               </div>
-              <h2 className="text-lg font-bold text-gray-800">
+              <h2 className="text-xl font-bold text-gray-800">
                 Performance
               </h2>
             </div>
-            <div className="space-y-2 flex-grow">
-              <div className="flex items-center justify-between p-2.5 bg-purple-50 rounded-lg">
-                <span className="text-sm text-gray-700">Recent Reviews</span>
-                <span className="text-xl font-bold text-purple-600">0</span>
+            <div className="space-y-4 flex-grow">
+              <div className="bg-purple-50 rounded-xl p-4 border border-purple-100">
+                <p className="text-sm text-purple-600 mb-1">Recent Reviews</p>
+                <p className="text-3xl font-bold text-purple-700">0</p>
               </div>
-              <div className="flex items-center justify-between p-2.5 bg-pink-50 rounded-lg">
-                <span className="text-sm text-gray-700">This Week</span>
-                <span className="text-xl font-bold text-pink-600">0</span>
+              <div className="bg-pink-50 rounded-xl p-4 border border-pink-100">
+                <p className="text-sm text-pink-600 mb-1">This Week</p>
+                <p className="text-3xl font-bold text-pink-700">0</p>
               </div>
             </div>
-            <div className="mt-4">
-              <span className="text-sm text-purple-600 font-semibold">View Reviews →</span>
+            <div className="mt-5 pt-4 border-t border-gray-100">
+              <span className="text-sm text-purple-600 font-semibold flex items-center gap-1">
+                View Reviews 
+                <span className="text-lg">→</span>
+              </span>
             </div>
           </Link>
 
-          <Link to="/calendar" className="bg-white rounded-2xl shadow-xl p-5 border border-gray-100 hover:shadow-2xl transition-all duration-300 flex flex-col cursor-pointer hover:-translate-y-1">
-            <div className="flex items-center gap-3 mb-4">
-              <div className="bg-gradient-to-br from-indigo-500 to-indigo-600 p-2.5 rounded-xl">
-                <CalendarDays className="text-white" size={22} />
+          <Link to="/calendar" className="bg-white rounded-2xl shadow-xl p-6 border border-gray-100 hover:shadow-2xl transition-all duration-300 flex flex-col cursor-pointer hover:-translate-y-1">
+            <div className="flex items-center gap-3 mb-5">
+              <div className="bg-gradient-to-br from-indigo-500 to-indigo-600 p-3 rounded-xl shadow-lg">
+                <CalendarDays className="text-white" size={24} />
               </div>
-              <h2 className="text-lg font-bold text-gray-800">
+              <h2 className="text-xl font-bold text-gray-800">
                 This Week
               </h2>
             </div>
-            <div className="space-y-2 flex-grow">
-              <div className="flex items-center gap-2 text-sm">
-                <div className="w-2 h-2 rounded-full bg-indigo-500"></div>
-                <span className="text-gray-700">Tue 18:30 - Training</span>
+            <div className="space-y-3 flex-grow">
+              <div className="bg-indigo-50 rounded-xl p-4 border border-indigo-100">
+                <p className="text-xs text-indigo-600 mb-2 font-medium">Tue 18:30</p>
+                <p className="text-base font-bold text-indigo-800">Training</p>
               </div>
-              <div className="flex items-center gap-2 text-sm">
-                <div className="w-2 h-2 rounded-full bg-indigo-500"></div>
-                <span className="text-gray-700">Wed 18:30 - Training</span>
-              </div>
-              <div className="flex items-center gap-2 text-sm">
-                <div className="w-2 h-2 rounded-full bg-indigo-500"></div>
-                <span className="text-gray-700">Thu 18:30 - Training</span>
+              <div className="bg-indigo-50 rounded-xl p-4 border border-indigo-100">
+                <p className="text-xs text-indigo-600 mb-2 font-medium">Wed 18:30</p>
+                <p className="text-base font-bold text-indigo-800">Training</p>
               </div>
             </div>
-            <div className="mt-4">
-              <span className="text-sm text-indigo-600 font-semibold">Full Calendar →</span>
+            <div className="mt-5 pt-4 border-t border-gray-100">
+              <span className="text-sm text-indigo-600 font-semibold flex items-center gap-1">
+                Full Calendar 
+                <span className="text-lg">→</span>
+              </span>
             </div>
           </Link>
         </div>
