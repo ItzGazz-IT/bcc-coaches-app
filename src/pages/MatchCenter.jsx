@@ -899,7 +899,7 @@ function MatchCenter() {
       {/* Match Details Modal */}
       {showMatchDetails && selectedMatch && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-6">
-          <div className="bg-white rounded-2xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-y-auto">
+          <div className="bg-white rounded-2xl shadow-2xl max-w-4xl w-full max-h-[85vh] overflow-hidden flex flex-col">
             <div className="p-6 border-b border-gray-200 bg-gradient-to-r from-green-500 to-green-600 flex items-center justify-between">
               <div>
                 <h2 className="text-2xl font-bold text-white">Match Details</h2>
@@ -915,7 +915,7 @@ function MatchCenter() {
               </button>
             </div>
 
-            <div className="p-6 space-y-6">
+            <div className="p-6 space-y-6 overflow-y-auto flex-1">
               {/* Scorers */}
               <div>
                 <div className="flex items-center justify-between mb-3">
