@@ -21,16 +21,28 @@ export default defineConfig({
         start_url: '/bcc-coaches-app/',
         icons: [
           {
-            src: '/bcc-coaches-app/icon-192x192.svg',
+            src: '/bcc-coaches-app/bcc-logo.png',
             sizes: '192x192',
-            type: 'image/svg+xml',
-            purpose: 'any maskable'
+            type: 'image/png',
+            purpose: 'any'
           },
           {
-            src: '/bcc-coaches-app/icon-512x512.svg',
+            src: '/bcc-coaches-app/bcc-logo.png',
             sizes: '512x512',
-            type: 'image/svg+xml',
-            purpose: 'any maskable'
+            type: 'image/png',
+            purpose: 'any'
+          },
+          {
+            src: '/bcc-coaches-app/bcc-logo.png',
+            sizes: '192x192',
+            type: 'image/png',
+            purpose: 'maskable'
+          },
+          {
+            src: '/bcc-coaches-app/bcc-logo.png',
+            sizes: '512x512',
+            type: 'image/png',
+            purpose: 'maskable'
           }
         ]
       },
