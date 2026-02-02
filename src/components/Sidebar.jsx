@@ -95,9 +95,9 @@ export default function Sidebar() {
       title: "My Performance",
       items: [
         { path: "/player-stats", label: "My Stats", icon: BarChart3 },
-        { path: "/fitness", label: "Fitness Tests", icon: Tre,
-        { path: "/performance-charts", label: "My Progress", icon: LineChart }ndingUp },
-        { path: "/reviews", label: "My Reviews", icon: Star }
+        { path: "/fitness", label: "Fitness Tests", icon: TrendingUp },
+        { path: "/reviews", label: "My Reviews", icon: Star },
+        { path: "/performance-charts", label: "My Progress", icon: LineChart }
       ]
     },
     {
