@@ -138,7 +138,6 @@ export default function Sidebar() {
       flex flex-col
       z-40
       transition-transform duration-300
-      overflow-y-auto
       ${mobileMenuOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'}
     `}>
       {/* Close button for mobile */}
@@ -150,20 +149,19 @@ export default function Sidebar() {
           <X size={24} />
         </button>
       )}
-      <div className="mb-5">
-        <div className="bg-white/10 backdrop-blur-md rounded-xl p-3 border border-white/20">
-          <img src={logo} className="w-20 mx-auto" />
-          <h2 className="text-center mt-2 font-bold text-base">
+      <div className="mb-4">
+        <div className="bg-white/10 backdrop-blur-md rounded-xl p-2.5 border border-white/20">
+          <img src={logo} className="w-16 mx-auto" />
+          <h2 className="text-center mt-1.5 font-bold text-sm">
             {userRole === "player" ? "BCC Player Portal" : "BCC Coaches Portal"}
           </h2>
-          <p className="text-center text-xs text-white/60 mt-0.5">
+          <p className="text-center text-[10px] text-white/60 mt-0.5">
             {userRole === "player" ? "Player Dashboard" : "Team Management"}
           </p>
         </div>
       </div>
 
-      <nav className="flex-1 overflow-y-auto space-y-1 pb-4">
-        {navSections.map((section, sectionIndex) => {
+      <nav className="flex-1 space-y-0.5 pb-2">{navSections.map((section, sectionIndex) => {
           const isCollapsible = section.key
           const isExpanded = isCollapsible ? expandedSections[section.key] : true
           
@@ -173,20 +171,20 @@ export default function Sidebar() {
               {isCollapsible ? (
                 <button
                   onClick={() => toggleSection(section.key)}
-                  className="w-full flex items-center justify-between px-3 py-2 text-white/40 hover:text-white/60 transition-colors text-xs font-bold uppercase tracking-wider"
+                  className="w-full flex items-center justify-between px-2.5 py-1.5 text-white/40 hover:text-white/60 transition-colors text-[10px] font-bold uppercase tracking-wider"
                 >
                   <span>{section.title}</span>
-                  {isExpanded ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
+                  {isExpanded ? <ChevronDown size={12} /> : <ChevronRight size={12} />}
                 </button>
               ) : (
-                <div className="px-3 py-2 text-white/40 text-xs font-bold uppercase tracking-wider">
+                <div className="px-2.5 py-1.5 text-white/40 text-[10px] font-bold uppercase tracking-wider">
                   {section.title}
                 </div>
               )}
 
               {/* Section Items */}
               {isExpanded && (
-                <div className="space-y-1 mb-3">
+                <div className="space-y-0.5 mb-2">
                   {section.items.map(({ path, label, icon: Icon }) => {
                     const isActive = location.pathname === path
                     return (
@@ -194,13 +192,13 @@ export default function Sidebar() {
                         key={path}
                         to={path}
                         onClick={() => setMobileMenuOpen(false)}
-                        className={`flex items-center gap-3 px-4 py-2.5 rounded-xl font-medium transition-all duration-200 text-sm ${
+                        className={`flex items-center gap-2.5 px-3 py-1.5 rounded-lg font-medium transition-all duration-200 text-xs ${
                           isActive
                             ? 'bg-accent text-white shadow-lg shadow-accent/50'
                             : 'hover:bg-white/10 text-white/70 hover:text-white'
                         }`}
                       >
-                        <Icon size={18} className={isActive ? 'animate-pulse' : ''} />
+                        <Icon size={16} className={isActive ? 'animate-pulse' : ''} />
                         <span className="truncate">{label}</span>
                       </Link>
                     )
@@ -212,13 +210,13 @@ export default function Sidebar() {
         })}
       </nav>
 
-      <div className="mt-auto pt-4 border-t border-white/10 flex-shrink-0">
+      <div className="mt-auto pt-2 border-t border-white/10 flex-shrink-0">
         <Link
           to="/"
           onClick={handleLogout}
-          className="flex items-center gap-3 px-4 py-3 rounded-xl bg-white/5 hover:bg-red-500/20 border border-white/10 hover:border-red-500/50 text-white/70 hover:text-red-400 transition-all duration-200 text-sm"
+          className="flex items-center gap-2.5 px-3 py-2 rounded-lg bg-white/5 hover:bg-red-500/20 border border-white/10 hover:border-red-500/50 text-white/70 hover:text-red-400 transition-all duration-200 text-xs"
         >
-          <LogOut size={18} />
+          <LogOut size={16} />
           <span className="font-medium">Logout</span>
         </Link>
       </div>
