@@ -130,8 +130,8 @@ export default function Sidebar() {
       hidden md:flex
       md:relative
       w-80 md:w-72
-      h-screen
-      bg-gradient-to-b from-primary via-[#0A1E4D] to-[#071533]
+      min-h-screen
+      bg-primary
       text-white
       p-4
       shadow-2xl
