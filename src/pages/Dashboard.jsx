@@ -4,6 +4,7 @@ import { Link } from "react-router-dom"
 import { useState, useEffect } from "react"
 import { collection, query, orderBy, onSnapshot } from "firebase/firestore"
 import { db } from "../firebase/config"
+import logo from "../assets/bcc-logo.png"
 
 function StatCard({ title, value, icon: Icon, gradient, delay = 0, to, subtitle }) {
   const CardContent = () => (
@@ -133,6 +134,19 @@ export default function Dashboard() {
   return (
     <div className="flex-1 p-4 md:p-6 bg-gray-50 min-h-screen overflow-y-auto">
       <div className="max-w-7xl mx-auto">
+        {/* Mobile Logo Header */}
+        <div className="md:hidden mb-4 bg-white rounded-xl shadow-sm p-4 border border-gray-100">
+          <div className="flex items-center gap-3">
+            <img src={logo} alt="BCC Logo" className="w-12 h-12" />
+            <div>
+              <h2 className="text-lg font-black bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">
+                BCC Coaches Portal
+              </h2>
+              <p className="text-xs text-gray-500">Team Management Dashboard</p>
+            </div>
+          </div>
+        </div>
+
         <div className="mb-4 md:mb-6">
           <h1 className="text-2xl md:text-4xl font-black bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent mb-1">
             Dashboard

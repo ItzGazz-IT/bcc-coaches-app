@@ -332,49 +332,48 @@ function FitnessTests() {
                 return (
                   <div 
                     key={`top-${player.playerId}-${index}`}
-                    className={`${bgColors[index]} rounded-xl p-4 border shadow-sm hover:shadow-md transition-all`}
+                    className={`${bgColors[index]} rounded-xl p-3 border shadow-sm hover:shadow-md transition-all`}
                   >
-                    <div className="flex items-center gap-4">
-                      <div className={`flex-shrink-0 w-10 h-10 bg-gradient-to-br ${medalColors[index]} rounded-xl flex items-center justify-center`}>
-                        <Award className="text-white" size={20} />
+                    <div className="flex items-start gap-3">
+                      <div className={`flex-shrink-0 w-9 h-9 bg-gradient-to-br ${medalColors[index]} rounded-lg flex items-center justify-center`}>
+                        <Award className="text-white" size={18} />
                       </div>
                       
                       <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2">
-                          <h4 className="font-bold text-gray-800 truncate">{player.playerName}</h4>
-                          {index === 0 && <span className="text-xs px-2 py-0.5 bg-yellow-200 text-yellow-800 rounded-full font-bold">TOP</span>}
+                        <div className="flex items-center gap-1.5 mb-1">
+                          <h4 className="font-bold text-sm text-gray-800 truncate">{player.playerName}</h4>
+                          {index === 0 && <span className="text-[9px] px-1.5 py-0.5 bg-yellow-200 text-yellow-800 rounded-full font-bold">TOP</span>}
                         </div>
-                        <div className="flex items-center gap-4 mt-1 text-xs text-gray-600">
+                        <div className="flex flex-wrap items-center gap-2 text-[10px] text-gray-600 mb-2">
                           <span className="flex items-center gap-1">
-                            <Activity size={12} />
+                            <Activity size={10} />
                             {player.testCount} test{player.testCount !== 1 ? 's' : ''}
                           </span>
-                          <span className="text-gray-400">|</span>
-                          <span>Score: {player.score.toFixed(1)}/100</span>
+                          <span className="text-gray-400">•</span>
+                          <span className="font-semibold">{player.score.toFixed(1)}/100</span>
                         </div>
-                      </div>
-
-                      <div className="flex flex-wrap gap-1.5 text-xs">
-                        {player.beepTest && (
-                          <div className="bg-purple-100 px-2 py-0.5 rounded">
-                            <span className="text-purple-600 font-bold">{player.beepTest}</span>
-                          </div>
-                        )}
-                        {player.sprint10m && (
-                          <div className="bg-blue-100 px-2 py-0.5 rounded">
-                            <span className="text-blue-600 font-bold">{player.sprint10m}s</span>
-                          </div>
-                        )}
-                        {player.pushUps && (
-                          <div className="bg-orange-100 px-2 py-0.5 rounded">
-                            <span className="text-orange-600 font-bold">{player.pushUps}</span>
-                          </div>
-                        )}
-                        {player.sitUps && (
-                          <div className="bg-pink-100 px-2 py-0.5 rounded">
-                            <span className="text-pink-600 font-bold">{player.sitUps}</span>
-                          </div>
-                        )}
+                        <div className="flex flex-wrap gap-1.5">
+                          {player.beepTest && (
+                            <span className="bg-purple-100 text-purple-700 px-1.5 py-0.5 rounded text-[10px] font-bold">
+                              {player.beepTest}
+                            </span>
+                          )}
+                          {player.sprint10m && (
+                            <span className="bg-blue-100 text-blue-700 px-1.5 py-0.5 rounded text-[10px] font-bold">
+                              {player.sprint10m}s
+                            </span>
+                          )}
+                          {player.pushUps && (
+                            <span className="bg-orange-100 text-orange-700 px-1.5 py-0.5 rounded text-[10px] font-bold">
+                              {player.pushUps}
+                            </span>
+                          )}
+                          {player.sitUps && (
+                            <span className="bg-pink-100 text-pink-700 px-1.5 py-0.5 rounded text-[10px] font-bold">
+                              {player.sitUps}
+                            </span>
+                          )}
+                        </div>
                       </div>
                     </div>
 
@@ -400,43 +399,42 @@ function FitnessTests() {
                     return (
                       <div 
                         key={`player-${player.playerId}-${actualRank}`}
-                        className="p-3 hover:bg-gray-50 transition-colors"
+                        className="p-2.5 hover:bg-gray-50 transition-colors"
                       >
-                        <div className="flex items-center gap-3">
-                          <div className="flex-shrink-0 w-8 h-8 bg-gradient-to-br from-blue-500 to-blue-600 rounded-lg flex items-center justify-center">
+                        <div className="flex items-start gap-2.5">
+                          <div className="flex-shrink-0 w-7 h-7 bg-gradient-to-br from-blue-500 to-blue-600 rounded-lg flex items-center justify-center">
                             <span className="text-white font-bold text-xs">{actualRank}</span>
                           </div>
                           
                           <div className="flex-1 min-w-0">
-                            <h5 className="font-semibold text-gray-800 text-sm truncate">{player.playerName}</h5>
-                            <div className="flex items-center gap-2 text-xs text-gray-500">
-                              <span>Score: {player.score.toFixed(1)}</span>
+                            <h5 className="font-semibold text-gray-800 text-sm truncate mb-1">{player.playerName}</h5>
+                            <div className="flex flex-wrap items-center gap-1.5 text-[10px] text-gray-600 mb-1.5">
+                              <span className="font-semibold">{player.score.toFixed(1)}/100</span>
                               <span className="text-gray-300">•</span>
                               <span>{player.testCount} test{player.testCount !== 1 ? 's' : ''}</span>
                             </div>
-                          </div>
-
-                          <div className="flex gap-1.5 text-xs">
-                            {player.beepTest && (
-                              <div className="bg-purple-100 px-1.5 py-0.5 rounded">
-                                <span className="text-purple-600 font-semibold">{player.beepTest}</span>
-                              </div>
-                            )}
-                            {player.sprint10m && (
-                              <div className="bg-blue-100 px-1.5 py-0.5 rounded">
-                                <span className="text-blue-600 font-semibold">{player.sprint10m}s</span>
-                              </div>
-                            )}
-                            {player.pushUps && (
-                              <div className="bg-orange-100 px-1.5 py-0.5 rounded">
-                                <span className="text-orange-600 font-semibold">{player.pushUps}</span>
-                              </div>
-                            )}
-                            {player.sitUps && (
-                              <div className="bg-pink-100 px-1.5 py-0.5 rounded">
-                                <span className="text-pink-600 font-semibold">{player.sitUps}</span>
-                              </div>
-                            )}
+                            <div className="flex flex-wrap gap-1">
+                              {player.beepTest && (
+                                <span className="bg-purple-100 text-purple-700 px-1.5 py-0.5 rounded text-[10px] font-bold">
+                                  {player.beepTest}
+                                </span>
+                              )}
+                              {player.sprint10m && (
+                                <span className="bg-blue-100 text-blue-700 px-1.5 py-0.5 rounded text-[10px] font-bold">
+                                  {player.sprint10m}s
+                                </span>
+                              )}
+                              {player.pushUps && (
+                                <span className="bg-orange-100 text-orange-700 px-1.5 py-0.5 rounded text-[10px] font-bold">
+                                  {player.pushUps}
+                                </span>
+                              )}
+                              {player.sitUps && (
+                                <span className="bg-pink-100 text-pink-700 px-1.5 py-0.5 rounded text-[10px] font-bold">
+                                  {player.sitUps}
+                                </span>
+                              )}
+                            </div>
                           </div>
                         </div>
                       </div>
