@@ -85,22 +85,24 @@ function Players() {
   const othersCount = players.filter(p => p.team === "Others").length
 
   return (
-    <div className="flex-1 p-6 bg-gradient-to-br from-gray-50 via-white to-blue-50 min-h-screen overflow-y-auto">
+    <div className="flex-1 p-4 md:p-6 bg-gray-50 min-h-screen overflow-y-auto">
       <div className="max-w-7xl mx-auto">
-        <div className="mb-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-4xl font-black bg-gradient-to-r from-primary via-secondary to-accent bg-clip-text text-transparent mb-2">
-                Players Management
+        {/* Header */}
+        <div className="mb-4 md:mb-6">
+          <div className="flex items-start md:items-center justify-between gap-3">
+            <div className="flex-1">
+              <h1 className="text-2xl md:text-4xl font-black bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent mb-1">
+                Players
               </h1>
-              <p className="text-gray-600">Manage your team roster and player information</p>
+              <p className="text-sm md:text-base text-gray-600 hidden md:block">Manage your team roster</p>
             </div>
             <button
               onClick={() => setShowModal(true)}
-              className="btn btn-primary inline-flex items-center gap-2 text-sm md:text-base"
+              className="btn btn-primary inline-flex items-center gap-2 text-sm flex-shrink-0"
             >
-              <UserPlus size={20} />
-              Add Player
+              <UserPlus size={18} />
+              <span className="hidden sm:inline">Add Player</span>
+              <span className="sm:hidden">Add</span>
             </button>
           </div>
         </div>
@@ -114,89 +116,89 @@ function Players() {
         )}
 
         {/* Stats Cards */}
-        <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mb-6">
-          <div className="bg-white rounded-2xl p-4 shadow-lg border border-gray-100">
-            <div className="flex items-center gap-3">
-              <div className="bg-gradient-to-br from-blue-500 to-blue-600 p-2.5 rounded-xl">
-                <Users className="text-white" size={20} />
-              </div>
-              <div>
+        <div className="grid grid-cols-2 lg:grid-cols-5 gap-3 mb-4">
+          <div className="bg-white rounded-xl p-3 shadow-sm border border-gray-100">
+            <div className="flex flex-col gap-1">
+              <div className="flex items-center gap-2">
+                <div className="bg-gradient-to-br from-blue-500 to-blue-600 p-1.5 rounded-lg">
+                  <Users className="text-white" size={16} />
+                </div>
                 <p className="text-xs font-bold text-gray-500 uppercase">Total</p>
-                <p className="text-2xl font-black text-blue-600">{players.length}</p>
               </div>
+              <p className="text-2xl font-black text-blue-600">{players.length}</p>
             </div>
           </div>
           
-          <div className="bg-white rounded-2xl p-4 shadow-lg border border-gray-100">
-            <div className="flex items-center gap-3">
-              <div className="bg-gradient-to-br from-emerald-500 to-emerald-600 p-2.5 rounded-xl">
-                <Shield className="text-white" size={20} />
+          <div className="bg-white rounded-xl p-3 shadow-sm border border-gray-100">
+            <div className="flex flex-col gap-1">
+              <div className="flex items-center gap-2">
+                <div className="bg-gradient-to-br from-emerald-500 to-emerald-600 p-1.5 rounded-lg">
+                  <Shield className="text-white" size={16} />
+                </div>
+                <p className="text-xs font-bold text-gray-500 uppercase truncate">First</p>
               </div>
-              <div>
-                <p className="text-xs font-bold text-gray-500 uppercase">First Team</p>
-                <p className="text-2xl font-black text-emerald-600">{firstTeamCount}</p>
-              </div>
+              <p className="text-2xl font-black text-emerald-600">{firstTeamCount}</p>
             </div>
           </div>
 
-          <div className="bg-white rounded-2xl p-4 shadow-lg border border-gray-100">
-            <div className="flex items-center gap-3">
-              <div className="bg-gradient-to-br from-orange-500 to-orange-600 p-2.5 rounded-xl">
-                <Activity className="text-white" size={20} />
+          <div className="bg-white rounded-xl p-3 shadow-sm border border-gray-100">
+            <div className="flex flex-col gap-1">
+              <div className="flex items-center gap-2">
+                <div className="bg-gradient-to-br from-orange-500 to-orange-600 p-1.5 rounded-lg">
+                  <Activity className="text-white" size={16} />
+                </div>
+                <p className="text-xs font-bold text-gray-500 uppercase truncate">Reserve</p>
               </div>
-              <div>
-                <p className="text-xs font-bold text-gray-500 uppercase">Reserve Team</p>
-                <p className="text-2xl font-black text-orange-600">{reserveTeamCount}</p>
-              </div>
+              <p className="text-2xl font-black text-orange-600">{reserveTeamCount}</p>
             </div>
           </div>
 
-          <div className="bg-white rounded-2xl p-4 shadow-lg border border-gray-100">
-            <div className="flex items-center gap-3">
-              <div className="bg-gradient-to-br from-purple-500 to-purple-600 p-2.5 rounded-xl">
-                <Users className="text-white" size={20} />
-              </div>
-              <div>
+          <div className="bg-white rounded-xl p-3 shadow-sm border border-gray-100">
+            <div className="flex flex-col gap-1">
+              <div className="flex items-center gap-2">
+                <div className="bg-gradient-to-br from-purple-500 to-purple-600 p-1.5 rounded-lg">
+                  <Users className="text-white" size={16} />
+                </div>
                 <p className="text-xs font-bold text-gray-500 uppercase">Others</p>
-                <p className="text-2xl font-black text-purple-600">{othersCount}</p>
               </div>
+              <p className="text-2xl font-black text-purple-600">{othersCount}</p>
             </div>
           </div>
 
-          <div className="bg-white rounded-2xl p-4 shadow-lg border border-gray-100">
-            <div className="flex items-center gap-3">
-              <div className="bg-gradient-to-br from-indigo-500 to-indigo-600 p-2.5 rounded-xl">
-                <CheckCircle className="text-white" size={20} />
+          <div className="bg-white rounded-xl p-3 shadow-sm border border-gray-100">
+            <div className="flex flex-col gap-1">
+              <div className="flex items-center gap-2">
+                <div className="bg-gradient-to-br from-indigo-500 to-indigo-600 p-1.5 rounded-lg">
+                  <CheckCircle className="text-white" size={16} />
+                </div>
+                <p className="text-xs font-bold text-gray-500 uppercase truncate">Showing</p>
               </div>
-              <div>
-                <p className="text-xs font-bold text-gray-500 uppercase">Showing</p>
-                <p className="text-2xl font-black text-indigo-600">{filteredPlayers.length}</p>
-              </div>
+              <p className="text-2xl font-black text-indigo-600">{filteredPlayers.length}</p>
             </div>
           </div>
         </div>
 
         {/* Players List */}
-        <div className="bg-white rounded-2xl shadow-xl border border-gray-100">
-          <div className="p-6 border-b border-gray-100">
-            <h2 className="text-xl font-bold text-gray-800 mb-4">Team Roster</h2>
+        <div className="bg-white rounded-xl shadow-sm border border-gray-100">
+          <div className="p-4 border-b border-gray-100">
+            <h2 className="text-lg md:text-xl font-bold text-gray-800 mb-3">Team Roster</h2>
             
-            <div className="flex gap-3">
+            <div className="flex flex-col sm:flex-row gap-2">
               <div className="relative flex-1">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={16} />
                 <input
                   type="text"
                   placeholder="Search players..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  className="w-full pl-10 pr-4 py-2.5 border-2 border-gray-200 rounded-xl focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 outline-none transition-all"
+                  className="w-full pl-9 pr-3 py-2 text-sm border-2 border-gray-200 rounded-lg focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 outline-none transition-all"
                 />
               </div>
               
               <select
                 value={filterTeam}
                 onChange={(e) => setFilterTeam(e.target.value)}
-                className="px-4 py-2.5 border-2 border-gray-200 rounded-xl focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 outline-none transition-all bg-white"
+                className="px-3 py-2 text-sm border-2 border-gray-200 rounded-lg focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 outline-none transition-all bg-white"
               >
                 <option value="All">All Teams</option>
                 <option value="First Team">First Team</option>
@@ -206,7 +208,7 @@ function Players() {
             </div>
           </div>
 
-          <div className="p-6">
+          <div className="p-4">
             {filteredPlayers.length === 0 ? (
               <div className="text-center py-12">
                 <Users className="mx-auto text-gray-300 mb-3" size={48} />
@@ -214,15 +216,15 @@ function Players() {
                 <p className="text-gray-400 text-sm mt-1">Try adjusting your search or filters</p>
               </div>
             ) : (
-              <div className="space-y-3">
+              <div className="space-y-2">
                 {filteredPlayers.map(player => (
                   <div 
                     key={player.id} 
-                    className="flex items-center justify-between p-4 border-2 border-gray-100 rounded-xl hover:border-blue-300 hover:bg-blue-50/50 transition-all group"
+                    className="flex flex-col sm:flex-row sm:items-center gap-3 p-3 border border-gray-200 rounded-lg hover:border-blue-300 hover:bg-blue-50/30 transition-all"
                   >
-                    <div className="flex-1">
-                      <div className="flex items-center gap-2 mb-1">
-                        <h3 className="font-bold text-gray-800 text-lg">
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 mb-1 flex-wrap">
+                        <h3 className="font-bold text-gray-800 text-base">
                           {player.firstName} {player.lastName}
                         </h3>
                         {player.position && (
@@ -230,46 +232,43 @@ function Players() {
                             {player.position}
                           </span>
                         )}
+                        <span className={`px-2 py-0.5 rounded text-xs font-bold ${
+                          player.team === "First Team" 
+                            ? "bg-emerald-100 text-emerald-700" 
+                            : player.team === "Reserve Team"
+                            ? "bg-orange-100 text-orange-700"
+                            : "bg-purple-100 text-purple-700"
+                        }`}>
+                          {player.team}
+                        </span>
                       </div>
-                      <div className="flex flex-col gap-0.5">
-                        <p className="text-sm text-gray-500 flex items-center gap-1.5">
-                          <Phone size={14} />
-                          {player.phone}
-                        </p>
-                      </div>
+                      <p className="text-sm text-gray-500 flex items-center gap-1.5">
+                        <Phone size={13} />
+                        {player.phone}
+                      </p>
                     </div>
                     
-                    <div className="flex items-center gap-2">
-                      <span className={`px-3 py-1.5 rounded-lg text-xs font-bold ${
-                        player.team === "First Team" 
-                          ? "bg-emerald-100 text-emerald-700" 
-                          : player.team === "Reserve Team"
-                          ? "bg-orange-100 text-orange-700"
-                          : "bg-purple-100 text-purple-700"
-                      }`}>
-                        {player.team}
-                      </span>
-                      
+                    <div className="flex items-center gap-1.5 sm:gap-2">
                       <button
                         onClick={() => handleEdit(player)}
-                        className="p-2 hover:bg-blue-100 rounded-lg transition-colors"
-                        title="Edit player"
+                        className="p-2 hover:bg-blue-100 rounded-lg transition-colors flex-shrink-0"
+                        title="Edit"
                       >
                         <Edit size={16} className="text-blue-600" />
                       </button>
                       
                       <button
                         onClick={() => openWhatsApp(player.phone)}
-                        className="p-2 hover:bg-green-100 rounded-lg transition-colors"
-                        title="Open WhatsApp"
+                        className="p-2 hover:bg-green-100 rounded-lg transition-colors flex-shrink-0"
+                        title="WhatsApp"
                       >
                         <Phone size={16} className="text-green-600" />
                       </button>
                       
                       <button
                         onClick={() => deletePlayer(player.id)}
-                        className="p-2 hover:bg-red-100 rounded-lg transition-colors"
-                        title="Delete player"
+                        className="p-2 hover:bg-red-100 rounded-lg transition-colors flex-shrink-0"
+                        title="Delete"
                       >
                         <Trash2 size={16} className="text-red-600" />
                       </button>

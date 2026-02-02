@@ -8,19 +8,19 @@ import { db } from "../firebase/config"
 function StatCard({ title, value, icon: Icon, gradient, delay = 0, to, subtitle }) {
   const CardContent = () => (
     <>
-      <div className={`absolute top-0 right-0 w-32 h-32 ${gradient} opacity-10 rounded-full blur-2xl group-hover:opacity-20 transition-opacity`}></div>
+      <div className={`absolute top-0 right-0 w-20 h-20 ${gradient} opacity-10 rounded-full blur-xl`}></div>
       <div className="relative z-10">
-        <div className={`${gradient} text-white p-3 rounded-xl w-fit mb-3 shadow-lg group-hover:scale-110 transition-transform`}>
-          <Icon size={22} />
+        <div className={`${gradient} text-white p-2 rounded-lg w-fit mb-2 shadow-md`}>
+          <Icon size={18} />
         </div>
-        <h3 className="text-xs font-bold text-gray-500 uppercase tracking-wide mb-1">{title}</h3>
-        <p className="text-3xl font-black bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">{value}</p>
-        {subtitle && <p className="text-xs text-gray-400 mt-1">{subtitle}</p>}
+        <h3 className="text-xs font-bold text-gray-500 uppercase tracking-wide mb-0.5 truncate">{title}</h3>
+        <p className="text-2xl md:text-3xl font-black bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">{value}</p>
+        {subtitle && <p className="text-xs text-gray-400 mt-0.5">{subtitle}</p>}
       </div>
     </>
   )
 
-  const className = "bg-white rounded-2xl shadow-lg p-4 hover:shadow-2xl hover:-translate-y-2 transition-all duration-300 border border-gray-100 group overflow-hidden relative cursor-pointer"
+  const className = "bg-white rounded-xl shadow-sm p-3 hover:shadow-md hover:-translate-y-1 transition-all duration-300 border border-gray-100 group overflow-hidden relative cursor-pointer"
   
   if (to) {
     return (
@@ -131,16 +131,16 @@ export default function Dashboard() {
   const nextTraining = getNextTrainingSession()
 
   return (
-    <div className="flex-1 p-6 bg-gradient-to-br from-gray-50 via-white to-blue-50 min-h-screen overflow-y-auto">
+    <div className="flex-1 p-4 md:p-6 bg-gray-50 min-h-screen overflow-y-auto">
       <div className="max-w-7xl mx-auto">
-        <div className="mb-6">
-          <h1 className="text-4xl font-black bg-gradient-to-r from-primary via-secondary to-accent bg-clip-text text-transparent mb-2">
-            Team Dashboard
+        <div className="mb-4 md:mb-6">
+          <h1 className="text-2xl md:text-4xl font-black bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent mb-1">
+            Dashboard
           </h1>
-          <p className="text-gray-600">BCC Team Management Portal</p>
+          <p className="text-sm md:text-base text-gray-600">BCC Team Management</p>
         </div>
 
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-7 gap-4 mb-6">
+        <div className="grid grid-cols-2 lg:grid-cols-7 gap-3 mb-4 md:mb-6">
           <StatCard 
             title="Total Players" 
             value={totalPlayers.toString()} 
