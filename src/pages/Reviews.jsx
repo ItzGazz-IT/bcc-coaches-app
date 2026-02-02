@@ -4,7 +4,7 @@ import { useApp } from "../contexts/AppContext"
 import { TableSkeleton } from "../components/Loading"
 
 function Reviews() {
-  const { players, reviews, addReview, updateReview, deleteReview, loading } = useApp()
+  const { players, reviews, addReview, updateReview, deleteReview, loading, userRole, currentPlayerId } = useApp()
   
   const [selectedPlayer, setSelectedPlayer] = useState(null)
   const [searchTerm, setSearchTerm] = useState("")
@@ -81,12 +81,21 @@ function Reviews() {
     }
   }
 
-  const filteredPlayers = players.filter(player =>
+  // Filter players based on role
+  const visiblePlayers = userRole === "player" && currentPlayerId
+    ? players.filter(p => p.id === currentPlayerId)
+    : players
+
+  const filteredPlayers = visiblePlayers.filter(player =>
     player.firstName.toLowerCase().includes(searchTerm.toLowerCase()) ||
     player.lastName.toLowerCase().includes(searchTerm.toLowerCase())
   )
 
   const getPlayerReviews = (playerId) => {
+    // For players, only show their own reviews
+    if (userRole === "player" && currentPlayerId && playerId !== currentPlayerId) {
+      return []
+    }
     return reviews
       .filter(r => r.playerId === playerId)
       .sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp))

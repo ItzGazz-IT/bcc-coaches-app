@@ -4,14 +4,14 @@ import { Lock, User, Shield, ArrowRight, AlertCircle, Users as UsersIcon } from 
 import { useState } from "react"
 import { useApp } from "../contexts/AppContext"
 
-const USERS = [
-  { username: "Goisto", password: "Goisto@BCC26", role: "coach" },
-  { username: "Gareth", password: "Gareth@BCC26", role: "coach" }
+const COACHES = [
+  { username: "Goisto", password: "Goisto@BCC26" },
+  { username: "Gareth", password: "Gareth@BCC26" }
 ]
 
 export default function Login() {
   const navigate = useNavigate()
-  const { setUserRole, setCurrentUser } = useApp()
+  const { setUserRole, setCurrentUser, setCurrentPlayerId, players } = useApp()
   const [username, setUsername] = useState("")
   const [password, setPassword] = useState("")
   const [selectedRole, setSelectedRole] = useState("coach")
@@ -21,16 +21,35 @@ export default function Login() {
     e.preventDefault()
     setError("")
 
-    const user = USERS.find(u => u.username === username && u.password === password)
-    
-    if (user) {
-      localStorage.setItem("bcc-user", username)
-      localStorage.setItem("bcc-role", selectedRole)
-      setUserRole(selectedRole)
-      setCurrentUser(username)
-      navigate("/dashboard")
+    if (selectedRole === "coach") {
+      // Check coach credentials
+      const coach = COACHES.find(c => c.username === username && c.password === password)
+      
+      if (coach) {
+        localStorage.setItem("bcc-user", username)
+        localStorage.setItem("bcc-role", "coach")
+        setUserRole("coach")
+        setCurrentUser(username)
+        setCurrentPlayerId(null)
+        navigate("/dashboard")
+      } else {
+        setError("Invalid coach username or password")
+      }
     } else {
-      setError("Invalid username or password")
+      // Check player credentials
+      const player = players.find(p => p.username === username && p.password === password)
+      
+      if (player) {
+        localStorage.setItem("bcc-user", username)
+        localStorage.setItem("bcc-role", "player")
+        localStorage.setItem("bcc-player-id", player.id)
+        setUserRole("player")
+        setCurrentUser(username)
+        setCurrentPlayerId(player.id)
+        navigate("/dashboard")
+      } else {
+        setError("Invalid player username or password. Contact your coach if you don't have login credentials.")
+      }
     }
   }
 

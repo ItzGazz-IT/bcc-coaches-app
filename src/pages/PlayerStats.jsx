@@ -3,15 +3,20 @@ import { Trophy, Target, TrendingUp, Award, Users, Download, Printer, Star, Aler
 import { useApp } from "../contexts/AppContext"
 
 function PlayerStats() {
-  const { players, fixtures } = useApp()
+  const { players, fixtures, userRole, currentPlayerId } = useApp()
   const [selectedTeam, setSelectedTeam] = useState("All")
   const [selectedStat, setSelectedStat] = useState("goals")
+
+  // Filter players based on role
+  const displayPlayers = userRole === "player" && currentPlayerId
+    ? players.filter(p => p.id === currentPlayerId)
+    : players
 
   // Calculate player statistics from fixtures
   const playerStats = useMemo(() => {
     const stats = {}
 
-    players.forEach(player => {
+    displayPlayers.forEach(player => {
       stats[player.id] = {
         player,
         appearances: 0,
@@ -82,7 +87,7 @@ function PlayerStats() {
     })
 
     return Object.values(stats)
-  }, [players, fixtures])
+  }, [displayPlayers, fixtures])
 
   const filteredStats = playerStats
     .filter(stat => selectedTeam === "All" || stat.player.team === selectedTeam)

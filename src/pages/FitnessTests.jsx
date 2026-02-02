@@ -4,7 +4,7 @@ import { useApp } from "../contexts/AppContext"
 import { TableSkeleton } from "../components/Loading"
 
 function FitnessTests() {
-  const { players, fitnessTests, addFitnessTest, updateFitnessTest, deleteFitnessTest, loading } = useApp()
+  const { players, fitnessTests, addFitnessTest, updateFitnessTest, deleteFitnessTest, loading, userRole, currentPlayerId } = useApp()
   
   const [formData, setFormData] = useState({
     playerId: "",
@@ -74,11 +74,16 @@ function FitnessTests() {
     }
   }
 
+  // Filter fitness tests based on role
+  const visibleTests = userRole === "player" && currentPlayerId
+    ? fitnessTests.filter(t => t.playerId === currentPlayerId)
+    : fitnessTests
+
   // Get unique test dates
-  const uniqueDates = [...new Set(fitnessTests.map(t => t.date))].sort((a, b) => new Date(b) - new Date(a))
+  const uniqueDates = [...new Set(visibleTests.map(t => t.date))].sort((a, b) => new Date(b) - new Date(a))
 
   // Filter tests
-  const filteredTests = fitnessTests.filter(test => {
+  const filteredTests = visibleTests.filter(test => {
     const matchesSearch = test.playerName?.toLowerCase().includes(searchTerm.toLowerCase())
     const matchesDate = filterDate === "all" || test.date === filterDate
     return matchesSearch && matchesDate
@@ -86,7 +91,7 @@ function FitnessTests() {
 
   // Calculate overall averages
   const calculateOverallAverages = () => {
-    const testsToAverage = filterDate === "all" ? fitnessTests : fitnessTests.filter(t => t.date === filterDate)
+    const testsToAverage = filterDate === "all" ? visibleTests : visibleTests.filter(t => t.date === filterDate)
     
     if (testsToAverage.length === 0) {
       return { beepTest: 0, sprint10m: 0, tTest: 0, pushUps: 0, sitUps: 0 }
@@ -116,7 +121,7 @@ function FitnessTests() {
   const calculatePlayerRankings = () => {
     // Get the latest test for each player
     const latestTests = {}
-    const testsToRank = filterDate === "all" ? fitnessTests : fitnessTests.filter(t => t.date === filterDate)
+    const testsToRank = filterDate === "all" ? visibleTests : visibleTests.filter(t => t.date === filterDate)
     
     testsToRank.forEach(test => {
       if (!latestTests[test.playerId] || new Date(test.date) > new Date(latestTests[test.playerId].date)) {

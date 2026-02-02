@@ -21,6 +21,7 @@ export const AppProvider = ({ children }) => {
   const [loading, setLoading] = useState(true)
   const [userRole, setUserRole] = useState(null) // 'coach' or 'player'
   const [currentUser, setCurrentUser] = useState(null)
+  const [currentPlayerId, setCurrentPlayerId] = useState(null) // ID of logged-in player
 
   // Real-time listener for players collection
   useEffect(() => {
@@ -284,7 +285,9 @@ export const AppProvider = ({ children }) => {
     userRole,
     setUserRole,
     currentUser,
-    setCurrentUser
+    setCurrentUser,
+    currentPlayerId,
+    setCurrentPlayerId
   }
 
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>

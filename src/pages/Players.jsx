@@ -14,7 +14,9 @@ function Players() {
     phone: "",
     team: "First Team",
     position: "Midfielder",
-    emergencyContact: ""
+    emergencyContact: "",
+    username: "",
+    password: ""
   })
   
   const [searchTerm, setSearchTerm] = useState("")
@@ -34,10 +36,23 @@ function Players() {
   const handleSubmit = async (e) => {
     e.preventDefault()
     if (formData.firstName && formData.lastName && formData.phone) {
+      const playerData = { ...formData }
+      
+      // If editing and password is empty, remove it from the update
+      if (editingPlayer && !formData.password) {
+        delete playerData.password
+      }
+      
+      // If username is empty, remove it
+      if (!playerData.username) {
+        delete playerData.username
+        delete playerData.password
+      }
+      
       if (editingPlayer) {
-        await updatePlayer(editingPlayer.id, formData)
+        await updatePlayer(editingPlayer.id, playerData)
       } else {
-        await addPlayer(formData)
+        await addPlayer(playerData)
       }
       setFormData({ 
         firstName: "", 
@@ -45,7 +60,9 @@ function Players() {
         phone: "", 
         team: "First Team",
         position: "Midfielder",
-        emergencyContact: ""
+        emergencyContact: "",
+        username: "",
+        password: ""
       })
       setShowSuccess(true)
       setShowModal(false)
@@ -62,7 +79,9 @@ function Players() {
       phone: player.phone,
       team: player.team,
       position: player.position || "Midfielder",
-      emergencyContact: player.emergencyContact || ""
+      emergencyContact: player.emergencyContact || "",
+      username: player.username || "",
+      password: "" // Don't show existing password
     })
     setShowModal(true)
   }
@@ -397,6 +416,40 @@ function Players() {
                     <option value="Forward">Forward/Winger</option>
                     <option value="Striker">Striker</option>
                   </select>
+                </div>
+
+                <div className="border-t pt-4 mt-2">
+                  <h3 className="text-sm font-bold text-gray-700 mb-3">Player Login Credentials (Optional)</h3>
+                  
+                  <div className="space-y-4">
+                    <div>
+                      <label className="block text-sm font-semibold text-gray-700 mb-2">
+                        Username
+                      </label>
+                      <input
+                        type="text"
+                        value={formData.username}
+                        onChange={(e) => setFormData({...formData, username: e.target.value})}
+                        placeholder="player.username"
+                        className="w-full px-4 py-2.5 border-2 border-gray-200 rounded-xl focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 outline-none transition-all"
+                      />
+                      <p className="text-xs text-gray-500 mt-1">Used for player login to the portal</p>
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-semibold text-gray-700 mb-2">
+                        Password {editingPlayer && "(leave blank to keep current)"}
+                      </label>
+                      <input
+                        type="password"
+                        value={formData.password}
+                        onChange={(e) => setFormData({...formData, password: e.target.value})}
+                        placeholder="Enter password"
+                        className="w-full px-4 py-2.5 border-2 border-gray-200 rounded-xl focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 outline-none transition-all"
+                      />
+                      <p className="text-xs text-gray-500 mt-1">Minimum 6 characters recommended</p>
+                    </div>
+                  </div>
                 </div>
 
                 <div className="flex gap-3 pt-4">

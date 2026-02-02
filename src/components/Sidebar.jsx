@@ -6,7 +6,7 @@ import logo from "../assets/bcc-logo.png"
 
 export default function Sidebar() {
   const location = useLocation()
-  const { userRole, setUserRole, setCurrentUser } = useApp()
+  const { userRole, setUserRole, setCurrentUser, setCurrentPlayerId } = useApp()
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const [expandedSections, setExpandedSections] = useState({
     team: true,
@@ -16,7 +16,9 @@ export default function Sidebar() {
 
   useEffect(() => {
     const role = localStorage.getItem("bcc-role")
+    const playerId = localStorage.getItem("bcc-player-id")
     if (role) setUserRole(role)
+    if (playerId) setCurrentPlayerId(playerId)
   }, [])
 
   const toggleSection = (section) => {
@@ -29,8 +31,10 @@ export default function Sidebar() {
   const handleLogout = () => {
     localStorage.removeItem("bcc-user")
     localStorage.removeItem("bcc-role")
+    localStorage.removeItem("bcc-player-id")
     setUserRole(null)
     setCurrentUser(null)
+    setCurrentPlayerId(null)
   }
 
   // Coach navigation sections

@@ -39,7 +39,7 @@ function StatCard({ title, value, icon: Icon, gradient, delay = 0, to, subtitle 
 }
 
 export default function Dashboard() {
-  const { players, injuries } = useApp()
+  const { players, injuries, userRole } = useApp()
   const [sessions, setSessions] = useState([])
   
   // Load sessions from Firestore
