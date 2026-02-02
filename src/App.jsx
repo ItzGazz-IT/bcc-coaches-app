@@ -46,7 +46,6 @@ export default function App() {
               key={path}
               path={`/${path}`}
               element={
-              element={
                 <div className="flex flex-row min-h-screen bg-gray-50 dark:bg-gray-950">
                   <Sidebar />
                   <div className="flex-1 w-full md:w-auto overflow-x-hidden pb-16 md:pb-0">

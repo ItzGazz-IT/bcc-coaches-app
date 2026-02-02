@@ -115,8 +115,7 @@ export const AppProvider = ({ children }) => {
     })
 
     return () => unsubscribe()
-  }, [userRoleturn () => unsubscribe()
-  }, [])
+  }, [userRole])
 
   const addPlayer = async (player) => {
     try {
