@@ -108,25 +108,26 @@ export default function Sidebar() {
 
   return (
     <>
-    {/* Mobile Menu Button - Only show when menu is closed */}
+    {/* Mobile Menu Button - Hidden on mobile, only visible on desktop */}
     {!mobileMenuOpen && (
       <button
         onClick={() => setMobileMenuOpen(true)}
-        className="md:hidden fixed top-4 left-4 z-50 bg-primary text-white p-3 rounded-xl shadow-lg hover:scale-105 transition-transform"
+        className="hidden md:hidden fixed top-4 left-4 z-50 bg-primary text-white p-3 rounded-xl shadow-lg hover:scale-105 transition-transform"
       >
         <Menu size={24} />
       </button>
     )}
 
-    {/* Overlay for mobile */}
+    {/* Overlay for mobile - Hidden */}
     {mobileMenuOpen && (
       <div
         onClick={() => setMobileMenuOpen(false)}
-        className="md:hidden fixed inset-0 bg-black/50 z-30"
+        className="hidden md:hidden fixed inset-0 bg-black/50 z-30"
       />
     )}
 
     <div className={`
+      hidden md:flex
       fixed md:relative
       w-80 md:w-72
       h-screen
