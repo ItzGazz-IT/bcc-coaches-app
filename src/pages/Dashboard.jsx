@@ -5,6 +5,8 @@ import { useState, useEffect, useMemo } from "react"
 import { collection, query, orderBy, onSnapshot } from "firebase/firestore"
 import { db } from "../firebase/config"
 import logo from "../assets/bcc-logo.png"
+import { usePullToRefresh } from "../hooks/usePullToRefresh"
+import PullToRefreshIndicator from "../components/PullToRefreshIndicator"
 
 function StatCard({ title, value, icon: Icon, gradient, delay = 0, to, subtitle }) {
   const CardContent = () => (
@@ -41,6 +43,16 @@ function StatCard({ title, value, icon: Icon, gradient, delay = 0, to, subtitle 
 export default function Dashboard() {
   const { players, injuries, userRole, currentPlayerId, fitnessTests, reviews, fixtures } = useApp()
   const [sessions, setSessions] = useState([])
+  const [refreshKey, setRefreshKey] = useState(0)
+  
+  const handleRefresh = async () => {
+    // Trigger data reload by incrementing key
+    setRefreshKey(prev => prev + 1)
+    // Add small delay for better UX
+    await new Promise(resolve => setTimeout(resolve, 1000))
+  }
+  
+  const { isPulling, pullDistance } = usePullToRefresh(handleRefresh)
   
   // Load sessions from Firestore
   useEffect(() => {
@@ -228,7 +240,8 @@ export default function Dashboard() {
   // Render player-specific dashboard
   if (userRole === "player" && currentPlayer) {
     return (
-      <div className="flex-1 p-4 md:p-6 bg-gray-50 min-h-screen overflow-y-auto">
+      <div className="flex-1 p-4 md:p-6 bg-gray-50 dark:bg-gray-950 min-h-screen overflow-y-auto">
+        <PullToRefreshIndicator isPulling={isPulling} pullDistance={pullDistance} />
         <div className="max-w-7xl mx-auto">
           {/* Mobile Logo Header */}
           <div className="md:hidden mb-4 bg-white rounded-xl shadow-sm p-4 border border-gray-100">
@@ -472,7 +485,8 @@ export default function Dashboard() {
 
   // Render coach dashboard
   return (
-    <div className="flex-1 p-4 md:p-6 bg-gray-50 min-h-screen overflow-y-auto">
+    <div className="flex-1 p-4 md:p-6 bg-gray-50 dark:bg-gray-950 min-h-screen overflow-y-auto">
+      <PullToRefreshIndicator isPulling={isPulling} pullDistance={pullDistance} />
       <div className="max-w-7xl mx-auto">
         {/* Mobile Logo Header */}
         <div className="md:hidden mb-4 bg-white rounded-xl shadow-sm p-4 border border-gray-100">

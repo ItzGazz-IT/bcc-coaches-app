@@ -1,12 +1,12 @@
 import { Link, useLocation } from "react-router-dom"
-import { LayoutDashboard, Users, Heart, CalendarDays, ClipboardCheck, Star, Trophy, LogOut, TrendingUp, Crosshair, BarChart3, Target, Bell, ChevronDown, ChevronRight, Menu, X } from "lucide-react"
+import { LayoutDashboard, Users, Heart, CalendarDays, ClipboardCheck, Star, Trophy, LogOut, TrendingUp, Crosshair, BarChart3, Target, Bell, ChevronDown, ChevronRight, Menu, X, Moon, Sun, LineChart } from "lucide-react"
 import { useState, useEffect } from "react"
 import { useApp } from "../contexts/AppContext"
 import logo from "../assets/bcc-logo.png"
 
 export default function Sidebar() {
   const location = useLocation()
-  const { userRole, setUserRole, setCurrentUser, setCurrentPlayerId } = useApp()
+  const { userRole, setUserRole, setCurrentUser, setCurrentPlayerId, darkMode, toggleDarkMode } = useApp()
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const [expandedSections, setExpandedSections] = useState({
     team: true,
@@ -70,7 +70,8 @@ export default function Sidebar() {
       items: [
         { path: "/player-stats", label: "Player Stats", icon: BarChart3 },
         { path: "/fitness", label: "Fitness Tests", icon: TrendingUp },
-        { path: "/reviews", label: "Reviews", icon: Star }
+        { path: "/reviews", label: "Reviews", icon: Star },
+        { path: "/performance-charts", label: "Analytics", icon: LineChart }
       ]
     },
     {
@@ -94,7 +95,8 @@ export default function Sidebar() {
       title: "My Performance",
       items: [
         { path: "/player-stats", label: "My Stats", icon: BarChart3 },
-        { path: "/fitness", label: "Fitness Tests", icon: TrendingUp },
+        { path: "/fitness", label: "Fitness Tests", icon: Tre,
+        { path: "/performance-charts", label: "My Progress", icon: LineChart }ndingUp },
         { path: "/reviews", label: "My Reviews", icon: Star }
       ]
     },
@@ -214,7 +216,14 @@ export default function Sidebar() {
         })}
       </nav>
 
-      <div className="mt-auto pt-2 border-t border-white/10 flex-shrink-0">
+      <div className="mt-auto pt-2 border-t border-white/10 flex-shrink-0 space-y-1">
+        <button
+          onClick={toggleDarkMode}
+          className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg bg-white/5 hover:bg-white/10 border border-white/10 text-white/70 hover:text-white transition-all duration-200 text-xs"
+        >
+          {darkMode ? <Sun size={16} /> : <Moon size={16} />}
+          <span className="font-medium">{darkMode ? 'Light Mode' : 'Dark Mode'}</span>
+        </button>
         <Link
           to="/"
           onClick={handleLogout}

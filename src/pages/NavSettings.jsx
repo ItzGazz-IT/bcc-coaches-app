@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react"
 import { useNavigate } from "react-router-dom"
 import { ChevronLeft, GripVertical } from "lucide-react"
-import { BarChart3, TrendingUp, Star, Heart, CalendarDays, Bell } from "lucide-react"
+import { BarChart3, TrendingUp, Star, Heart, CalendarDays, Bell, LineChart } from "lucide-react"
 
 export default function NavSettings() {
   const navigate = useNavigate()
@@ -13,7 +13,8 @@ export default function NavSettings() {
     { id: "reviews", label: "My Reviews", icon: Star, path: "/reviews" },
     { id: "availability", label: "Availability", icon: Heart, path: "/injuries" },
     { id: "calendar", label: "Calendar", icon: CalendarDays, path: "/calendar" },
-    { id: "announcements", label: "Announcements", icon: Bell, path: "/announcements" }
+    { id: "announcements", label: "Announcements", icon: Bell, path: "/announcements" },
+    { id: "charts", label: "My Progress", icon: LineChart, path: "/performance-charts" }
   ]
 
   // Load saved preferences or use defaults
@@ -24,7 +25,7 @@ export default function NavSettings() {
 
   const [selectedMore, setSelectedMore] = useState(() => {
     const saved = localStorage.getItem("playerNavMore")
-    return saved ? JSON.parse(saved) : ["reviews", "availability", "calendar", "announcements"]
+    return saved ? JSON.parse(saved) : ["reviews", "availability", "calendar", "announcements", "charts"]
   })
 
   const handleToggle = (itemId) => {

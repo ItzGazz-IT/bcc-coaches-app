@@ -22,6 +22,24 @@ export const AppProvider = ({ children }) => {
   const [userRole, setUserRole] = useState(null) // 'coach' or 'player'
   const [currentUser, setCurrentUser] = useState(null)
   const [currentPlayerId, setCurrentPlayerId] = useState(null) // ID of logged-in player
+  const [darkMode, setDarkMode] = useState(() => {
+    const saved = localStorage.getItem("bcc-dark-mode")
+    return saved === "true"
+  })
+
+  // Apply dark mode class to html element
+  useEffect(() => {
+    if (darkMode) {
+      document.documentElement.classList.add('dark')
+    } else {
+      document.documentElement.classList.remove('dark')
+    }
+    localStorage.setItem("bcc-dark-mode", darkMode)
+  }, [darkMode])
+
+  const toggleDarkMode = () => {
+    setDarkMode(!darkMode)
+  }
 
   // Real-time listener for players collection
   useEffect(() => {
@@ -287,7 +305,9 @@ export const AppProvider = ({ children }) => {
     currentUser,
     setCurrentUser,
     currentPlayerId,
-    setCurrentPlayerId
+    setCurrentPlayerId,
+    darkMode,
+    toggleDarkMode
   }
 
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>

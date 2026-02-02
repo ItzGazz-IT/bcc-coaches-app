@@ -14,8 +14,10 @@ import PlayerStats from "./pages/PlayerStats"
 import SeasonGoals from "./pages/SeasonGoals"
 import Announcements from "./pages/Announcements"
 import NavSettings from "./pages/NavSettings"
+import PerformanceCharts from "./pages/PerformanceCharts"
 import Sidebar from "./components/Sidebar"
 import BottomNav from "./components/BottomNav"
+import NotificationPrompt from "./components/NotificationPrompt"
 
 export default function App() {
   return (
@@ -37,18 +39,20 @@ export default function App() {
             ["attendance", Attendance],
             ["reviews", Reviews],
             ["injuries", InjuriesAvailability],
-            ["nav-settings", NavSettings]
+            ["nav-settings", NavSettings],
+            ["performance-charts", PerformanceCharts]
           ].map(([path, Page]) => (
             <Route
               key={path}
               path={`/${path}`}
               element={
-                <div className="flex flex-row min-h-screen bg-gray-50">
+                <div className="flex flex-row min-h-screen bg-gray-50 dark:bg-gray-950">
                   <Sidebar />
                   <div className="flex-1 w-full md:w-auto overflow-x-hidden pb-16 md:pb-0">
                     <Page />
                   </div>
                   <BottomNav />
+                  <NotificationPrompt />
                 </div>
               }
             />
