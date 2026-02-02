@@ -4,7 +4,7 @@ import { useApp } from "../contexts/AppContext"
 import { TableSkeleton } from "../components/Loading"
 
 function Fixtures() {
-  const { fixtures, addFixture, updateFixture, deleteFixture, loading } = useApp()
+  const { fixtures, addFixture, updateFixture, deleteFixture, loading, userRole } = useApp()
   
   const [showModal, setShowModal] = useState(false)
   const [editingFixture, setEditingFixture] = useState(null)
@@ -100,27 +100,29 @@ function Fixtures() {
               </h1>
               <p className="text-sm md:text-base text-gray-600 hidden md:block">Team fixtures and match results</p>
             </div>
-            <button
-              onClick={() => {
-                setShowModal(true)
-                setEditingFixture(null)
-                setFormData({
-                  date: "",
-                  time: "",
-                  opponent: "",
-                  competition: "",
-                  venue: "",
-                  homeAway: "Home",
-                  team: "First Team",
-                  result: "",
-                  score: ""
-                })
-              }}
-              className="flex items-center gap-2 bg-gradient-to-r from-primary to-secondary text-white px-6 py-3 rounded-xl font-bold hover:shadow-lg transition-all"
-            >
+            {userRole === "coach" && (
+              <button
+                onClick={() => {
+                  setShowModal(true)
+                  setEditingFixture(null)
+                  setFormData({
+                    date: "",
+                    time: "",
+                    opponent: "",
+                    competition: "",
+                    venue: "",
+                    homeAway: "Home",
+                    team: "First Team",
+                    result: "",
+                    score: ""
+                  })
+                }}
+                className="flex items-center gap-2 bg-gradient-to-r from-primary to-secondary text-white px-6 py-3 rounded-xl font-bold hover:shadow-lg transition-all"
+              >
               <Plus size={20} />
               Add Fixture
             </button>
+            )}
           </div>
         </div>
 
@@ -209,20 +211,22 @@ function Fixtures() {
                           )}
                         </div>
                       </div>
-                      <div className="flex items-center gap-2">
-                        <button
-                          onClick={() => handleEdit(fixture)}
-                          className="p-2 hover:bg-blue-100 rounded-lg transition-colors"
-                        >
-                          <Edit size={18} className="text-blue-600" />
-                        </button>
-                        <button
-                          onClick={() => handleDelete(fixture.id)}
-                          className="p-2 hover:bg-red-100 rounded-lg transition-colors"
-                        >
-                          <Trash2 size={18} className="text-red-600" />
-                        </button>
-                      </div>
+                      {userRole === "coach" && (
+                        <div className="flex items-center gap-2">
+                          <button
+                            onClick={() => handleEdit(fixture)}
+                            className="p-2 hover:bg-blue-100 rounded-lg transition-colors"
+                          >
+                            <Edit size={18} className="text-blue-600" />
+                          </button>
+                          <button
+                            onClick={() => handleDelete(fixture.id)}
+                            className="p-2 hover:bg-red-100 rounded-lg transition-colors"
+                          >
+                            <Trash2 size={18} className="text-red-600" />
+                          </button>
+                        </div>
+                      )}
                     </div>
                   </div>
                 ))}
@@ -274,20 +278,22 @@ function Fixtures() {
                           )}
                         </div>
                       </div>
-                      <div className="flex items-center gap-2">
-                        <button
-                          onClick={() => handleEdit(fixture)}
-                          className="p-2 hover:bg-blue-100 rounded-lg transition-colors"
-                        >
-                          <Edit size={18} className="text-blue-600" />
-                        </button>
-                        <button
-                          onClick={() => handleDelete(fixture.id)}
-                          className="p-2 hover:bg-red-100 rounded-lg transition-colors"
-                        >
-                          <Trash2 size={18} className="text-red-600" />
-                        </button>
-                      </div>
+                      {userRole === "coach" && (
+                        <div className="flex items-center gap-2">
+                          <button
+                            onClick={() => handleEdit(fixture)}
+                            className="p-2 hover:bg-blue-100 rounded-lg transition-colors"
+                          >
+                            <Edit size={18} className="text-blue-600" />
+                          </button>
+                          <button
+                            onClick={() => handleDelete(fixture.id)}
+                            className="p-2 hover:bg-red-100 rounded-lg transition-colors"
+                          >
+                            <Trash2 size={18} className="text-red-600" />
+                          </button>
+                        </div>
+                      )}
                     </div>
                   </div>
                 ))}

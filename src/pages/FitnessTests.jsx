@@ -232,25 +232,27 @@ function FitnessTests() {
                     {new Date(date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })}                  </option>
                 ))}
               </select>
-              <button
-                onClick={() => {
-                  setFormData({
-                    playerId: "",
-                    date: new Date().toISOString().split('T')[0],
-                    beepTest: "",
-                    sprint10m: "",
-                    tTest: "",
-                    pushUps: "",
-                    sitUps: ""
-                  })
-                  setEditingTest(null)
-                  setShowModal(true)
-                }}
-                className="btn btn-purple inline-flex items-center gap-2 text-sm md:text-base"
-              >
-                <Plus size={20} />
-                Add Test
-              </button>
+              {userRole === "coach" && (
+                <button
+                  onClick={() => {
+                    setFormData({
+                      playerId: "",
+                      date: new Date().toISOString().split('T')[0],
+                      beepTest: "",
+                      sprint10m: "",
+                      tTest: "",
+                      pushUps: "",
+                      sitUps: ""
+                    })
+                    setEditingTest(null)
+                    setShowModal(true)
+                  }}
+                  className="btn btn-purple inline-flex items-center gap-2 text-sm md:text-base"
+                >
+                  <Plus size={20} />
+                  Add Test
+                </button>
+              )}
             </div>
           </div>
         </div>

@@ -5,7 +5,7 @@ import { useSearchParams } from "react-router-dom"
 import { TableSkeleton } from "../components/Loading"
 
 function Players() {
-  const { players, addPlayer, updatePlayer, deletePlayer, loading } = useApp()
+  const { players, addPlayer, updatePlayer, deletePlayer, loading, userRole } = useApp()
   const [searchParams, setSearchParams] = useSearchParams()
   
   const [formData, setFormData] = useState({
@@ -116,14 +116,16 @@ function Players() {
               </h1>
               <p className="text-sm md:text-base text-gray-600 hidden md:block">Manage your team roster</p>
             </div>
-            <button
-              onClick={() => setShowModal(true)}
-              className="btn btn-primary inline-flex items-center gap-2 text-sm flex-shrink-0"
-            >
-              <UserPlus size={18} />
-              <span className="hidden sm:inline">Add Player</span>
-              <span className="sm:hidden">Add</span>
-            </button>
+            {userRole === "coach" && (
+              <button
+                onClick={() => setShowModal(true)}
+                className="btn btn-primary inline-flex items-center gap-2 text-sm flex-shrink-0"
+              >
+                <UserPlus size={18} />
+                <span className="hidden sm:inline">Add Player</span>
+                <span className="sm:hidden">Add</span>
+              </button>
+            )}
           </div>
         </div>
 
@@ -273,13 +275,25 @@ function Players() {
                     </div>
                     
                     <div className="flex items-center gap-1.5 sm:gap-2">
-                      <button
-                        onClick={() => handleEdit(player)}
-                        className="p-2 hover:bg-blue-100 rounded-lg transition-colors flex-shrink-0"
-                        title="Edit"
-                      >
-                        <Edit size={16} className="text-blue-600" />
-                      </button>
+                      {userRole === "coach" && (
+                        <>
+                          <button
+                            onClick={() => handleEdit(player)}
+                            className="p-2 hover:bg-blue-100 rounded-lg transition-colors flex-shrink-0"
+                            title="Edit"
+                          >
+                            <Edit size={16} className="text-blue-600" />
+                          </button>
+                          
+                          <button
+                            onClick={() => deletePlayer(player.id)}
+                            className="p-2 hover:bg-red-100 rounded-lg transition-colors flex-shrink-0"
+                            title="Delete"
+                          >
+                            <Trash2 size={16} className="text-red-600" />
+                          </button>
+                        </>
+                      )}
                       
                       <button
                         onClick={() => openWhatsApp(player.phone)}
@@ -287,14 +301,6 @@ function Players() {
                         title="WhatsApp"
                       >
                         <Phone size={16} className="text-green-600" />
-                      </button>
-                      
-                      <button
-                        onClick={() => deletePlayer(player.id)}
-                        className="p-2 hover:bg-red-100 rounded-lg transition-colors flex-shrink-0"
-                        title="Delete"
-                      >
-                        <Trash2 size={16} className="text-red-600" />
                       </button>
                     </div>
                   </div>
