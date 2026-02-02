@@ -1,9 +1,10 @@
 import { useState } from "react"
 import { Calendar, Clock, MapPin, Trophy, Plus, Edit, Trash2, CheckCircle, Users, Search } from "lucide-react"
 import { useApp } from "../contexts/AppContext"
+import { TableSkeleton } from "../components/Loading"
 
 function Fixtures() {
-  const { fixtures, addFixture, updateFixture, deleteFixture } = useApp()
+  const { fixtures, addFixture, updateFixture, deleteFixture, loading } = useApp()
   
   const [showModal, setShowModal] = useState(false)
   const [editingFixture, setEditingFixture] = useState(null)
@@ -130,6 +131,10 @@ function Fixtures() {
           </div>
         )}
 
+        {loading ? (
+          <TableSkeleton rows={3} />
+        ) : (
+          <>
         {/* Filters */}
         <div className="mb-6 flex gap-4">
           <div className="relative flex-1 max-w-md">
@@ -298,7 +303,8 @@ function Fixtures() {
             </div>
           )}
         </div>
-      </div>
+      </>
+        )}
 
       {/* Add/Edit Modal */}
       {showModal && (
@@ -444,6 +450,7 @@ function Fixtures() {
           </div>
         </div>
       )}
+      </div>
     </div>
   )
 }

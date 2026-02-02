@@ -14,6 +14,7 @@ import PlayerStats from "./pages/PlayerStats"
 import SeasonGoals from "./pages/SeasonGoals"
 import Announcements from "./pages/Announcements"
 import Sidebar from "./components/Sidebar"
+import BottomNav from "./components/BottomNav"
 
 export default function App() {
   return (
@@ -42,9 +43,10 @@ export default function App() {
               element={
                 <div className="flex flex-row min-h-screen bg-gray-50">
                   <Sidebar />
-                  <div className="flex-1 w-full md:w-auto overflow-x-hidden pt-16 md:pt-0">
+                  <div className="flex-1 w-full md:w-auto overflow-x-hidden pt-16 md:pt-0 pb-16 md:pb-0">
                     <Page />
                   </div>
+                  <BottomNav />
                 </div>
               }
             />

@@ -1,9 +1,10 @@
 import { useState, useEffect } from "react"
 import { TrendingUp, Search, Edit, Trash2, CheckCircle, X, Activity, Users, Plus, Calendar, Trophy, Award } from "lucide-react"
 import { useApp } from "../contexts/AppContext"
+import { TableSkeleton } from "../components/Loading"
 
 function FitnessTests() {
-  const { players, fitnessTests, addFitnessTest, updateFitnessTest, deleteFitnessTest } = useApp()
+  const { players, fitnessTests, addFitnessTest, updateFitnessTest, deleteFitnessTest, loading } = useApp()
   
   const [formData, setFormData] = useState({
     playerId: "",
@@ -206,8 +207,7 @@ function FitnessTests() {
                 <option value="all">All Dates</option>
                 {uniqueDates.map(date => (
                   <option key={date} value={date}>
-                    {new Date(date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })}
-                  </option>
+                    {new Date(date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })}                  </option>
                 ))}
               </select>
               <button
@@ -240,53 +240,58 @@ function FitnessTests() {
           </div>
         )}
 
+        {loading ? (
+          <TableSkeleton rows={5} />
+        ) : (
+          <>
+
         {/* Test Averages */}
         {fitnessTests.length > 0 && (
-          <div className="mb-6 bg-gradient-to-br from-purple-50 to-blue-50 rounded-2xl p-6 border border-purple-200 shadow-lg">
-            <div className="flex items-center gap-3 mb-4">
-              <div className="bg-gradient-to-br from-purple-500 to-purple-600 p-2.5 rounded-xl">
-                <TrendingUp className="text-white" size={22} />
+          <div className="mb-4 md:mb-6 bg-gradient-to-br from-purple-50 to-blue-50 rounded-xl p-4 border border-purple-200 shadow-sm">
+            <div className="flex items-center gap-2 mb-3">
+              <div className="bg-gradient-to-br from-purple-500 to-purple-600 p-2 rounded-lg">
+                <TrendingUp className="text-white" size={18} />
               </div>
               <div>
-                <h3 className="text-lg font-bold text-gray-800">Average Test Results</h3>
-                <p className="text-sm text-gray-600">
+                <h3 className="text-base font-bold text-gray-800">Average Results</h3>
+                <p className="text-xs text-gray-600">
                   {filterDate === "all" 
-                    ? `All tests (${fitnessTests.length} total)` 
-                    : `${new Date(filterDate).toLocaleDateString('en-GB', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}`
+                    ? `${fitnessTests.length} tests` 
+                    : new Date(filterDate).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })
                   }
                 </p>
               </div>
             </div>
             
-            <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
-              <div className="bg-white rounded-xl p-4 shadow border border-gray-100">
-                <p className="text-xs font-bold text-gray-500 uppercase mb-1">Beep Test</p>
-                <p className="text-2xl font-black text-purple-600">{averages.beepTest > 0 ? averages.beepTest : '-'}</p>
-                <p className="text-xs text-gray-500 mt-1">avg level</p>
+            <div className="grid grid-cols-2 md:grid-cols-5 gap-2">
+              <div className="bg-white rounded-lg p-3 shadow-sm border border-gray-100">
+                <p className="text-xs font-bold text-gray-500 mb-0.5">Beep</p>
+                <p className="text-xl md:text-2xl font-black text-purple-600">{averages.beepTest > 0 ? averages.beepTest : '-'}</p>
+                <p className="text-xs text-gray-500">level</p>
               </div>
               
-              <div className="bg-white rounded-xl p-4 shadow border border-gray-100">
-                <p className="text-xs font-bold text-gray-500 uppercase mb-1">10m Sprint</p>
-                <p className="text-2xl font-black text-blue-600">{averages.sprint10m > 0 ? `${averages.sprint10m}s` : '-'}</p>
-                <p className="text-xs text-gray-500 mt-1">avg time</p>
+              <div className="bg-white rounded-lg p-3 shadow-sm border border-gray-100">
+                <p className="text-xs font-bold text-gray-500 mb-0.5">Sprint</p>
+                <p className="text-xl md:text-2xl font-black text-blue-600">{averages.sprint10m > 0 ? `${averages.sprint10m}s` : '-'}</p>
+                <p className="text-xs text-gray-500">10m</p>
               </div>
               
-              <div className="bg-white rounded-xl p-4 shadow border border-gray-100">
-                <p className="text-xs font-bold text-gray-500 uppercase mb-1">T Test</p>
-                <p className="text-2xl font-black text-green-600">{averages.tTest > 0 ? `${averages.tTest}s` : '-'}</p>
-                <p className="text-xs text-gray-500 mt-1">avg time</p>
+              <div className="bg-white rounded-lg p-3 shadow-sm border border-gray-100">
+                <p className="text-xs font-bold text-gray-500 mb-0.5">T-Test</p>
+                <p className="text-xl md:text-2xl font-black text-green-600">{averages.tTest > 0 ? `${averages.tTest}s` : '-'}</p>
+                <p className="text-xs text-gray-500">time</p>
               </div>
               
-              <div className="bg-white rounded-xl p-4 shadow border border-gray-100">
-                <p className="text-xs font-bold text-gray-500 uppercase mb-1">Push Ups</p>
-                <p className="text-2xl font-black text-orange-600">{averages.pushUps > 0 ? averages.pushUps : '-'}</p>
-                <p className="text-xs text-gray-500 mt-1">avg reps</p>
+              <div className="bg-white rounded-lg p-3 shadow-sm border border-gray-100">
+                <p className="text-xs font-bold text-gray-500 mb-0.5">Push</p>
+                <p className="text-xl md:text-2xl font-black text-orange-600">{averages.pushUps > 0 ? averages.pushUps : '-'}</p>
+                <p className="text-xs text-gray-500">reps</p>
               </div>
               
-              <div className="bg-white rounded-xl p-4 shadow border border-gray-100">
-                <p className="text-xs font-bold text-gray-500 uppercase mb-1">Sit Ups</p>
-                <p className="text-2xl font-black text-pink-600">{averages.sitUps > 0 ? averages.sitUps : '-'}</p>
-                <p className="text-xs text-gray-500 mt-1">avg reps</p>
+              <div className="bg-white rounded-lg p-3 shadow-sm border border-gray-100">
+                <p className="text-xs font-bold text-gray-500 mb-0.5">Sit Ups</p>
+                <p className="text-xl md:text-2xl font-black text-pink-600">{averages.sitUps > 0 ? averages.sitUps : '-'}</p>
+                <p className="text-xs text-gray-500">reps</p>
               </div>
             </div>
           </div>
@@ -349,29 +354,25 @@ function FitnessTests() {
                         </div>
                       </div>
 
-                      <div className="flex gap-2 text-xs">
+                      <div className="flex flex-wrap gap-1.5 text-xs">
                         {player.beepTest && (
-                          <div className="bg-purple-100 px-2 py-1 rounded-lg">
+                          <div className="bg-purple-100 px-2 py-0.5 rounded">
                             <span className="text-purple-600 font-bold">{player.beepTest}</span>
-                            <span className="text-purple-500 ml-1">Beep</span>
                           </div>
                         )}
                         {player.sprint10m && (
-                          <div className="bg-blue-100 px-2 py-1 rounded-lg">
+                          <div className="bg-blue-100 px-2 py-0.5 rounded">
                             <span className="text-blue-600 font-bold">{player.sprint10m}s</span>
-                            <span className="text-blue-500 ml-1">10m</span>
                           </div>
                         )}
                         {player.pushUps && (
-                          <div className="bg-orange-100 px-2 py-1 rounded-lg">
+                          <div className="bg-orange-100 px-2 py-0.5 rounded">
                             <span className="text-orange-600 font-bold">{player.pushUps}</span>
-                            <span className="text-orange-500 ml-1">Push</span>
                           </div>
                         )}
                         {player.sitUps && (
-                          <div className="bg-pink-100 px-2 py-1 rounded-lg">
+                          <div className="bg-pink-100 px-2 py-0.5 rounded">
                             <span className="text-pink-600 font-bold">{player.sitUps}</span>
-                            <span className="text-pink-500 ml-1">Sit</span>
                           </div>
                         )}
                       </div>
@@ -608,6 +609,8 @@ function FitnessTests() {
               </form>
             </div>
           </div>
+        )}
+        </>
         )}
       </div>
     </div>

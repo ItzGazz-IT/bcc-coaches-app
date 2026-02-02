@@ -1,9 +1,10 @@
 import { useState } from "react"
 import { Star, Search, MessageSquare, Calendar, Clock, User, Trash2, Edit, CheckCircle, X, Plus } from "lucide-react"
 import { useApp } from "../contexts/AppContext"
+import { TableSkeleton } from "../components/Loading"
 
 function Reviews() {
-  const { players, reviews, addReview, updateReview, deleteReview } = useApp()
+  const { players, reviews, addReview, updateReview, deleteReview, loading } = useApp()
   
   const [selectedPlayer, setSelectedPlayer] = useState(null)
   const [searchTerm, setSearchTerm] = useState("")
@@ -108,6 +109,10 @@ function Reviews() {
           </div>
         )}
 
+        {loading ? (
+          <TableSkeleton rows={4} />
+        ) : (
+          <>
         {/* Search Bar */}
         <div className="mb-6">
           <div className="relative max-w-md">
@@ -192,7 +197,8 @@ function Reviews() {
             )}
           </div>
         </div>
-      </div>
+      </>
+        )}
 
       {/* Player Reviews Modal */}
       {showPlayerModal && selectedPlayer && (
@@ -385,6 +391,7 @@ function Reviews() {
           </div>
         </div>
       )}
+      </div>
     </div>
   )
 }

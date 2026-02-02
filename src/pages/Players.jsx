@@ -2,9 +2,10 @@ import { useState, useEffect } from "react"
 import { UserPlus, Phone, Users, Shield, Trash2, Search, CheckCircle, Activity, X, Edit } from "lucide-react"
 import { useApp } from "../contexts/AppContext"
 import { useSearchParams } from "react-router-dom"
+import { TableSkeleton } from "../components/Loading"
 
 function Players() {
-  const { players, addPlayer, updatePlayer, deletePlayer } = useApp()
+  const { players, addPlayer, updatePlayer, deletePlayer, loading } = useApp()
   const [searchParams, setSearchParams] = useSearchParams()
   
   const [formData, setFormData] = useState({
@@ -107,6 +108,10 @@ function Players() {
           </div>
         </div>
 
+        {loading ? (
+          <TableSkeleton rows={5} />
+        ) : (
+          <>
         {/* Success Message */}
         {showSuccess && (
           <div className="mb-4 bg-green-50 border border-green-200 rounded-xl p-4 flex items-center gap-3 animate-fade-in">
@@ -279,6 +284,8 @@ function Players() {
             )}
           </div>
         </div>
+        </>
+        )}
 
         {/* Add Player Modal */}
         {showModal && (
