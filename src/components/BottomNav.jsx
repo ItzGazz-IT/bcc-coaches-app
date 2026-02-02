@@ -34,6 +34,9 @@ export default function BottomNav() {
   ]
 
   const playerMoreNav = [
+    { path: "/reviews", label: "My Reviews", icon: Star },
+    { path: "/injuries", label: "Availability", icon: Heart },
+    { path: "/calendar", label: "Calendar", icon: CalendarDays },
     { path: "/announcements", label: "Announcements", icon: Bell }
   ]
 
