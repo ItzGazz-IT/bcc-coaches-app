@@ -278,13 +278,13 @@ function Reviews() {
                         setShowReviewForm(false)
                         setEditingReview(null)
                       }}
-                      className="flex-1 px-6 py-3 border-2 border-gray-200 text-gray-700 rounded-xl font-bold hover:bg-gray-50 transition-all"
+                      className="btn btn-secondary flex-1 text-sm md:text-base"
                     >
                       Cancel
                     </button>
                     <button
                       type="submit"
-                      className="flex-1 bg-gradient-to-r from-purple-500 to-purple-600 text-white px-6 py-3 rounded-xl font-bold shadow-lg hover:shadow-xl hover:scale-[1.02] transition-all duration-300 inline-flex items-center justify-center gap-2"
+                      className="btn btn-purple flex-1 inline-flex items-center justify-center gap-2 text-sm md:text-base"
                     >
                       <CheckCircle size={18} />
                       {editingReview ? "Update Review" : "Save Review"}

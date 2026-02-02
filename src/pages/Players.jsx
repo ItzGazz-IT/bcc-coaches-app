@@ -97,7 +97,7 @@ function Players() {
             </div>
             <button
               onClick={() => setShowModal(true)}
-              className="bg-gradient-to-r from-blue-500 to-indigo-600 text-white px-6 py-3 rounded-xl font-bold shadow-lg hover:shadow-xl hover:scale-[1.02] transition-all duration-300 inline-flex items-center gap-2"
+              className="btn btn-primary inline-flex items-center gap-2 text-sm md:text-base"
             >
               <UserPlus size={20} />
               Add Player
@@ -400,13 +400,13 @@ function Players() {
                       setShowModal(false)
                       setEditingPlayer(null)
                     }}
-                    className="flex-1 px-6 py-3 border-2 border-gray-200 text-gray-700 rounded-xl font-bold hover:bg-gray-50 transition-all"
+                    className="btn btn-secondary flex-1 text-sm md:text-base"
                   >
                     Cancel
                   </button>
                   <button
                     type="submit"
-                    className="flex-1 bg-gradient-to-r from-blue-500 to-indigo-600 text-white px-6 py-3 rounded-xl font-bold shadow-lg hover:shadow-xl hover:scale-[1.02] transition-all duration-300 inline-flex items-center justify-center gap-2"
+                    className="btn btn-primary flex-1 inline-flex items-center justify-center gap-2 text-sm md:text-base"
                   >
                     <UserPlus size={18} />
                     {editingPlayer ? "Update Player" : "Add Player"}

@@ -129,7 +129,7 @@ export default function Sidebar() {
     <div className={`
       fixed md:relative
       w-80 md:w-72
-      min-h-screen
+      h-screen
       bg-gradient-to-b from-primary via-[#0A1E4D] to-[#071533]
       text-white
       p-4
@@ -137,6 +137,7 @@ export default function Sidebar() {
       flex flex-col
       z-40
       transition-transform duration-300
+      overflow-y-auto
       ${mobileMenuOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'}
     `}>
       {/* Close button for mobile */}
@@ -160,7 +161,7 @@ export default function Sidebar() {
         </div>
       </div>
 
-      <nav className="flex-grow overflow-y-auto space-y-1">
+      <nav className="flex-1 overflow-y-auto space-y-1 pb-4">
         {navSections.map((section, sectionIndex) => {
           const isCollapsible = section.key
           const isExpanded = isCollapsible ? expandedSections[section.key] : true
@@ -210,7 +211,7 @@ export default function Sidebar() {
         })}
       </nav>
 
-      <div className="mt-4 pt-4 border-t border-white/10">
+      <div className="mt-auto pt-4 border-t border-white/10 flex-shrink-0">
         <Link
           to="/"
           onClick={handleLogout}

@@ -130,7 +130,7 @@ function SeasonGoals() {
                 })
                 setShowModal(true)
               }}
-              className="flex items-center gap-2 bg-gradient-to-r from-purple-500 to-purple-600 text-white px-5 py-3 rounded-xl font-bold hover:from-purple-600 hover:to-purple-700 transition-all"
+              className="btn btn-purple flex items-center gap-2 text-sm md:text-base"
             >
               <Plus size={20} />
               Add Goal
@@ -406,14 +406,14 @@ function SeasonGoals() {
               <div className="flex gap-3 pt-4">
                 <button
                   type="submit"
-                  className="flex-1 bg-gradient-to-r from-purple-500 to-purple-600 text-white py-3 rounded-xl font-bold hover:from-purple-600 hover:to-purple-700 transition-all"
+                  className="btn btn-purple flex-1 text-sm md:text-base"
                 >
                   {editingGoal ? "Update Goal" : "Add Goal"}
                 </button>
                 <button
                   type="button"
                   onClick={() => setShowModal(false)}
-                  className="px-6 bg-gray-200 text-gray-700 py-3 rounded-xl font-bold hover:bg-gray-300 transition-all"
+                  className="btn btn-secondary text-sm md:text-base"
                 >
                   Cancel
                 </button>

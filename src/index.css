@@ -42,6 +42,32 @@
   .mobile-card {
     @apply bg-white rounded-2xl shadow-sm p-4 mb-4;
   }
+  
+  /* Mobile-friendly button styles */
+  .btn {
+    @apply px-4 py-2 md:px-6 md:py-3 rounded-xl font-bold transition-all duration-300;
+  }
+  
+  .btn-primary {
+    @apply bg-gradient-to-r from-blue-500 to-indigo-600 text-white shadow-lg hover:shadow-xl hover:scale-[1.02];
+  }
+  
+  .btn-secondary {
+    @apply border-2 border-gray-200 text-gray-700 hover:bg-gray-50;
+  }
+  
+  .btn-danger {
+    @apply bg-red-500 text-white hover:bg-red-600;
+  }
+  
+  .btn-purple {
+    @apply bg-gradient-to-r from-purple-500 to-purple-600 text-white shadow-lg hover:shadow-xl hover:scale-[1.02];
+  }
+  
+  /* Mobile-friendly input styles */
+  .input-field {
+    @apply px-3 py-2 md:px-4 md:py-3 border-2 border-gray-200 rounded-xl focus:border-purple-500 outline-none transition-all;
+  }
 }
 
 body {

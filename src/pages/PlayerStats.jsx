@@ -160,14 +160,14 @@ function PlayerStats() {
               </select>
               <button
                 onClick={handleExport}
-                className="flex items-center gap-2 bg-green-500 text-white px-4 py-3 rounded-xl font-bold hover:bg-green-600 transition-all"
+                className="btn bg-green-500 text-white hover:bg-green-600 flex items-center gap-2 text-sm md:text-base"
               >
                 <Download size={20} />
                 Export CSV
               </button>
               <button
                 onClick={handlePrint}
-                className="flex items-center gap-2 bg-blue-500 text-white px-4 py-3 rounded-xl font-bold hover:bg-blue-600 transition-all"
+                className="btn bg-blue-500 text-white hover:bg-blue-600 flex items-center gap-2 text-sm md:text-base"
               >
                 <Printer size={20} />
                 Print
