@@ -131,8 +131,8 @@ export default function Dashboard() {
   const nextTraining = getNextTrainingSession()
 
   return (
-    <div className="flex-1 p-6 bg-gradient-to-br from-gray-50 via-white to-blue-50 h-screen overflow-hidden">
-      <div className="max-w-7xl mx-auto h-full flex flex-col">
+    <div className="flex-1 p-6 bg-gradient-to-br from-gray-50 via-white to-blue-50 min-h-screen overflow-y-auto">
+      <div className="max-w-7xl mx-auto">
         <div className="mb-6">
           <h1 className="text-4xl font-black bg-gradient-to-r from-primary via-secondary to-accent bg-clip-text text-transparent mb-2">
             Team Dashboard
@@ -202,7 +202,7 @@ export default function Dashboard() {
           />
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 flex-1 min-h-0">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
           <Link to="/attendance" className="bg-white rounded-2xl shadow-xl p-5 border border-gray-100 hover:shadow-2xl transition-all duration-300 flex flex-col cursor-pointer hover:-translate-y-1">
             <div className="flex items-center gap-3 mb-4">
               <div className="bg-gradient-to-br from-green-500 to-emerald-600 p-2.5 rounded-xl">

@@ -125,8 +125,8 @@ function Attendance() {
   }
 
   return (
-    <div className="flex-1 p-6 bg-gradient-to-br from-gray-50 via-white to-blue-50 h-screen overflow-hidden">
-      <div className="max-w-7xl mx-auto h-full flex flex-col">
+    <div className="flex-1 p-6 bg-gradient-to-br from-gray-50 via-white to-blue-50 min-h-screen overflow-y-auto">
+      <div className="max-w-7xl mx-auto">
         <div className="mb-6">
           <div className="flex items-center justify-between">
             <div>

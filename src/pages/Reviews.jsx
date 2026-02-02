@@ -92,8 +92,8 @@ function Reviews() {
   }
 
   return (
-    <div className="flex-1 p-6 bg-gradient-to-br from-gray-50 via-white to-purple-50 h-screen overflow-hidden">
-      <div className="max-w-7xl mx-auto h-full flex flex-col">
+    <div className="flex-1 p-6 bg-gradient-to-br from-gray-50 via-white to-purple-50 min-h-screen overflow-y-auto">
+      <div className="max-w-7xl mx-auto">
         <div className="mb-6">
           <h1 className="text-4xl font-black bg-gradient-to-r from-primary via-secondary to-accent bg-clip-text text-transparent mb-2">
             Player Reviews
@@ -123,13 +123,13 @@ function Reviews() {
         </div>
 
         {/* Players Grid */}
-        <div className="bg-white rounded-2xl shadow-xl border border-gray-100 overflow-hidden flex-1 min-h-0">
+        <div className="bg-white rounded-2xl shadow-xl border border-gray-100">
           <div className="p-6 border-b border-gray-100">
             <h2 className="text-xl font-bold text-gray-800">All Players</h2>
             <p className="text-sm text-gray-500 mt-1">Click on a player to view and manage their reviews</p>
           </div>
 
-          <div className="p-6 overflow-y-auto" style={{ maxHeight: 'calc(100vh - 280px)' }}>
+          <div className="p-6">
             {filteredPlayers.length === 0 ? (
               <div className="text-center py-12">
                 <User className="mx-auto text-gray-300 mb-3" size={48} />
@@ -196,9 +196,9 @@ function Reviews() {
 
       {/* Player Reviews Modal */}
       {showPlayerModal && selectedPlayer && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-6">
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-2xl shadow-2xl max-w-5xl w-full max-h-[90vh] overflow-hidden flex flex-col">
-            <div className="p-6 border-b border-gray-200 bg-gradient-to-r from-purple-500 to-purple-600 flex items-center justify-between">
+            <div className="sticky top-0 bg-gradient-to-r from-purple-500 to-purple-600 p-6 border-b border-purple-700 flex items-center justify-between">
               <div>
                 <h2 className="text-2xl font-bold text-white">
                   {selectedPlayer.firstName} {selectedPlayer.lastName}
@@ -217,11 +217,10 @@ function Reviews() {
               </button>
             </div>
 
-            <div className="flex-1 overflow-y-auto p-6">
-              {showReviewForm ? (
+            <div className="flex-1 overflow-y-auto p-6">{showReviewForm ? (
                 <form onSubmit={handleSubmit} className="space-y-5">
                   <div>
-                    <label className="block text-sm font-bold text-gray-700 mb-2">Rating</label>
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">Rating</label>
                     <div className="flex gap-2">
                       {[1, 2, 3, 4, 5].map(rating => (
                         <button
@@ -240,7 +239,7 @@ function Reviews() {
                   </div>
 
                   <div>
-                    <label className="block text-sm font-bold text-gray-700 mb-2">Comments</label>
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">Comments</label>
                     <textarea
                       value={formData.comment}
                       onChange={(e) => setFormData({ ...formData, comment: e.target.value })}
@@ -251,7 +250,7 @@ function Reviews() {
                   </div>
 
                   <div>
-                    <label className="block text-sm font-bold text-gray-700 mb-2">Strengths</label>
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">Strengths</label>
                     <textarea
                       value={formData.strengths}
                       onChange={(e) => setFormData({ ...formData, strengths: e.target.value })}
@@ -262,7 +261,7 @@ function Reviews() {
                   </div>
 
                   <div>
-                    <label className="block text-sm font-bold text-gray-700 mb-2">Areas for Improvement</label>
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">Areas for Improvement</label>
                     <textarea
                       value={formData.areasForImprovement}
                       onChange={(e) => setFormData({ ...formData, areasForImprovement: e.target.value })}
@@ -274,20 +273,21 @@ function Reviews() {
 
                   <div className="flex gap-3 pt-4">
                     <button
-                      type="submit"
-                      className="flex-1 bg-gradient-to-r from-purple-500 to-purple-600 text-white py-3 rounded-xl font-bold hover:from-purple-600 hover:to-purple-700 transition-all"
-                    >
-                      {editingReview ? "Update Review" : "Save Review"}
-                    </button>
-                    <button
                       type="button"
                       onClick={() => {
                         setShowReviewForm(false)
                         setEditingReview(null)
                       }}
-                      className="px-6 bg-gray-200 text-gray-700 py-3 rounded-xl font-bold hover:bg-gray-300 transition-all"
+                      className="flex-1 px-6 py-3 border-2 border-gray-200 text-gray-700 rounded-xl font-bold hover:bg-gray-50 transition-all"
                     >
                       Cancel
+                    </button>
+                    <button
+                      type="submit"
+                      className="flex-1 bg-gradient-to-r from-purple-500 to-purple-600 text-white px-6 py-3 rounded-xl font-bold shadow-lg hover:shadow-xl hover:scale-[1.02] transition-all duration-300 inline-flex items-center justify-center gap-2"
+                    >
+                      <CheckCircle size={18} />
+                      {editingReview ? "Update Review" : "Save Review"}
                     </button>
                   </div>
                 </form>
@@ -297,7 +297,7 @@ function Reviews() {
                     <h3 className="text-xl font-bold text-gray-800">Review History</h3>
                     <button
                       onClick={handleAddNewReview}
-                      className="flex items-center gap-2 bg-gradient-to-r from-purple-500 to-purple-600 text-white px-5 py-2.5 rounded-xl font-bold hover:from-purple-600 hover:to-purple-700 transition-all"
+                      className="flex items-center gap-2 bg-gradient-to-r from-purple-500 to-purple-600 text-white px-5 py-2.5 rounded-xl font-bold shadow-lg hover:shadow-xl hover:scale-[1.02] transition-all duration-300"
                     >
                       <Plus size={18} />
                       Add New Review
@@ -313,13 +313,13 @@ function Reviews() {
                   ) : (
                     <div className="space-y-4">
                       {getPlayerReviews(selectedPlayer.id).map(review => (
-                        <div key={review.id} className="p-5 rounded-xl border-2 border-gray-200 bg-gradient-to-br from-white to-gray-50">
+                        <div key={review.id} className="p-5 rounded-xl border-2 border-gray-200 bg-gradient-to-br from-white to-gray-50 hover:border-purple-300 transition-all">
                           <div className="flex items-start justify-between mb-3">
                             <div className="flex-1">
                               <div className="flex items-center gap-4 text-sm text-gray-600">
                                 <div className="flex items-center gap-1">
                                   <Calendar size={14} />
-                                  <span>{review.date}</span>
+                                  <span className="font-semibold">{review.date}</span>
                                 </div>
                                 <div className="flex items-center gap-1">
                                   <Clock size={14} />
@@ -340,12 +340,14 @@ function Reviews() {
                               <button
                                 onClick={() => handleEdit(review)}
                                 className="p-2 hover:bg-blue-100 rounded-lg transition-colors"
+                                title="Edit review"
                               >
                                 <Edit size={16} className="text-blue-600" />
                               </button>
                               <button
                                 onClick={() => handleDelete(review.id)}
                                 className="p-2 hover:bg-red-100 rounded-lg transition-colors"
+                                title="Delete review"
                               >
                                 <Trash2 size={16} className="text-red-600" />
                               </button>
@@ -353,23 +355,23 @@ function Reviews() {
                           </div>
 
                           {review.comment && (
-                            <div className="mb-3">
-                              <p className="text-sm font-semibold text-gray-700 mb-1">Comments:</p>
-                              <p className="text-gray-600">{review.comment}</p>
+                            <div className="mb-3 bg-blue-50 rounded-lg p-3 border border-blue-200">
+                              <p className="text-xs font-bold text-blue-700 uppercase mb-1">Comments</p>
+                              <p className="text-gray-700">{review.comment}</p>
                             </div>
                           )}
 
-                          <div className="grid grid-cols-2 gap-4">
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                             {review.strengths && (
-                              <div>
+                              <div className="bg-green-50 rounded-lg p-3 border border-green-200">
                                 <p className="text-xs font-bold text-green-700 uppercase mb-1">Strengths</p>
-                                <p className="text-sm text-gray-600">{review.strengths}</p>
+                                <p className="text-sm text-gray-700">{review.strengths}</p>
                               </div>
                             )}
                             {review.areasForImprovement && (
-                              <div>
+                              <div className="bg-orange-50 rounded-lg p-3 border border-orange-200">
                                 <p className="text-xs font-bold text-orange-700 uppercase mb-1">Areas for Improvement</p>
-                                <p className="text-sm text-gray-600">{review.areasForImprovement}</p>
+                                <p className="text-sm text-gray-700">{review.areasForImprovement}</p>
                               </div>
                             )}
                           </div>

@@ -107,7 +107,7 @@ function SeasonGoals() {
   }
 
   return (
-    <div className="flex-1 p-6 bg-gradient-to-br from-gray-50 via-white to-purple-50 h-screen overflow-auto">
+    <div className="min-h-screen overflow-y-auto p-6 bg-gradient-to-br from-gray-50 via-white to-purple-50">
       <div className="max-w-7xl mx-auto">
         <div className="mb-6">
           <div className="flex items-center justify-between">

@@ -85,8 +85,8 @@ function Players() {
   const othersCount = players.filter(p => p.team === "Others").length
 
   return (
-    <div className="flex-1 p-6 bg-gradient-to-br from-gray-50 via-white to-blue-50 h-screen overflow-hidden">
-      <div className="max-w-7xl mx-auto h-full flex flex-col">
+    <div className="flex-1 p-6 bg-gradient-to-br from-gray-50 via-white to-blue-50 min-h-screen overflow-y-auto">
+      <div className="max-w-7xl mx-auto">
         <div className="mb-6">
           <div className="flex items-center justify-between">
             <div>
@@ -97,7 +97,7 @@ function Players() {
             </div>
             <button
               onClick={() => setShowModal(true)}
-              className="bg-gradient-to-r from-blue-500 to-indigo-600 text-white px-6 py-3 rounded-xl font-bold shadow-lg hover:shadow-xl hover:scale-105 transition-all duration-300 inline-flex items-center gap-2"
+              className="bg-gradient-to-r from-blue-500 to-indigo-600 text-white px-6 py-3 rounded-xl font-bold shadow-lg hover:shadow-xl hover:scale-[1.02] transition-all duration-300 inline-flex items-center gap-2"
             >
               <UserPlus size={20} />
               Add Player
@@ -177,7 +177,7 @@ function Players() {
         </div>
 
         {/* Players List */}
-        <div className="bg-white rounded-2xl shadow-xl border border-gray-100 overflow-hidden flex flex-col flex-1 min-h-0">
+        <div className="bg-white rounded-2xl shadow-xl border border-gray-100">
           <div className="p-6 border-b border-gray-100">
             <h2 className="text-xl font-bold text-gray-800 mb-4">Team Roster</h2>
             
@@ -206,7 +206,7 @@ function Players() {
             </div>
           </div>
 
-          <div className="p-6 overflow-y-auto flex-1">
+          <div className="p-6">
             {filteredPlayers.length === 0 ? (
               <div className="text-center py-12">
                 <Users className="mx-auto text-gray-300 mb-3" size={48} />
@@ -252,26 +252,26 @@ function Players() {
                       
                       <button
                         onClick={() => handleEdit(player)}
-                        className="p-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-all hover:scale-110"
+                        className="p-2 hover:bg-blue-100 rounded-lg transition-colors"
                         title="Edit player"
                       >
-                        <Edit size={18} />
+                        <Edit size={16} className="text-blue-600" />
                       </button>
                       
                       <button
                         onClick={() => openWhatsApp(player.phone)}
-                        className="p-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-all hover:scale-110"
+                        className="p-2 hover:bg-green-100 rounded-lg transition-colors"
                         title="Open WhatsApp"
                       >
-                        <Phone size={18} />
+                        <Phone size={16} className="text-green-600" />
                       </button>
                       
                       <button
                         onClick={() => deletePlayer(player.id)}
-                        className="p-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-all hover:scale-110"
+                        className="p-2 hover:bg-red-100 rounded-lg transition-colors"
                         title="Delete player"
                       >
-                        <Trash2 size={18} />
+                        <Trash2 size={16} className="text-red-600" />
                       </button>
                     </div>
                   </div>

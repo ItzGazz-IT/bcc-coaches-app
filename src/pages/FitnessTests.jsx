@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react"
-import { TrendingUp, Search, Edit, Trash2, CheckCircle, X, Activity, Users } from "lucide-react"
+import { TrendingUp, Search, Edit, Trash2, CheckCircle, X, Activity, Users, Plus, Calendar, Trophy, Award } from "lucide-react"
 import { useApp } from "../contexts/AppContext"
 
 function FitnessTests() {
@@ -19,21 +19,7 @@ function FitnessTests() {
   const [showSuccess, setShowSuccess] = useState(false)
   const [showModal, setShowModal] = useState(false)
   const [editingTest, setEditingTest] = useState(null)
-  const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0])
-
-  const handlePlayerClick = (player) => {
-    setFormData({
-      playerId: player.id,
-      date: selectedDate,
-      beepTest: "",
-      sprint10m: "",
-      tTest: "",
-      pushUps: "",
-      sitUps: ""
-    })
-    setEditingTest(null)
-    setShowModal(true)
-  }
+  const [filterDate, setFilterDate] = useState("all")
 
   const handleSubmit = async (e) => {
     e.preventDefault()
@@ -53,7 +39,7 @@ function FitnessTests() {
 
       setFormData({
         playerId: "",
-        date: selectedDate,
+        date: new Date().toISOString().split('T')[0],
         beepTest: "",
         sprint10m: "",
         tTest: "",
@@ -87,48 +73,162 @@ function FitnessTests() {
     }
   }
 
-  const filteredPlayers = players.filter(player => {
-    const matchesSearch = 
-      player.firstName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      player.lastName.toLowerCase().includes(searchTerm.toLowerCase())
-    return matchesSearch
-  })
+  // Get unique test dates
+  const uniqueDates = [...new Set(fitnessTests.map(t => t.date))].sort((a, b) => new Date(b) - new Date(a))
 
-  const getPlayerTestForDate = (playerId, date) => {
-    return fitnessTests.find(t => t.playerId === playerId && t.date === date)
-  }
+  // Filter tests
+  const filteredTests = fitnessTests.filter(test => {
+    const matchesSearch = test.playerName?.toLowerCase().includes(searchTerm.toLowerCase())
+    const matchesDate = filterDate === "all" || test.date === filterDate
+    return matchesSearch && matchesDate
+  }).sort((a, b) => new Date(b.date) - new Date(a.date))
 
-  const testsForSelectedDate = fitnessTests.filter(t => t.date === selectedDate)
+  // Calculate overall averages
+  const calculateOverallAverages = () => {
+    const testsToAverage = filterDate === "all" ? fitnessTests : fitnessTests.filter(t => t.date === filterDate)
+    
+    if (testsToAverage.length === 0) {
+      return { beepTest: 0, sprint10m: 0, tTest: 0, pushUps: 0, sitUps: 0 }
+    }
 
-  const getPlayerStats = (playerId) => {
-    const playerTests = fitnessTests.filter(t => t.playerId === playerId)
+    const totals = testsToAverage.reduce((acc, test) => {
+      if (test.beepTest) acc.beepTest.push(parseFloat(test.beepTest))
+      if (test.sprint10m) acc.sprint10m.push(parseFloat(test.sprint10m))
+      if (test.tTest) acc.tTest.push(parseFloat(test.tTest))
+      if (test.pushUps) acc.pushUps.push(parseFloat(test.pushUps))
+      if (test.sitUps) acc.sitUps.push(parseFloat(test.sitUps))
+      return acc
+    }, { beepTest: [], sprint10m: [], tTest: [], pushUps: [], sitUps: [] })
+
     return {
-      totalTests: playerTests.length,
-      latestTest: playerTests.length > 0 ? playerTests.sort((a, b) => new Date(b.date) - new Date(a.date))[0] : null
+      beepTest: totals.beepTest.length > 0 ? (totals.beepTest.reduce((a, b) => a + b, 0) / totals.beepTest.length).toFixed(1) : 0,
+      sprint10m: totals.sprint10m.length > 0 ? (totals.sprint10m.reduce((a, b) => a + b, 0) / totals.sprint10m.length).toFixed(2) : 0,
+      tTest: totals.tTest.length > 0 ? (totals.tTest.reduce((a, b) => a + b, 0) / totals.tTest.length).toFixed(2) : 0,
+      pushUps: totals.pushUps.length > 0 ? Math.round(totals.pushUps.reduce((a, b) => a + b, 0) / totals.pushUps.length) : 0,
+      sitUps: totals.sitUps.length > 0 ? Math.round(totals.sitUps.reduce((a, b) => a + b, 0) / totals.sitUps.length) : 0
     }
   }
 
+  const averages = calculateOverallAverages()
+
+  // Calculate player rankings based on their latest test
+  const calculatePlayerRankings = () => {
+    // Get the latest test for each player
+    const latestTests = {}
+    const testsToRank = filterDate === "all" ? fitnessTests : fitnessTests.filter(t => t.date === filterDate)
+    
+    testsToRank.forEach(test => {
+      if (!latestTests[test.playerId] || new Date(test.date) > new Date(latestTests[test.playerId].date)) {
+        latestTests[test.playerId] = test
+      }
+    })
+
+    // Calculate composite score for each player
+    const playerScores = Object.values(latestTests).map(test => {
+      let score = 0
+      let testCount = 0
+
+      // Beep test (higher is better) - normalize to 0-100
+      if (test.beepTest) {
+        const beepScore = Math.min((parseFloat(test.beepTest) / 15) * 100, 100)
+        score += beepScore
+        testCount++
+      }
+
+      // 10m Sprint (lower is better) - normalize to 0-100
+      if (test.sprint10m) {
+        const sprintScore = Math.min(Math.max(100 - ((parseFloat(test.sprint10m) - 1.5) / 0.5) * 100, 0), 100)
+        score += sprintScore
+        testCount++
+      }
+
+      // T Test (lower is better) - normalize to 0-100
+      if (test.tTest) {
+        const tTestScore = Math.min(Math.max(100 - ((parseFloat(test.tTest) - 8) / 2) * 100, 0), 100)
+        score += tTestScore
+        testCount++
+      }
+
+      // Push ups (higher is better) - normalize to 0-100
+      if (test.pushUps) {
+        const pushScore = Math.min((parseFloat(test.pushUps) / 80) * 100, 100)
+        score += pushScore
+        testCount++
+      }
+
+      // Sit ups (higher is better) - normalize to 0-100
+      if (test.sitUps) {
+        const sitScore = Math.min((parseFloat(test.sitUps) / 60) * 100, 100)
+        score += sitScore
+        testCount++
+      }
+
+      const averageScore = testCount > 0 ? score / testCount : 0
+
+      return {
+        playerId: test.playerId,
+        playerName: test.playerName,
+        score: averageScore,
+        testCount: testCount,
+        date: test.date,
+        beepTest: test.beepTest,
+        sprint10m: test.sprint10m,
+        tTest: test.tTest,
+        pushUps: test.pushUps,
+        sitUps: test.sitUps
+      }
+    })
+
+    return playerScores
+      .filter(p => p.testCount > 0)
+      .sort((a, b) => b.score - a.score)
+  }
+
+  const rankings = calculatePlayerRankings()
+
   return (
-    <div className="flex-1 p-6 bg-gradient-to-br from-gray-50 via-white to-blue-50 h-screen overflow-hidden">
-      <div className="max-w-7xl mx-auto h-full flex flex-col">
+    <div className="flex-1 p-6 bg-gradient-to-br from-gray-50 via-white to-blue-50 min-h-screen overflow-y-auto">
+      <div className="max-w-7xl mx-auto">
         <div className="mb-6">
           <div className="flex items-center justify-between">
             <div>
               <h1 className="text-4xl font-black bg-gradient-to-r from-primary via-secondary to-accent bg-clip-text text-transparent mb-2">
-                Fitness Tests
+                Fitness Rankings
               </h1>
-              <p className="text-gray-600">Record fitness test results for today's session</p>
+              <p className="text-gray-600">Overall fitness performance rankings</p>
             </div>
             <div className="flex items-center gap-3">
-              <div>
-                <label className="block text-xs font-semibold text-gray-500 uppercase mb-1">Test Date</label>
-                <input
-                  type="date"
-                  value={selectedDate}
-                  onChange={(e) => setSelectedDate(e.target.value)}
-                  className="px-4 py-2.5 border-2 border-gray-200 rounded-xl focus:border-purple-500 focus:ring-2 focus:ring-purple-500/20 outline-none transition-all"
-                />
-              </div>
+              <select
+                value={filterDate}
+                onChange={(e) => setFilterDate(e.target.value)}
+                className="px-4 py-2.5 border-2 border-gray-200 rounded-xl focus:border-purple-500 focus:ring-2 focus:ring-purple-500/20 outline-none transition-all bg-white"
+              >
+                <option value="all">All Dates</option>
+                {uniqueDates.map(date => (
+                  <option key={date} value={date}>
+                    {new Date(date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}
+                  </option>
+                ))}
+              </select>
+              <button
+                onClick={() => {
+                  setFormData({
+                    playerId: "",
+                    date: new Date().toISOString().split('T')[0],
+                    beepTest: "",
+                    sprint10m: "",
+                    tTest: "",
+                    pushUps: "",
+                    sitUps: ""
+                  })
+                  setEditingTest(null)
+                  setShowModal(true)
+                }}
+                className="bg-gradient-to-r from-purple-500 to-purple-600 text-white px-6 py-3 rounded-xl font-bold shadow-lg hover:shadow-xl hover:scale-[1.02] transition-all duration-300 inline-flex items-center gap-2"
+              >
+                <Plus size={20} />
+                Add Test
+              </button>
             </div>
           </div>
         </div>
@@ -140,173 +240,212 @@ function FitnessTests() {
           </div>
         )}
 
-        {/* Stats Cards */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-          <div className="bg-white rounded-2xl p-4 shadow-lg border border-gray-100">
-            <div className="flex items-center gap-3">
-              <div className="bg-gradient-to-br from-blue-500 to-blue-600 p-2.5 rounded-xl">
-                <Users className="text-white" size={20} />
-              </div>
-              <div>
-                <p className="text-xs font-bold text-gray-500 uppercase">Total Players</p>
-                <p className="text-2xl font-black text-blue-600">{players.length}</p>
-              </div>
-            </div>
-          </div>
-          
-          <div className="bg-white rounded-2xl p-4 shadow-lg border border-gray-100">
-            <div className="flex items-center gap-3">
-              <div className="bg-gradient-to-br from-green-500 to-green-600 p-2.5 rounded-xl">
-                <CheckCircle className="text-white" size={20} />
-              </div>
-              <div>
-                <p className="text-xs font-bold text-gray-500 uppercase">Tested Today</p>
-                <p className="text-2xl font-black text-green-600">{testsForSelectedDate.length}</p>
-              </div>
-            </div>
-          </div>
-
-          <div className="bg-white rounded-2xl p-4 shadow-lg border border-gray-100">
-            <div className="flex items-center gap-3">
-              <div className="bg-gradient-to-br from-orange-500 to-orange-600 p-2.5 rounded-xl">
-                <Activity className="text-white" size={20} />
-              </div>
-              <div>
-                <p className="text-xs font-bold text-gray-500 uppercase">Remaining</p>
-                <p className="text-2xl font-black text-orange-600">{players.length - testsForSelectedDate.length}</p>
-              </div>
-            </div>
-          </div>
-
-          <div className="bg-white rounded-2xl p-4 shadow-lg border border-gray-100">
-            <div className="flex items-center gap-3">
+        {/* Test Averages */}
+        {fitnessTests.length > 0 && (
+          <div className="mb-6 bg-gradient-to-br from-purple-50 to-blue-50 rounded-2xl p-6 border border-purple-200 shadow-lg">
+            <div className="flex items-center gap-3 mb-4">
               <div className="bg-gradient-to-br from-purple-500 to-purple-600 p-2.5 rounded-xl">
-                <TrendingUp className="text-white" size={20} />
+                <TrendingUp className="text-white" size={22} />
               </div>
               <div>
-                <p className="text-xs font-bold text-gray-500 uppercase">Completion</p>
-                <p className="text-2xl font-black text-purple-600">
-                  {players.length > 0 ? Math.round((testsForSelectedDate.length / players.length) * 100) : 0}%
+                <h3 className="text-lg font-bold text-gray-800">Average Test Results</h3>
+                <p className="text-sm text-gray-600">
+                  {filterDate === "all" 
+                    ? `All tests (${fitnessTests.length} total)` 
+                    : `${new Date(filterDate).toLocaleDateString('en-GB', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}`
+                  }
                 </p>
               </div>
             </div>
-          </div>
-        </div>
-
-        {/* Players List */}
-        <div className="bg-white rounded-2xl shadow-xl border border-gray-100 overflow-hidden flex flex-col flex-1 min-h-0">
-          <div className="p-6 border-b border-gray-100">
-            <h2 className="text-xl font-bold text-gray-800 mb-4">
-              Select Player for {new Date(selectedDate).toLocaleDateString('en-GB', { 
-                weekday: 'long', 
-                year: 'numeric', 
-                month: 'long', 
-                day: 'numeric' 
-              })}
-            </h2>
-
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
-              <input
-                type="text"
-                placeholder="Search players..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full pl-10 pr-4 py-2.5 border-2 border-gray-200 rounded-xl focus:border-purple-500 focus:ring-2 focus:ring-purple-500/20 outline-none transition-all"
-              />
+            
+            <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+              <div className="bg-white rounded-xl p-4 shadow border border-gray-100">
+                <p className="text-xs font-bold text-gray-500 uppercase mb-1">Beep Test</p>
+                <p className="text-2xl font-black text-purple-600">{averages.beepTest > 0 ? averages.beepTest : '-'}</p>
+                <p className="text-xs text-gray-500 mt-1">avg level</p>
+              </div>
+              
+              <div className="bg-white rounded-xl p-4 shadow border border-gray-100">
+                <p className="text-xs font-bold text-gray-500 uppercase mb-1">10m Sprint</p>
+                <p className="text-2xl font-black text-blue-600">{averages.sprint10m > 0 ? `${averages.sprint10m}s` : '-'}</p>
+                <p className="text-xs text-gray-500 mt-1">avg time</p>
+              </div>
+              
+              <div className="bg-white rounded-xl p-4 shadow border border-gray-100">
+                <p className="text-xs font-bold text-gray-500 uppercase mb-1">T Test</p>
+                <p className="text-2xl font-black text-green-600">{averages.tTest > 0 ? `${averages.tTest}s` : '-'}</p>
+                <p className="text-xs text-gray-500 mt-1">avg time</p>
+              </div>
+              
+              <div className="bg-white rounded-xl p-4 shadow border border-gray-100">
+                <p className="text-xs font-bold text-gray-500 uppercase mb-1">Push Ups</p>
+                <p className="text-2xl font-black text-orange-600">{averages.pushUps > 0 ? averages.pushUps : '-'}</p>
+                <p className="text-xs text-gray-500 mt-1">avg reps</p>
+              </div>
+              
+              <div className="bg-white rounded-xl p-4 shadow border border-gray-100">
+                <p className="text-xs font-bold text-gray-500 uppercase mb-1">Sit Ups</p>
+                <p className="text-2xl font-black text-pink-600">{averages.sitUps > 0 ? averages.sitUps : '-'}</p>
+                <p className="text-xs text-gray-500 mt-1">avg reps</p>
+              </div>
             </div>
           </div>
+        )}
 
-          <div className="p-6 overflow-y-auto flex-1">
-            {filteredPlayers.length === 0 ? (
-              <div className="text-center py-12">
-                <Users className="mx-auto text-gray-300 mb-3" size={48} />
-                <p className="text-gray-500 font-medium">No players found</p>
-                <p className="text-gray-400 text-sm mt-1">Try adjusting your search</p>
+        {/* Player Rankings */}
+        {rankings.length > 0 && (
+          <div className="mb-6 bg-gradient-to-br from-yellow-50 to-orange-50 rounded-2xl p-6 border border-yellow-200 shadow-lg">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="bg-gradient-to-br from-yellow-500 to-orange-500 p-2.5 rounded-xl">
+                <Trophy className="text-white" size={22} />
               </div>
-            ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-                {filteredPlayers.map(player => {
-                  const existingTest = getPlayerTestForDate(player.id, selectedDate)
-                  const stats = getPlayerStats(player.id)
-                  
-                  return (
-                    <button
-                      key={player.id}
-                      onClick={() => existingTest ? handleEdit(existingTest) : handlePlayerClick(player)}
-                      className={`p-4 rounded-xl border-2 transition-all text-left ${
-                        existingTest
-                          ? "border-green-300 bg-green-50 hover:bg-green-100"
-                          : "border-gray-200 bg-white hover:bg-purple-50 hover:border-purple-300"
-                      }`}
-                    >
-                      <div className="flex items-start justify-between mb-2">
-                        <div className="flex-1">
-                          <div className="flex items-center gap-2 mb-1">
-                            <h3 className="font-bold text-gray-800">
-                              {player.firstName} {player.lastName}
-                            </h3>
-                            {existingTest && (
-                              <CheckCircle className="text-green-600" size={18} />
-                            )}
-                          </div>
-                          <div className="flex items-center gap-2">
-                            <span className={`px-2 py-0.5 rounded text-xs font-bold ${
-                              player.team === "First Team" 
-                                ? "bg-emerald-100 text-emerald-700" 
-                                : player.team === "Reserve Team"
-                                ? "bg-orange-100 text-orange-700"
-                                : "bg-purple-100 text-purple-700"
-                            }`}>
-                              {player.team}
-                            </span>
-                            <span className="text-xs text-gray-500">
-                              {stats.totalTests} {stats.totalTests === 1 ? 'test' : 'tests'} total
-                            </span>
-                          </div>
+              <div>
+                <h3 className="text-lg font-bold text-gray-800">Overall Fitness Rankings</h3>
+                <p className="text-sm text-gray-600">
+                  {filterDate === "all" 
+                    ? "Based on latest test for each player" 
+                    : `For test on ${new Date(filterDate).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}`
+                  }
+                </p>
+              </div>
+            </div>
+            
+            {/* Top 3 Players - Special Display */}
+            <div className="space-y-3 mb-6">
+              {rankings.slice(0, 3).map((player, index) => {
+                const medalColors = {
+                  0: 'from-yellow-400 to-yellow-500',
+                  1: 'from-gray-300 to-gray-400',
+                  2: 'from-orange-400 to-orange-500'
+                }
+                const bgColors = {
+                  0: 'bg-yellow-100 border-yellow-300',
+                  1: 'bg-gray-100 border-gray-300',
+                  2: 'bg-orange-100 border-orange-300'
+                }
+                
+                return (
+                  <div 
+                    key={`top-${player.playerId}-${index}`}
+                    className={`${bgColors[index]} rounded-xl p-4 border shadow-sm hover:shadow-md transition-all`}
+                  >
+                    <div className="flex items-center gap-4">
+                      <div className={`flex-shrink-0 w-10 h-10 bg-gradient-to-br ${medalColors[index]} rounded-xl flex items-center justify-center`}>
+                        <Award className="text-white" size={20} />
+                      </div>
+                      
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2">
+                          <h4 className="font-bold text-gray-800 truncate">{player.playerName}</h4>
+                          {index === 0 && <span className="text-xs px-2 py-0.5 bg-yellow-200 text-yellow-800 rounded-full font-bold">TOP</span>}
+                        </div>
+                        <div className="flex items-center gap-4 mt-1 text-xs text-gray-600">
+                          <span className="flex items-center gap-1">
+                            <Activity size={12} />
+                            {player.testCount} test{player.testCount !== 1 ? 's' : ''}
+                          </span>
+                          <span className="text-gray-400">|</span>
+                          <span>Score: {player.score.toFixed(1)}/100</span>
                         </div>
                       </div>
 
-                      {existingTest ? (
-                        <div className="grid grid-cols-2 gap-2 mt-3">
-                          {existingTest.beepTest && (
-                            <div className="bg-white rounded p-2 border border-green-200">
-                              <p className="text-[10px] font-semibold text-green-600 uppercase">Beep</p>
-                              <p className="text-sm font-black text-green-700">{existingTest.beepTest}</p>
+                      <div className="flex gap-2 text-xs">
+                        {player.beepTest && (
+                          <div className="bg-purple-100 px-2 py-1 rounded-lg">
+                            <span className="text-purple-600 font-bold">{player.beepTest}</span>
+                            <span className="text-purple-500 ml-1">Beep</span>
+                          </div>
+                        )}
+                        {player.sprint10m && (
+                          <div className="bg-blue-100 px-2 py-1 rounded-lg">
+                            <span className="text-blue-600 font-bold">{player.sprint10m}s</span>
+                            <span className="text-blue-500 ml-1">10m</span>
+                          </div>
+                        )}
+                        {player.pushUps && (
+                          <div className="bg-orange-100 px-2 py-1 rounded-lg">
+                            <span className="text-orange-600 font-bold">{player.pushUps}</span>
+                            <span className="text-orange-500 ml-1">Push</span>
+                          </div>
+                        )}
+                        {player.sitUps && (
+                          <div className="bg-pink-100 px-2 py-1 rounded-lg">
+                            <span className="text-pink-600 font-bold">{player.sitUps}</span>
+                            <span className="text-pink-500 ml-1">Sit</span>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Progress bar */}
+                    <div className="mt-3 bg-gray-200 rounded-full h-2 overflow-hidden">
+                      <div 
+                        className={`h-full bg-gradient-to-r ${medalColors[index]} transition-all duration-500`}
+                        style={{ width: `${player.score}%` }}
+                      ></div>
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+
+            {/* All Other Players - Compact List */}
+            {rankings.length > 3 && (
+              <div>
+                <h4 className="text-sm font-bold text-gray-700 mb-3 px-2">All Players</h4>
+                <div className="bg-white rounded-xl border border-gray-200 divide-y divide-gray-100">
+                  {rankings.slice(3).map((player, index) => {
+                    const actualRank = index + 4
+                    return (
+                      <div 
+                        key={`player-${player.playerId}-${actualRank}`}
+                        className="p-3 hover:bg-gray-50 transition-colors"
+                      >
+                        <div className="flex items-center gap-3">
+                          <div className="flex-shrink-0 w-8 h-8 bg-gradient-to-br from-blue-500 to-blue-600 rounded-lg flex items-center justify-center">
+                            <span className="text-white font-bold text-xs">{actualRank}</span>
+                          </div>
+                          
+                          <div className="flex-1 min-w-0">
+                            <h5 className="font-semibold text-gray-800 text-sm truncate">{player.playerName}</h5>
+                            <div className="flex items-center gap-2 text-xs text-gray-500">
+                              <span>Score: {player.score.toFixed(1)}</span>
+                              <span className="text-gray-300">•</span>
+                              <span>{player.testCount} test{player.testCount !== 1 ? 's' : ''}</span>
                             </div>
-                          )}
-                          {existingTest.sprint10m && (
-                            <div className="bg-white rounded p-2 border border-green-200">
-                              <p className="text-[10px] font-semibold text-green-600 uppercase">10m</p>
-                              <p className="text-sm font-black text-green-700">{existingTest.sprint10m}s</p>
-                            </div>
-                          )}
-                          {existingTest.tTest && (
-                            <div className="bg-white rounded p-2 border border-green-200">
-                              <p className="text-[10px] font-semibold text-green-600 uppercase">T Test</p>
-                              <p className="text-sm font-black text-green-700">{existingTest.tTest}s</p>
-                            </div>
-                          )}
-                          {existingTest.pushUps && (
-                            <div className="bg-white rounded p-2 border border-green-200">
-                              <p className="text-[10px] font-semibold text-green-600 uppercase">Push</p>
-                              <p className="text-sm font-black text-green-700">{existingTest.pushUps}</p>
-                            </div>
-                          )}
+                          </div>
+
+                          <div className="flex gap-1.5 text-xs">
+                            {player.beepTest && (
+                              <div className="bg-purple-100 px-1.5 py-0.5 rounded">
+                                <span className="text-purple-600 font-semibold">{player.beepTest}</span>
+                              </div>
+                            )}
+                            {player.sprint10m && (
+                              <div className="bg-blue-100 px-1.5 py-0.5 rounded">
+                                <span className="text-blue-600 font-semibold">{player.sprint10m}s</span>
+                              </div>
+                            )}
+                            {player.pushUps && (
+                              <div className="bg-orange-100 px-1.5 py-0.5 rounded">
+                                <span className="text-orange-600 font-semibold">{player.pushUps}</span>
+                              </div>
+                            )}
+                            {player.sitUps && (
+                              <div className="bg-pink-100 px-1.5 py-0.5 rounded">
+                                <span className="text-pink-600 font-semibold">{player.sitUps}</span>
+                              </div>
+                            )}
+                          </div>
                         </div>
-                      ) : (
-                        <div className="mt-3 text-purple-600 text-sm font-semibold flex items-center gap-1">
-                          <TrendingUp size={16} />
-                          Click to record test
-                        </div>
-                      )}
-                    </button>
-                  )
-                })}
+                      </div>
+                    )
+                  })}
+                </div>
               </div>
             )}
           </div>
-        </div>
+        )}
 
         {/* Add/Edit Modal */}
         {showModal && (
