@@ -19,6 +19,8 @@ export const AppProvider = ({ children }) => {
   const [reviews, setReviews] = useState([])
   const [fixtures, setFixtures] = useState([])
   const [loading, setLoading] = useState(true)
+  const [userRole, setUserRole] = useState(null) // 'coach' or 'player'
+  const [currentUser, setCurrentUser] = useState(null)
 
   // Real-time listener for players collection
   useEffect(() => {
@@ -278,7 +280,11 @@ export const AppProvider = ({ children }) => {
     addFixture,
     updateFixture,
     deleteFixture,
-    loading
+    loading,
+    userRole,
+    setUserRole,
+    currentUser,
+    setCurrentUser
   }
 
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>

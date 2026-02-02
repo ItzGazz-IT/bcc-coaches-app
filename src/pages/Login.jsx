@@ -1,17 +1,20 @@
 import logo from "../assets/bcc-logo.png"
 import { useNavigate } from "react-router-dom"
-import { Lock, User, Shield, ArrowRight, AlertCircle } from "lucide-react"
+import { Lock, User, Shield, ArrowRight, AlertCircle, Users as UsersIcon } from "lucide-react"
 import { useState } from "react"
+import { useApp } from "../contexts/AppContext"
 
 const USERS = [
-  { username: "Goisto", password: "Goisto@BCC26" },
-  { username: "Gareth", password: "Gareth@BCC26" }
+  { username: "Goisto", password: "Goisto@BCC26", role: "coach" },
+  { username: "Gareth", password: "Gareth@BCC26", role: "coach" }
 ]
 
 export default function Login() {
   const navigate = useNavigate()
+  const { setUserRole, setCurrentUser } = useApp()
   const [username, setUsername] = useState("")
   const [password, setPassword] = useState("")
+  const [selectedRole, setSelectedRole] = useState("coach")
   const [error, setError] = useState("")
 
   const handleSubmit = (e) => {
@@ -22,6 +25,9 @@ export default function Login() {
     
     if (user) {
       localStorage.setItem("bcc-user", username)
+      localStorage.setItem("bcc-role", selectedRole)
+      setUserRole(selectedRole)
+      setCurrentUser(username)
       navigate("/dashboard")
     } else {
       setError("Invalid username or password")
@@ -81,6 +87,39 @@ export default function Login() {
             )}
 
             <form onSubmit={handleSubmit} className="space-y-5">
+              {/* Role Selection */}
+              <div className="mb-6">
+                <label className="block text-sm font-bold text-gray-700 mb-3">
+                  I am a
+                </label>
+                <div className="grid grid-cols-2 gap-3">
+                  <button
+                    type="button"
+                    onClick={() => setSelectedRole("coach")}
+                    className={`p-4 rounded-xl border-2 transition-all ${
+                      selectedRole === "coach"
+                        ? 'border-secondary bg-secondary/10 shadow-lg'
+                        : 'border-gray-200 hover:border-gray-300'
+                    }`}
+                  >
+                    <Shield className={`mx-auto mb-2 ${selectedRole === "coach" ? 'text-secondary' : 'text-gray-400'}`} size={24} />
+                    <div className={`text-sm font-bold ${selectedRole === "coach" ? 'text-secondary' : 'text-gray-600'}`}>Coach</div>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setSelectedRole("player")}
+                    className={`p-4 rounded-xl border-2 transition-all ${
+                      selectedRole === "player"
+                        ? 'border-secondary bg-secondary/10 shadow-lg'
+                        : 'border-gray-200 hover:border-gray-300'
+                    }`}
+                  >
+                    <UsersIcon className={`mx-auto mb-2 ${selectedRole === "player" ? 'text-secondary' : 'text-gray-400'}`} size={24} />
+                    <div className={`text-sm font-bold ${selectedRole === "player" ? 'text-secondary' : 'text-gray-600'}`}>Player</div>
+                  </button>
+                </div>
+              </div>
+
               {/* Username input */}
               <div className="relative group">
                 <label className="block text-sm font-bold text-gray-700 mb-2">

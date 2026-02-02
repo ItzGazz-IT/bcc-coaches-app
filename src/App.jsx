@@ -40,9 +40,11 @@ export default function App() {
               key={path}
               path={`/${path}`}
               element={
-                <div className="flex flex-col md:flex-row min-h-screen">
+                <div className="flex flex-row min-h-screen bg-gray-50">
                   <Sidebar />
-                  <Page />
+                  <div className="flex-1 w-full md:w-auto overflow-x-hidden">
+                    <Page />
+                  </div>
                 </div>
               }
             />

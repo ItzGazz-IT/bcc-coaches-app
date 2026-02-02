@@ -10,6 +10,12 @@
   body {
     @apply antialiased;
   }
+  
+  /* Mobile-friendly defaults */
+  html {
+    -webkit-tap-highlight-color: transparent;
+    -webkit-touch-callout: none;
+  }
 }
 
 @layer utilities {
@@ -27,8 +33,18 @@
       transform: translateY(0);
     }
   }
+  
+  /* Mobile app styles */
+  .mobile-page {
+    @apply p-4 md:p-6;
+  }
+  
+  .mobile-card {
+    @apply bg-white rounded-2xl shadow-sm p-4 mb-4;
+  }
 }
 
 body {
   background-color: #F4F6FA;
+  overscroll-behavior-y: none;
 }
