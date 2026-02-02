@@ -1,6 +1,7 @@
 import { createContext, useContext, useState, useEffect } from "react"
 import { db } from "../firebase/config"
 import { collection, getDocs, addDoc, deleteDoc, doc, onSnapshot, updateDoc, query, where } from "firebase/firestore"
+import { initializeNotifications, checkForNewReviews, checkForNewFitnessTests, checkForNewFixtures } from "../services/notificationService"
 
 const AppContext = createContext()
 
@@ -41,6 +42,13 @@ export const AppProvider = ({ children }) => {
     setDarkMode(!darkMode)
   }
 
+  // Initialize notification service after first data load
+  useEffect(() => {
+    if (!loading) {
+      initializeNotifications({ reviews, fitnessTests, fixtures })
+    }
+  }, [loading])
+
   // Real-time listener for players collection
   useEffect(() => {
     const unsubscribe = onSnapshot(collection(db, "players"), (snapshot) => {
@@ -76,10 +84,11 @@ export const AppProvider = ({ children }) => {
         ...doc.data()
       }))
       setFitnessTests(testsData)
+      checkForNewFitnessTests(testsData, userRole, currentPlayerId, players)
     })
 
     return () => unsubscribe()
-  }, [])
+  }, [userRole, currentPlayerId, players])
 
   // Real-time listener for reviews collection
   useEffect(() => {
@@ -89,10 +98,11 @@ export const AppProvider = ({ children }) => {
         ...doc.data()
       }))
       setReviews(reviewsData)
+      checkForNewReviews(reviewsData, userRole, currentPlayerId, players)
     })
 
     return () => unsubscribe()
-  }, [])
+  }, [userRole, currentPlayerId, players])
 
   // Real-time listener for fixtures collection
   useEffect(() => {
@@ -101,10 +111,11 @@ export const AppProvider = ({ children }) => {
         id: doc.id,
         ...doc.data()
       }))
-      setFixtures(fixturesData)
+      checkForNewFixtures(fixturesData, userRole)
     })
 
     return () => unsubscribe()
+  }, [userRoleturn () => unsubscribe()
   }, [])
 
   const addPlayer = async (player) => {
