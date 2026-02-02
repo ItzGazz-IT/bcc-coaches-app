@@ -3,7 +3,7 @@ import { UserPlus, AlertTriangle, CheckCircle, Clock, Edit, Trash2, Search, User
 import { useApp } from "../contexts/AppContext"
 
 function InjuriesAvailability() {
-  const { players, injuries, addInjury, updateInjury, deleteInjury, getPlayerInjuryStatus } = useApp()
+  const { players, injuries, addInjury, updateInjury, deleteInjury, getPlayerInjuryStatus, userRole, currentPlayerId } = useApp()
 
   const [formData, setFormData] = useState({
     playerId: "",
@@ -73,6 +73,11 @@ function InjuriesAvailability() {
     const player = players.find(p => p.id === injury.playerId)
     if (!player) return false
 
+    // For players, only show their own injuries
+    if (userRole === "player" && currentPlayerId && injury.playerId !== currentPlayerId) {
+      return false
+    }
+
     const matchesSearch =
       player.firstName.toLowerCase().includes(searchTerm.toLowerCase()) ||
       player.lastName.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -117,7 +122,7 @@ function InjuriesAvailability() {
                 setShowModal(true)
                 setEditingId(null)
                 setFormData({
-                  playerId: "",
+                  playerId: userRole === "player" && currentPlayerId ? currentPlayerId : "",
                   type: "injury",
                   description: "",
                   expectedReturn: "",
@@ -127,7 +132,7 @@ function InjuriesAvailability() {
               className="bg-gradient-to-r from-red-500 to-orange-600 text-white px-6 py-3 rounded-xl font-bold shadow-lg hover:shadow-xl hover:scale-[1.02] transition-all duration-300 inline-flex items-center gap-2"
             >
               <Heart size={20} />
-              Report Injury
+              {userRole === "player" ? "Update My Status" : "Report Injury"}
             </button>
           </div>
         </div>
@@ -303,13 +308,15 @@ function InjuriesAvailability() {
                           <Edit size={16} className="text-blue-600" />
                         </button>
 
-                        <button
-                          onClick={() => deleteInjury(injury.id)}
-                          className="p-2 hover:bg-red-100 rounded-lg transition-colors"
-                          title="Delete"
-                        >
-                          <Trash2 size={16} className="text-red-600" />
-                        </button>
+                        {userRole === "coach" && (
+                          <button
+                            onClick={() => deleteInjury(injury.id)}
+                            className="p-2 hover:bg-red-100 rounded-lg transition-colors"
+                            title="Delete"
+                          >
+                            <Trash2 size={16} className="text-red-600" />
+                          </button>
+                        )}
                       </div>
                     </div>
                   )
@@ -351,24 +358,32 @@ function InjuriesAvailability() {
               </div>
 
               <form onSubmit={handleSubmit} className="p-6 space-y-4 overflow-y-auto flex-1">
-                <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-2">
-                    Player *
-                  </label>
-                  <select
-                    required
-                    value={formData.playerId}
-                    onChange={(e) => setFormData({...formData, playerId: e.target.value})}
-                    className="w-full px-4 py-2.5 border-2 border-gray-200 rounded-xl focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 outline-none transition-all bg-white"
-                  >
-                    <option value="">Select Player</option>
-                    {players.map(player => (
-                      <option key={player.id} value={player.id}>
-                        {player.firstName} {player.lastName} ({player.team})
-                      </option>
-                    ))}
-                  </select>
-                </div>
+                {userRole === "coach" ? (
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">
+                      Player *
+                    </label>
+                    <select
+                      required
+                      value={formData.playerId}
+                      onChange={(e) => setFormData({...formData, playerId: e.target.value})}
+                      className="w-full px-4 py-2.5 border-2 border-gray-200 rounded-xl focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 outline-none transition-all bg-white"
+                    >
+                      <option value="">Select Player</option>
+                      {players.map(player => (
+                        <option key={player.id} value={player.id}>
+                          {player.firstName} {player.lastName} ({player.team})
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                ) : (
+                  <div className="bg-blue-50 border border-blue-200 rounded-xl p-4">
+                    <p className="text-sm font-semibold text-blue-800">
+                      Updating status for: {players.find(p => p.id === currentPlayerId)?.firstName} {players.find(p => p.id === currentPlayerId)?.lastName}
+                    </p>
+                  </div>
+                )}
 
                 <div>
                   <label className="block text-sm font-semibold text-gray-700 mb-2">
