@@ -89,9 +89,9 @@ function FitnessTests() {
     return matchesSearch && matchesDate
   }).sort((a, b) => new Date(b.date) - new Date(a.date))
 
-  // Calculate overall averages
+  // Calculate overall averages (always use all tests for team average)
   const calculateOverallAverages = () => {
-    const testsToAverage = filterDate === "all" ? visibleTests : visibleTests.filter(t => t.date === filterDate)
+    const testsToAverage = filterDate === "all" ? fitnessTests : fitnessTests.filter(t => t.date === filterDate)
     
     if (testsToAverage.length === 0) {
       return { beepTest: 0, sprint10m: 0, tTest: 0, pushUps: 0, sitUps: 0 }
@@ -116,6 +116,23 @@ function FitnessTests() {
   }
 
   const averages = calculateOverallAverages()
+
+  // Get player's latest test for comparison
+  const getPlayerLatestTest = () => {
+    if (!currentPlayerId) return null
+    const playerTests = fitnessTests
+      .filter(t => t.playerId === currentPlayerId)
+      .sort((a, b) => new Date(b.date) - new Date(a.date))
+    
+    if (filterDate !== "all") {
+      const dateTests = playerTests.filter(t => t.date === filterDate)
+      return dateTests.length > 0 ? dateTests[0] : null
+    }
+    
+    return playerTests.length > 0 ? playerTests[0] : null
+  }
+
+  const playerTest = getPlayerLatestTest()
 
   // Calculate player rankings based on their latest test
   const calculatePlayerRankings = () => {
@@ -258,7 +275,9 @@ function FitnessTests() {
                 <TrendingUp className="text-white" size={18} />
               </div>
               <div>
-                <h3 className="text-base font-bold text-gray-800">Average Results</h3>
+                <h3 className="text-base font-bold text-gray-800">
+                  {userRole === "player" ? "Team Average vs My Score" : "Average Results"}
+                </h3>
                 <p className="text-xs text-gray-600">
                   {filterDate === "all" 
                     ? `${fitnessTests.length} tests` 
@@ -269,34 +288,74 @@ function FitnessTests() {
             </div>
             
             <div className="grid grid-cols-2 md:grid-cols-5 gap-2">
+              {/* Beep Test */}
               <div className="bg-white rounded-lg p-3 shadow-sm border border-gray-100">
-                <p className="text-xs font-bold text-gray-500 mb-0.5">Beep</p>
-                <p className="text-xl md:text-2xl font-black text-purple-600">{averages.beepTest > 0 ? averages.beepTest : '-'}</p>
-                <p className="text-xs text-gray-500">level</p>
+                <p className="text-xs font-bold text-gray-500 mb-0.5">Beep Test</p>
+                <div className="flex items-baseline gap-1.5">
+                  <p className="text-xl md:text-2xl font-black text-purple-600">{averages.beepTest > 0 ? averages.beepTest : '-'}</p>
+                  {userRole === "player" && playerTest?.beepTest && (
+                    <p className="text-sm font-bold text-green-600">/ {playerTest.beepTest}</p>
+                  )}
+                </div>
+                <p className="text-xs text-gray-500">
+                  {userRole === "player" ? "avg / yours" : "level"}
+                </p>
               </div>
               
+              {/* Sprint */}
               <div className="bg-white rounded-lg p-3 shadow-sm border border-gray-100">
-                <p className="text-xs font-bold text-gray-500 mb-0.5">Sprint</p>
-                <p className="text-xl md:text-2xl font-black text-blue-600">{averages.sprint10m > 0 ? `${averages.sprint10m}s` : '-'}</p>
-                <p className="text-xs text-gray-500">10m</p>
+                <p className="text-xs font-bold text-gray-500 mb-0.5">10m Sprint</p>
+                <div className="flex items-baseline gap-1.5">
+                  <p className="text-xl md:text-2xl font-black text-blue-600">{averages.sprint10m > 0 ? `${averages.sprint10m}s` : '-'}</p>
+                  {userRole === "player" && playerTest?.sprint10m && (
+                    <p className="text-sm font-bold text-green-600">/ {playerTest.sprint10m}s</p>
+                  )}
+                </div>
+                <p className="text-xs text-gray-500">
+                  {userRole === "player" ? "avg / yours" : "10m"}
+                </p>
               </div>
               
+              {/* T-Test */}
               <div className="bg-white rounded-lg p-3 shadow-sm border border-gray-100">
                 <p className="text-xs font-bold text-gray-500 mb-0.5">T-Test</p>
-                <p className="text-xl md:text-2xl font-black text-green-600">{averages.tTest > 0 ? `${averages.tTest}s` : '-'}</p>
-                <p className="text-xs text-gray-500">time</p>
+                <div className="flex items-baseline gap-1.5">
+                  <p className="text-xl md:text-2xl font-black text-green-600">{averages.tTest > 0 ? `${averages.tTest}s` : '-'}</p>
+                  {userRole === "player" && playerTest?.tTest && (
+                    <p className="text-sm font-bold text-green-600">/ {playerTest.tTest}s</p>
+                  )}
+                </div>
+                <p className="text-xs text-gray-500">
+                  {userRole === "player" ? "avg / yours" : "time"}
+                </p>
               </div>
               
+              {/* Push Ups */}
               <div className="bg-white rounded-lg p-3 shadow-sm border border-gray-100">
-                <p className="text-xs font-bold text-gray-500 mb-0.5">Push</p>
-                <p className="text-xl md:text-2xl font-black text-orange-600">{averages.pushUps > 0 ? averages.pushUps : '-'}</p>
-                <p className="text-xs text-gray-500">reps</p>
+                <p className="text-xs font-bold text-gray-500 mb-0.5">Push Ups</p>
+                <div className="flex items-baseline gap-1.5">
+                  <p className="text-xl md:text-2xl font-black text-orange-600">{averages.pushUps > 0 ? averages.pushUps : '-'}</p>
+                  {userRole === "player" && playerTest?.pushUps && (
+                    <p className="text-sm font-bold text-green-600">/ {playerTest.pushUps}</p>
+                  )}
+                </div>
+                <p className="text-xs text-gray-500">
+                  {userRole === "player" ? "avg / yours" : "reps"}
+                </p>
               </div>
               
+              {/* Sit Ups */}
               <div className="bg-white rounded-lg p-3 shadow-sm border border-gray-100">
                 <p className="text-xs font-bold text-gray-500 mb-0.5">Sit Ups</p>
-                <p className="text-xl md:text-2xl font-black text-pink-600">{averages.sitUps > 0 ? averages.sitUps : '-'}</p>
-                <p className="text-xs text-gray-500">reps</p>
+                <div className="flex items-baseline gap-1.5">
+                  <p className="text-xl md:text-2xl font-black text-pink-600">{averages.sitUps > 0 ? averages.sitUps : '-'}</p>
+                  {userRole === "player" && playerTest?.sitUps && (
+                    <p className="text-sm font-bold text-green-600">/ {playerTest.sitUps}</p>
+                  )}
+                </div>
+                <p className="text-xs text-gray-500">
+                  {userRole === "player" ? "avg / yours" : "reps"}
+                </p>
               </div>
             </div>
           </div>
