@@ -13,6 +13,7 @@ import Fixtures from "./pages/Fixtures"
 import PlayerStats from "./pages/PlayerStats"
 import SeasonGoals from "./pages/SeasonGoals"
 import Announcements from "./pages/Announcements"
+import NavSettings from "./pages/NavSettings"
 import Sidebar from "./components/Sidebar"
 import BottomNav from "./components/BottomNav"
 
@@ -35,7 +36,8 @@ export default function App() {
             ["calendar", Calendar],
             ["attendance", Attendance],
             ["reviews", Reviews],
-            ["injuries", InjuriesAvailability]
+            ["injuries", InjuriesAvailability],
+            ["nav-settings", NavSettings]
           ].map(([path, Page]) => (
             <Route
               key={path}

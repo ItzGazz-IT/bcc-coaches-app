@@ -1,12 +1,14 @@
 import { Link, useLocation } from "react-router-dom"
-import { LayoutDashboard, Users, Trophy, BarChart3, MoreHorizontal, Heart, TrendingUp, Star, CalendarDays, Crosshair, Target, ClipboardCheck, Bell, X } from "lucide-react"
+import { LayoutDashboard, Users, Trophy, BarChart3, MoreHorizontal, Heart, TrendingUp, Star, CalendarDays, Crosshair, Target, ClipboardCheck, Bell, X, Settings } from "lucide-react"
 import { useApp } from "../contexts/AppContext"
-import { useState } from "react"
+import { useState, useEffect } from "react"
 
 export default function BottomNav() {
   const location = useLocation()
   const { userRole } = useApp()
   const [showMenu, setShowMenu] = useState(false)
+  const [playerNavMain, setPlayerNavMain] = useState([])
+  const [playerNavMore, setPlayerNavMore] = useState([])
 
   const coachMainNav = [
     { path: "/dashboard", label: "Home", icon: LayoutDashboard },
@@ -26,18 +28,39 @@ export default function BottomNav() {
     { path: "/announcements", label: "Announcements", icon: Bell }
   ]
 
+  // Available player navigation items
+  const availablePlayerItems = {
+    stats: { path: "/player-stats", label: "Stats", icon: BarChart3 },
+    fitness: { path: "/fitness", label: "Fitness", icon: TrendingUp },
+    reviews: { path: "/reviews", label: "My Reviews", icon: Star },
+    availability: { path: "/injuries", label: "Availability", icon: Heart },
+    calendar: { path: "/calendar", label: "Calendar", icon: CalendarDays },
+    announcements: { path: "/announcements", label: "Announcements", icon: Bell }
+  }
+
+  // Load player nav preferences from localStorage
+  useEffect(() => {
+    if (userRole === "player") {
+      const savedMain = localStorage.getItem("playerNavMain")
+      const savedMore = localStorage.getItem("playerNavMore")
+      
+      const mainIds = savedMain ? JSON.parse(savedMain) : ["stats", "fitness"]
+      const moreIds = savedMore ? JSON.parse(savedMore) : ["reviews", "availability", "calendar", "announcements"]
+      
+      setPlayerNavMain(mainIds.map(id => availablePlayerItems[id]).filter(Boolean))
+      setPlayerNavMore(moreIds.map(id => availablePlayerItems[id]).filter(Boolean))
+    }
+  }, [userRole])
+
   const playerMainNav = [
     { path: "/dashboard", label: "Home", icon: LayoutDashboard },
     { path: "/fixtures", label: "Fixtures", icon: Trophy },
-    { path: "/player-stats", label: "Stats", icon: BarChart3 },
-    { path: "/fitness", label: "Fitness", icon: TrendingUp }
+    ...playerNavMain
   ]
 
   const playerMoreNav = [
-    { path: "/reviews", label: "My Reviews", icon: Star },
-    { path: "/injuries", label: "Availability", icon: Heart },
-    { path: "/calendar", label: "Calendar", icon: CalendarDays },
-    { path: "/announcements", label: "Announcements", icon: Bell }
+    ...playerNavMore,
+    { path: "/nav-settings", label: "Customize Nav", icon: Settings }
   ]
 
   const mainNav = userRole === "player" ? playerMainNav : coachMainNav
