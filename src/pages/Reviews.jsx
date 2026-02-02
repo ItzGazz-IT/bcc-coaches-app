@@ -32,6 +32,7 @@ function Reviews() {
   }
 
   const handleAddNewReview = () => {
+    if (userRole !== "coach") return
     setShowReviewForm(true)
     setEditingReview(null)
     setFormData({
@@ -44,6 +45,7 @@ function Reviews() {
 
   const handleSubmit = async (e) => {
     e.preventDefault()
+    if (userRole !== "coach") return
     if (selectedPlayer) {
       const now = new Date()
       const reviewData = {
@@ -70,6 +72,7 @@ function Reviews() {
   }
 
   const handleEdit = (review) => {
+    if (userRole !== "coach") return
     setEditingReview(review)
     setFormData({
       rating: review.rating,
@@ -81,6 +84,7 @@ function Reviews() {
   }
 
   const handleDelete = async (id) => {
+    if (userRole !== "coach") return
     if (window.confirm("Are you sure you want to delete this review?")) {
       await deleteReview(id)
     }
@@ -216,8 +220,8 @@ function Reviews() {
 
       {/* Player Reviews Modal */}
       {showPlayerModal && selectedPlayer && (
-        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4 overflow-y-auto">
-          <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-2xl max-w-5xl w-full my-8 flex flex-col max-h-[calc(100vh-4rem)]">
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-2xl max-w-5xl w-full my-8 flex flex-col max-h-[90vh] overflow-hidden">
             <div className="sticky top-0 bg-gradient-to-r from-purple-500 to-purple-600 p-6 border-b border-purple-700 flex items-center justify-between">
               <div>
                 <h2 className="text-2xl font-bold text-white">
