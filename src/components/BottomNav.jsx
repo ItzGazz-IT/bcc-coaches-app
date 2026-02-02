@@ -1,14 +1,26 @@
-import { Link, useLocation } from "react-router-dom"
-import { LayoutDashboard, Users, Trophy, BarChart3, MoreHorizontal, Heart, TrendingUp, Star, CalendarDays, Crosshair, Target, ClipboardCheck, Bell, X, Settings } from "lucide-react"
+import { Link, useLocation, useNavigate } from "react-router-dom"
+import { LayoutDashboard, Users, Trophy, BarChart3, MoreHorizontal, Heart, TrendingUp, Star, CalendarDays, Crosshair, Target, ClipboardCheck, Bell, X, Settings, LogOut } from "lucide-react"
 import { useApp } from "../contexts/AppContext"
 import { useState, useEffect } from "react"
 
 export default function BottomNav() {
   const location = useLocation()
-  const { userRole } = useApp()
+  const navigate = useNavigate()
+  const { userRole, setUserRole, setCurrentUser, setCurrentPlayerId } = useApp()
   const [showMenu, setShowMenu] = useState(false)
   const [playerNavMain, setPlayerNavMain] = useState([])
   const [playerNavMore, setPlayerNavMore] = useState([])
+
+  const handleLogout = () => {
+    localStorage.removeItem("bcc-user")
+    localStorage.removeItem("bcc-role")
+    localStorage.removeItem("bcc-player-id")
+    setUserRole(null)
+    setCurrentUser(null)
+    setCurrentPlayerId(null)
+    setShowMenu(false)
+    navigate("/")
+  }
 
   const coachMainNav = [
     { path: "/dashboard", label: "Home", icon: LayoutDashboard },
@@ -94,6 +106,17 @@ export default function BottomNav() {
                   <span className="text-xs font-medium mt-2 text-center">{label}</span>
                 </Link>
               ))}
+            </div>
+            
+            {/* Logout Button */}
+            <div className="p-4 border-t border-gray-200">
+              <button
+                onClick={handleLogout}
+                className="w-full flex items-center justify-center gap-2 p-4 rounded-xl bg-red-50 text-red-600 hover:bg-red-100 transition-all font-medium"
+              >
+                <LogOut size={20} />
+                <span>Logout</span>
+              </button>
             </div>
           </div>
         </div>
