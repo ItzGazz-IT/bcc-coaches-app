@@ -54,7 +54,7 @@ export default function Login() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-[#0B2558] via-[#0D2E6B] to-[#0D4C92] p-6 relative overflow-hidden">
+    <div className="min-h-screen bg-gradient-to-br from-[#0B2558] via-[#0D2E6B] to-[#0D4C92] p-4 sm:p-6 relative overflow-hidden flex items-center">
       {/* Animated background elements */}
       <div className="absolute inset-0 overflow-hidden">
         <div className="absolute -top-40 -left-40 w-96 h-96 bg-[#0D4C92]/30 rounded-full blur-3xl animate-pulse"></div>
@@ -69,108 +69,108 @@ export default function Login() {
       {/* Grid pattern */}
       <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.05)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.05)_1px,transparent_1px)] bg-[size:60px_60px] opacity-30"></div>
 
-      <div className="max-w-md mx-auto pt-20 relative z-10">
+      <div className="max-w-md w-full mx-auto relative z-10">
         {/* Logo and Header */}
-        <div className="text-center mb-8">
-          <div className="bg-white/10 backdrop-blur-xl rounded-3xl p-6 inline-block mb-4 shadow-2xl border border-white/20 animate-float">
-            <img src={logo} alt="BCC Logo" className="w-24 h-24 mx-auto" />
+        <div className="text-center mb-6 sm:mb-8">
+          <div className="bg-white/10 backdrop-blur-xl rounded-2xl sm:rounded-3xl p-4 sm:p-6 inline-block mb-3 sm:mb-4 shadow-2xl border border-white/20 animate-float">
+            <img src={logo} alt="BCC Logo" className="w-16 h-16 sm:w-24 sm:h-24 mx-auto" />
           </div>
-          <h1 className="text-4xl font-black text-white mb-2 drop-shadow-lg">
+          <h1 className="text-2xl sm:text-4xl font-black text-white mb-1 sm:mb-2 drop-shadow-lg px-4">
             BCC Team Portal
           </h1>
-          <p className="text-white/80 font-medium">
+          <p className="text-sm sm:text-base text-white/80 font-medium px-4">
             Seniors & Reserves Management
           </p>
         </div>
 
         {/* Main login card */}
-        <div className="bg-white/95 backdrop-blur-xl rounded-2xl shadow-2xl overflow-hidden border border-white/20">
-          <div className="bg-gradient-to-r from-primary to-secondary p-6">
+        <div className="bg-white/95 backdrop-blur-xl rounded-xl sm:rounded-2xl shadow-2xl overflow-hidden border border-white/20">
+          <div className="bg-gradient-to-r from-primary to-secondary p-4 sm:p-6">
             <div className="flex items-center gap-3">
-              <div className="bg-white/20 backdrop-blur-lg rounded-xl p-2.5">
-                <Shield className="text-white" size={24} />
+              <div className="bg-white/20 backdrop-blur-lg rounded-lg sm:rounded-xl p-2 sm:p-2.5">
+                <Shield className="text-white" size={20} />
               </div>
               <div>
-                <h2 className="text-xl font-bold text-white">Sign In</h2>
-                <p className="text-white/80 text-sm">Access your account</p>
+                <h2 className="text-lg sm:text-xl font-bold text-white">Sign In</h2>
+                <p className="text-white/80 text-xs sm:text-sm">Access your account</p>
               </div>
             </div>
           </div>
 
-          <div className="p-8">
+          <div className="p-5 sm:p-8">
             {error && (
-              <div className="bg-red-50 border-2 border-red-200 rounded-xl p-4 mb-6 flex items-center gap-3">
-                <AlertCircle className="text-red-500" size={20} />
-                <p className="text-sm font-semibold text-red-700">{error}</p>
+              <div className="bg-red-50 border-2 border-red-200 rounded-lg sm:rounded-xl p-3 sm:p-4 mb-4 sm:mb-6 flex items-start gap-2 sm:gap-3">
+                <AlertCircle className="text-red-500 flex-shrink-0 mt-0.5" size={18} />
+                <p className="text-xs sm:text-sm font-semibold text-red-700">{error}</p>
               </div>
             )}
 
-            <form onSubmit={handleSubmit} className="space-y-5">
+            <form onSubmit={handleSubmit} className="space-y-4 sm:space-y-5">
               {/* Role Selection */}
-              <div className="mb-6">
-                <label className="block text-sm font-bold text-gray-700 mb-3">
+              <div>
+                <label className="block text-xs sm:text-sm font-bold text-gray-700 mb-2 sm:mb-3">
                   I am a
                 </label>
-                <div className="grid grid-cols-2 gap-3">
+                <div className="grid grid-cols-2 gap-2 sm:gap-3">
                   <button
                     type="button"
                     onClick={() => setSelectedRole("coach")}
-                    className={`p-4 rounded-xl border-2 transition-all ${
+                    className={`p-3 sm:p-4 rounded-lg sm:rounded-xl border-2 transition-all ${
                       selectedRole === "coach"
                         ? 'border-secondary bg-secondary/10 shadow-lg'
                         : 'border-gray-200 hover:border-gray-300'
                     }`}
                   >
-                    <Shield className={`mx-auto mb-2 ${selectedRole === "coach" ? 'text-secondary' : 'text-gray-400'}`} size={24} />
-                    <div className={`text-sm font-bold ${selectedRole === "coach" ? 'text-secondary' : 'text-gray-600'}`}>Coach</div>
+                    <Shield className={`mx-auto mb-1.5 sm:mb-2 ${selectedRole === "coach" ? 'text-secondary' : 'text-gray-400'}`} size={20} />
+                    <div className={`text-xs sm:text-sm font-bold ${selectedRole === "coach" ? 'text-secondary' : 'text-gray-600'}`}>Coach</div>
                   </button>
                   <button
                     type="button"
                     onClick={() => setSelectedRole("player")}
-                    className={`p-4 rounded-xl border-2 transition-all ${
+                    className={`p-3 sm:p-4 rounded-lg sm:rounded-xl border-2 transition-all ${
                       selectedRole === "player"
                         ? 'border-secondary bg-secondary/10 shadow-lg'
                         : 'border-gray-200 hover:border-gray-300'
                     }`}
                   >
-                    <UsersIcon className={`mx-auto mb-2 ${selectedRole === "player" ? 'text-secondary' : 'text-gray-400'}`} size={24} />
-                    <div className={`text-sm font-bold ${selectedRole === "player" ? 'text-secondary' : 'text-gray-600'}`}>Player</div>
+                    <UsersIcon className={`mx-auto mb-1.5 sm:mb-2 ${selectedRole === "player" ? 'text-secondary' : 'text-gray-400'}`} size={20} />
+                    <div className={`text-xs sm:text-sm font-bold ${selectedRole === "player" ? 'text-secondary' : 'text-gray-600'}`}>Player</div>
                   </button>
                 </div>
               </div>
 
               {/* Username input */}
               <div className="relative group">
-                <label className="block text-sm font-bold text-gray-700 mb-2">
+                <label className="block text-xs sm:text-sm font-bold text-gray-700 mb-1.5 sm:mb-2">
                   Username
                 </label>
                 <div className="relative">
-                  <User className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-secondary transition-colors" size={18} />
+                  <User className="absolute left-3 sm:left-4 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-secondary transition-colors" size={16} />
                   <input
                     type="text"
                     value={username}
                     onChange={(e) => setUsername(e.target.value)}
                     placeholder="Enter your username"
                     required
-                    className="w-full pl-12 pr-4 py-3.5 border-2 border-gray-200 rounded-xl focus:border-secondary focus:ring-4 focus:ring-secondary/20 outline-none transition-all text-sm font-medium bg-gray-50 focus:bg-white"
+                    className="w-full pl-10 sm:pl-12 pr-3 sm:pr-4 py-3 sm:py-3.5 border-2 border-gray-200 rounded-lg sm:rounded-xl focus:border-secondary focus:ring-4 focus:ring-secondary/20 outline-none transition-all text-sm font-medium bg-gray-50 focus:bg-white"
                   />
                 </div>
               </div>
 
               {/* Password input */}
               <div className="relative group">
-                <label className="block text-sm font-bold text-gray-700 mb-2">
+                <label className="block text-xs sm:text-sm font-bold text-gray-700 mb-1.5 sm:mb-2">
                   Password
                 </label>
                 <div className="relative">
-                  <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-secondary transition-colors" size={18} />
+                  <Lock className="absolute left-3 sm:left-4 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-secondary transition-colors" size={16} />
                   <input
                     type="password"
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     placeholder="Enter your password"
                     required
-                    className="w-full pl-12 pr-4 py-3.5 border-2 border-gray-200 rounded-xl focus:border-secondary focus:ring-4 focus:ring-secondary/20 outline-none transition-all text-sm font-medium bg-gray-50 focus:bg-white"
+                    className="w-full pl-10 sm:pl-12 pr-3 sm:pr-4 py-3 sm:py-3.5 border-2 border-gray-200 rounded-lg sm:rounded-xl focus:border-secondary focus:ring-4 focus:ring-secondary/20 outline-none transition-all text-sm font-medium bg-gray-50 focus:bg-white"
                   />
                 </div>
               </div>
@@ -178,23 +178,17 @@ export default function Login() {
               {/* Login button */}
               <button
                 type="submit"
-                className="w-full bg-gradient-to-r from-secondary to-accent text-white py-4 rounded-xl font-bold shadow-lg hover:shadow-2xl hover:scale-[1.02] transition-all duration-300 mt-8 inline-flex items-center justify-center gap-2 group"
+                className="w-full bg-gradient-to-r from-secondary to-accent text-white py-3.5 sm:py-4 rounded-lg sm:rounded-xl font-bold shadow-lg hover:shadow-2xl hover:scale-[1.02] transition-all duration-300 mt-6 sm:mt-8 inline-flex items-center justify-center gap-2 group text-sm sm:text-base"
               >
                 <span>Sign In</span>
-                <ArrowRight size={20} className="group-hover:translate-x-1 transition-transform" />
+                <ArrowRight size={18} className="group-hover:translate-x-1 transition-transform" />
               </button>
             </form>
-
-            {/* Authorized users info */}
-            <div className="mt-6 p-4 bg-gray-50 rounded-xl border border-gray-200">
-              <p className="text-xs font-bold text-gray-600 mb-2">Authorized Users:</p>
-              <p className="text-xs text-gray-500">Goisto • Gareth</p>
-            </div>
           </div>
         </div>
 
         {/* Footer */}
-        <p className="text-center text-white/70 text-sm mt-6 font-medium drop-shadow-lg">
+        <p className="text-center text-white/70 text-xs sm:text-sm mt-4 sm:mt-6 font-medium drop-shadow-lg px-4">
           © 2026 BCC Football Seniors. Designed By Gareth Van Den Aardweg
         </p>
       </div>
