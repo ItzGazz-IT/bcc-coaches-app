@@ -2,8 +2,10 @@ import { useState, useEffect } from "react"
 import { Bell, Plus, Edit, Trash2, X, AlertCircle, Info, CheckCircle, Trophy } from "lucide-react"
 import { collection, addDoc, updateDoc, deleteDoc, doc, onSnapshot, serverTimestamp } from "firebase/firestore"
 import { db } from "../firebase/config"
+import { useApp } from "../contexts/AppContext"
 
 function Announcements() {
+  const { userRole, markAsSeen } = useApp()
   const [announcements, setAnnouncements] = useState([])
   const [showModal, setShowModal] = useState(false)
   const [editingAnnouncement, setEditingAnnouncement] = useState(null)
@@ -14,6 +16,11 @@ function Announcements() {
     priority: "normal",
     team: "All Teams"
   })
+
+  // Mark announcements as seen when component mounts
+  useEffect(() => {
+    markAsSeen("announcements")
+  }, [])
 
   useEffect(() => {
     const unsubscribe = onSnapshot(
@@ -148,23 +155,25 @@ function Announcements() {
               </h1>
               <p className="text-sm md:text-base text-gray-600 hidden md:block">Team updates and news</p>
             </div>
-            <button
-              onClick={() => {
-                setEditingAnnouncement(null)
-                setFormData({
-                  title: "",
-                  message: "",
-                  type: "info",
-                  priority: "normal",
-                  team: "All Teams"
-                })
-                setShowModal(true)
-              }}
-              className="flex items-center justify-center gap-2 bg-gradient-to-r from-indigo-500 to-indigo-600 text-white px-5 py-3 rounded-xl font-bold hover:from-indigo-600 hover:to-indigo-700 transition-all w-full md:w-auto"
-            >
-              <Plus size={20} />
-              New Announcement
-            </button>
+            {userRole === "coach" && (
+              <button
+                onClick={() => {
+                  setEditingAnnouncement(null)
+                  setFormData({
+                    title: "",
+                    message: "",
+                    type: "info",
+                    priority: "normal",
+                    team: "All Teams"
+                  })
+                  setShowModal(true)
+                }}
+                className="flex items-center justify-center gap-2 bg-gradient-to-r from-indigo-500 to-indigo-600 text-white px-5 py-3 rounded-xl font-bold hover:from-indigo-600 hover:to-indigo-700 transition-all w-full md:w-auto"
+              >
+                <Plus size={20} />
+                New Announcement
+              </button>
+            )}
           </div>
         </div>
 
@@ -248,20 +257,22 @@ function Announcements() {
                             <p className="text-xs text-white/80 mt-1">{announcement.team}</p>
                           </div>
                         </div>
-                        <div className="flex items-center gap-2">
-                          <button
-                            onClick={() => handleEdit(announcement)}
-                            className="p-2 hover:bg-white/20 rounded-lg transition-colors"
-                          >
-                            <Edit size={16} />
-                          </button>
-                          <button
-                            onClick={() => handleDelete(announcement.id)}
-                            className="p-2 hover:bg-white/20 rounded-lg transition-colors"
-                          >
-                            <Trash2 size={16} />
-                          </button>
-                        </div>
+                        {userRole === "coach" && (
+                          <div className="flex items-center gap-2">
+                            <button
+                              onClick={() => handleEdit(announcement)}
+                              className="p-2 hover:bg-white/20 rounded-lg transition-colors"
+                            >
+                              <Edit size={16} />
+                            </button>
+                            <button
+                              onClick={() => handleDelete(announcement.id)}
+                              className="p-2 hover:bg-white/20 rounded-lg transition-colors"
+                            >
+                              <Trash2 size={16} />
+                            </button>
+                          </div>
+                        )}
                       </div>
                       <div className="p-4">
                         <p className="text-gray-700 whitespace-pre-wrap">{announcement.message}</p>

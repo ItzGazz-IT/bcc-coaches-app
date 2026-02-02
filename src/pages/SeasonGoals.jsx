@@ -209,20 +209,22 @@ function SeasonGoals() {
                             <p className="text-sm text-gray-500 italic">{goal.description}</p>
                           )}
                         </div>
-                        <div className="flex items-center gap-2">
-                          <button
-                            onClick={() => handleEdit(goal)}
-                            className="p-2 hover:bg-blue-100 rounded-lg transition-colors"
-                          >
-                            <Edit size={16} className="text-blue-600" />
-                          </button>
-                          <button
-                            onClick={() => handleDelete(goal.id)}
-                            className="p-2 hover:bg-red-100 rounded-lg transition-colors"
-                          >
-                            <Trash2 size={16} className="text-red-600" />
-                          </button>
-                        </div>
+                        {userRole === "coach" && (
+                          <div className="flex items-center gap-2">
+                            <button
+                              onClick={() => handleEdit(goal)}
+                              className="p-2 hover:bg-blue-100 rounded-lg transition-colors"
+                            >
+                              <Edit size={16} className="text-blue-600" />
+                            </button>
+                            <button
+                              onClick={() => handleDelete(goal.id)}
+                              className="p-2 hover:bg-red-100 rounded-lg transition-colors"
+                            >
+                              <Trash2 size={16} className="text-red-600" />
+                            </button>
+                          </div>
+                        )}
                       </div>
 
                       <div className="mb-2">

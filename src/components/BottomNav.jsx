@@ -1,12 +1,13 @@
 import { Link, useLocation, useNavigate } from "react-router-dom"
 import { LayoutDashboard, Users, Trophy, BarChart3, MoreHorizontal, Heart, TrendingUp, Star, CalendarDays, Crosshair, Target, ClipboardCheck, Bell, X, Settings, LogOut, Moon, Sun, LineChart } from "lucide-react"
 import { useApp } from "../contexts/AppContext"
+import NotificationBadge from "./NotificationBadge"
 import { useState, useEffect } from "react"
 
 export default function BottomNav() {
   const location = useLocation()
   const navigate = useNavigate()
-  const { userRole, setUserRole, setCurrentUser, setCurrentPlayerId, darkMode, toggleDarkMode } = useApp()
+  const { userRole, setUserRole, setCurrentUser, setCurrentPlayerId, darkMode, toggleDarkMode, unreadCounts } = useApp()
   const [showMenu, setShowMenu] = useState(false)
   const [playerNavMain, setPlayerNavMain] = useState([])
   const [playerNavMore, setPlayerNavMore] = useState([])
@@ -94,21 +95,25 @@ export default function BottomNav() {
               </button>
             </div>
             <div className="p-4 grid grid-cols-3 gap-3">
-              {moreNav.map(({ path, label, icon: Icon }) => (
-                <Link
-                  key={path}
-                  to={path}
-                  onClick={() => setShowMenu(false)}
-                  className={`flex flex-col items-center justify-center p-4 rounded-xl transition-all ${
-                    location.pathname === path
-                      ? 'bg-primary/10 dark:bg-accent/20 text-primary dark:text-accent'
-                      : 'bg-gray-50 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'
-                  }`}
-                >
-                  <Icon size={24} strokeWidth={location.pathname === path ? 2.5 : 2} />
-                  <span className="text-xs font-medium mt-2 text-center">{label}</span>
-                </Link>
-              ))}
+              {moreNav.map(({ path, label, icon: Icon }) => {
+                const showBadge = path === "/announcements" && unreadCounts.total > 0
+                return (
+                  <Link
+                    key={path}
+                    to={path}
+                    onClick={() => setShowMenu(false)}
+                    className={`flex flex-col items-center justify-center p-4 rounded-xl transition-all relative ${
+                      location.pathname === path
+                        ? 'bg-primary/10 dark:bg-accent/20 text-primary dark:text-accent'
+                        : 'bg-gray-50 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'
+                    }`}
+                  >
+                    <Icon size={24} strokeWidth={location.pathname === path ? 2.5 : 2} />
+                    <span className="text-xs font-medium mt-2 text-center">{label}</span>
+                    {showBadge && <NotificationBadge count={unreadCounts.total} />}
+                  </Link>
+                )
+              })}
             </div>
             
             {/* Dark Mode Toggle */}
@@ -141,11 +146,12 @@ export default function BottomNav() {
         <div className="grid grid-cols-5 gap-0">
           {mainNav.map(({ path, label, icon: Icon }) => {
             const isActive = location.pathname === path
+            const showBadge = path === "/announcements" && unreadCounts.total > 0
             return (
               <Link
                 key={path}
                 to={path}
-                className={`flex flex-col items-center justify-center py-2.5 px-1 transition-colors ${
+                className={`flex flex-col items-center justify-center py-2.5 px-1 transition-colors relative ${
                   isActive
                     ? 'text-primary dark:text-accent'
                     : 'text-gray-500 dark:text-gray-400'
@@ -155,15 +161,20 @@ export default function BottomNav() {
                 <span className={`text-[10px] mt-0.5 ${isActive ? 'font-bold' : 'font-medium'}`}>
                   {label}
                 </span>
+                {showBadge && <NotificationBadge count={unreadCounts.total} />}
               </Link>
             )
           })}
           <button
             onClick={() => setShowMenu(true)}
-            className="flex flex-col items-center justify-center py-2.5 px-1 text-gray-500 dark:text-gray-400"
+            className="flex flex-col items-center justify-center py-2.5 px-1 text-gray-500 dark:text-gray-400 relative"
           >
             <MoreHorizontal size={22} strokeWidth={2} />
             <span className="text-[10px] mt-0.5 font-medium">More</span>
+            {/* Show badge on More if announcements is in More menu */}
+            {moreNav.some(item => item.path === "/announcements") && unreadCounts.total > 0 && (
+              <NotificationBadge count={unreadCounts.total} />
+            )}
           </button>
         </div>
       </div>

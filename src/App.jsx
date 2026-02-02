@@ -17,7 +17,6 @@ import NavSettings from "./pages/NavSettings"
 import PerformanceCharts from "./pages/PerformanceCharts"
 import Sidebar from "./components/Sidebar"
 import BottomNav from "./components/BottomNav"
-import NotificationPrompt from "./components/NotificationPrompt"
 
 export default function App() {
   return (
@@ -52,7 +51,6 @@ export default function App() {
                     <Page />
                   </div>
                   <BottomNav />
-                  <NotificationPrompt />
                 </div>
               }
             />

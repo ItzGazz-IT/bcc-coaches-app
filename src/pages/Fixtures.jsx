@@ -1,10 +1,15 @@
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Calendar, Clock, MapPin, Trophy, Plus, Edit, Trash2, CheckCircle, Users, Search } from "lucide-react"
 import { useApp } from "../contexts/AppContext"
 import { TableSkeleton } from "../components/Loading"
 
 function Fixtures() {
-  const { fixtures, addFixture, updateFixture, deleteFixture, loading, userRole } = useApp()
+  const { fixtures, addFixture, updateFixture, deleteFixture, loading, userRole, markAsSeen } = useApp()
+  
+  // Mark fixtures as seen when component mounts
+  useEffect(() => {
+    markAsSeen("fixtures")
+  }, [])
   
   const [showModal, setShowModal] = useState(false)
   const [editingFixture, setEditingFixture] = useState(null)

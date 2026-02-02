@@ -27,6 +27,38 @@ export const AppProvider = ({ children }) => {
     const saved = localStorage.getItem("bcc-dark-mode")
     return saved === "true"
   })
+  
+  // Notification tracking - stores last seen timestamp for each category
+  const [lastSeen, setLastSeen] = useState(() => {
+    const saved = localStorage.getItem("bcc-last-seen")
+    return saved ? JSON.parse(saved) : {
+      reviews: Date.now(),
+      fitnessTests: Date.now(),
+      fixtures: Date.now(),
+      announcements: Date.now()
+    }
+  })
+
+  const [unreadCounts, setUnreadCounts] = useState({
+    reviews: 0,
+    fitnessTests: 0,
+    fixtures: 0,
+    announcements: 0,
+    total: 0
+  })
+
+  // Save lastSeen to localStorage whenever it changes
+  useEffect(() => {
+    localStorage.setItem("bcc-last-seen", JSON.stringify(lastSeen))
+  }, [lastSeen])
+
+  // Function to mark a category as seen
+  const markAsSeen = (category) => {
+    setLastSeen(prev => ({
+      ...prev,
+      [category]: Date.now()
+    }))
+  }
 
   // Apply dark mode class to html element
   useEffect(() => {
@@ -116,6 +148,55 @@ export const AppProvider = ({ children }) => {
 
     return () => unsubscribe()
   }, [userRole])
+
+  // Calculate unread counts whenever data changes
+  useEffect(() => {
+    if (loading) return
+
+    const counts = {
+      reviews: 0,
+      fitnessTests: 0,
+      fixtures: 0,
+      announcements: 0,
+      total: 0
+    }
+
+    // Count unread reviews (for players, only their own reviews; for coaches, all reviews)
+    if (userRole === "player" && currentPlayerId) {
+      counts.reviews = reviews.filter(r => {
+        const createdAt = r.timestamp ? new Date(r.timestamp).getTime() : 0
+        return r.playerId === currentPlayerId && createdAt > lastSeen.reviews
+      }).length
+    } else if (userRole === "coach") {
+      counts.reviews = reviews.filter(r => {
+        const createdAt = r.timestamp ? new Date(r.timestamp).getTime() : 0
+        return createdAt > lastSeen.reviews
+      }).length
+    }
+
+    // Count unread fitness tests (for players, only their own; for coaches, all)
+    if (userRole === "player" && currentPlayerId) {
+      counts.fitnessTests = fitnessTests.filter(t => {
+        const createdAt = t.date ? new Date(t.date).getTime() : 0
+        return t.playerId === currentPlayerId && createdAt > lastSeen.fitnessTests
+      }).length
+    } else if (userRole === "coach") {
+      counts.fitnessTests = fitnessTests.filter(t => {
+        const createdAt = t.date ? new Date(t.date).getTime() : 0
+        return createdAt > lastSeen.fitnessTests
+      }).length
+    }
+
+    // Count unread fixtures (for everyone)
+    counts.fixtures = fixtures.filter(f => {
+      const createdAt = f.createdAt ? new Date(f.createdAt).getTime() : 0
+      return createdAt > lastSeen.fixtures
+    }).length
+
+    counts.total = counts.reviews + counts.fitnessTests + counts.fixtures + counts.announcements
+
+    setUnreadCounts(counts)
+  }, [reviews, fitnessTests, fixtures, lastSeen, loading, userRole, currentPlayerId])
 
   const addPlayer = async (player) => {
     try {
@@ -317,7 +398,9 @@ export const AppProvider = ({ children }) => {
     currentPlayerId,
     setCurrentPlayerId,
     darkMode,
-    toggleDarkMode
+    toggleDarkMode,
+    unreadCounts,
+    markAsSeen
   }
 
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>

@@ -4,7 +4,12 @@ import { useApp } from "../contexts/AppContext"
 import { TableSkeleton } from "../components/Loading"
 
 function FitnessTests() {
-  const { players, fitnessTests, addFitnessTest, updateFitnessTest, deleteFitnessTest, loading, userRole, currentPlayerId } = useApp()
+  const { players, fitnessTests, addFitnessTest, updateFitnessTest, deleteFitnessTest, loading, userRole, currentPlayerId, markAsSeen } = useApp()
+  
+  // Mark fitness tests as seen when component mounts
+  useEffect(() => {
+    markAsSeen("fitnessTests")
+  }, [])
   
   const [formData, setFormData] = useState({
     playerId: "",

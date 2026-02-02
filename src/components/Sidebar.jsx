@@ -2,11 +2,12 @@ import { Link, useLocation } from "react-router-dom"
 import { LayoutDashboard, Users, Heart, CalendarDays, ClipboardCheck, Star, Trophy, LogOut, TrendingUp, Crosshair, BarChart3, Target, Bell, ChevronDown, ChevronRight, Menu, X, Moon, Sun, LineChart } from "lucide-react"
 import { useState, useEffect } from "react"
 import { useApp } from "../contexts/AppContext"
+import NotificationBadge from "./NotificationBadge"
 import logo from "../assets/bcc-logo.png"
 
 export default function Sidebar() {
   const location = useLocation()
-  const { userRole, setUserRole, setCurrentUser, setCurrentPlayerId, darkMode, toggleDarkMode } = useApp()
+  const { userRole, setUserRole, setCurrentUser, setCurrentPlayerId, darkMode, toggleDarkMode, unreadCounts } = useApp()
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const [expandedSections, setExpandedSections] = useState({
     team: true,
@@ -215,12 +216,13 @@ export default function Sidebar() {
                 <div className="space-y-0.5 mb-2">
                   {section.items.map(({ path, label, icon: Icon }) => {
                     const isActive = location.pathname === path
+                    const showBadge = path === "/announcements" && unreadCounts.total > 0
                     return (
                       <Link
                         key={path}
                         to={path}
                         onClick={() => setMobileMenuOpen(false)}
-                        className={`flex items-center gap-2.5 px-3 py-1.5 rounded-lg font-medium transition-all duration-200 text-xs ${
+                        className={`flex items-center gap-2.5 px-3 py-1.5 rounded-lg font-medium transition-all duration-200 text-xs relative ${
                           isActive
                             ? 'bg-accent text-white shadow-lg shadow-accent/50'
                             : 'hover:bg-white/10 text-white/70 hover:text-white'
@@ -228,6 +230,7 @@ export default function Sidebar() {
                       >
                         <Icon size={16} className={isActive ? 'animate-pulse' : ''} />
                         <span className="truncate">{label}</span>
+                        {showBadge && <NotificationBadge count={unreadCounts.total} />}
                       </Link>
                     )
                   })}

@@ -1,10 +1,15 @@
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Star, Search, MessageSquare, Calendar, Clock, User, Trash2, Edit, CheckCircle, X, Plus } from "lucide-react"
 import { useApp } from "../contexts/AppContext"
 import { TableSkeleton } from "../components/Loading"
 
 function Reviews() {
-  const { players, reviews, addReview, updateReview, deleteReview, loading, userRole, currentPlayerId } = useApp()
+  const { players, reviews, addReview, updateReview, deleteReview, loading, userRole, currentPlayerId, markAsSeen } = useApp()
+  
+  // Mark reviews as seen when component mounts
+  useEffect(() => {
+    markAsSeen("reviews")
+  }, [])
   
   const [selectedPlayer, setSelectedPlayer] = useState(null)
   const [searchTerm, setSearchTerm] = useState("")
@@ -211,8 +216,8 @@ function Reviews() {
 
       {/* Player Reviews Modal */}
       {showPlayerModal && selectedPlayer && (
-        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-2xl shadow-2xl max-w-5xl w-full max-h-[90vh] overflow-hidden flex flex-col">
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4 overflow-y-auto">
+          <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-2xl max-w-5xl w-full my-8 flex flex-col max-h-[calc(100vh-4rem)]">
             <div className="sticky top-0 bg-gradient-to-r from-purple-500 to-purple-600 p-6 border-b border-purple-700 flex items-center justify-between">
               <div>
                 <h2 className="text-2xl font-bold text-white">
@@ -310,13 +315,15 @@ function Reviews() {
                 <div>
                   <div className="flex items-center justify-between mb-6">
                     <h3 className="text-xl font-bold text-gray-800">Review History</h3>
-                    <button
-                      onClick={handleAddNewReview}
-                      className="flex items-center gap-2 bg-gradient-to-r from-purple-500 to-purple-600 text-white px-5 py-2.5 rounded-xl font-bold shadow-lg hover:shadow-xl hover:scale-[1.02] transition-all duration-300"
-                    >
-                      <Plus size={18} />
-                      Add New Review
-                    </button>
+                    {userRole === "coach" && (
+                      <button
+                        onClick={handleAddNewReview}
+                        className="flex items-center gap-2 bg-gradient-to-r from-purple-500 to-purple-600 text-white px-5 py-2.5 rounded-xl font-bold shadow-lg hover:shadow-xl hover:scale-[1.02] transition-all duration-300"
+                      >
+                        <Plus size={18} />
+                        Add New Review
+                      </button>
+                    )}
                   </div>
 
                   {getPlayerReviews(selectedPlayer.id).length === 0 ? (
@@ -352,20 +359,24 @@ function Reviews() {
                                   />
                                 ))}
                               </div>
-                              <button
-                                onClick={() => handleEdit(review)}
-                                className="p-2 hover:bg-blue-100 rounded-lg transition-colors"
-                                title="Edit review"
-                              >
-                                <Edit size={16} className="text-blue-600" />
-                              </button>
-                              <button
-                                onClick={() => handleDelete(review.id)}
-                                className="p-2 hover:bg-red-100 rounded-lg transition-colors"
-                                title="Delete review"
-                              >
-                                <Trash2 size={16} className="text-red-600" />
-                              </button>
+                              {userRole === "coach" && (
+                                <>
+                                  <button
+                                    onClick={() => handleEdit(review)}
+                                    className="p-2 hover:bg-blue-100 rounded-lg transition-colors"
+                                    title="Edit review"
+                                  >
+                                    <Edit size={16} className="text-blue-600" />
+                                  </button>
+                                  <button
+                                    onClick={() => handleDelete(review.id)}
+                                    className="p-2 hover:bg-red-100 rounded-lg transition-colors"
+                                    title="Delete review"
+                                  >
+                                    <Trash2 size={16} className="text-red-600" />
+                                  </button>
+                                </>
+                              )}
                             </div>
                           </div>
 

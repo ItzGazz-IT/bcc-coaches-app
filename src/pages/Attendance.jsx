@@ -5,7 +5,7 @@ import { collection, addDoc, onSnapshot, query, orderBy, deleteDoc, doc } from "
 import { db } from "../firebase/config"
 
 function Attendance() {
-  const { players } = useApp()
+  const { players, userRole } = useApp()
   const [sessions, setSessions] = useState([])
   const [showModal, setShowModal] = useState(false)
   const [expandedSession, setExpandedSession] = useState(null)
@@ -135,14 +135,16 @@ function Attendance() {
               </h1>
               <p className="text-sm md:text-base text-gray-600 hidden md:block">Track training sessions</p>
             </div>
-            <button
-              onClick={() => setShowModal(true)}
-              className="btn btn-primary inline-flex items-center gap-2 text-sm flex-shrink-0"
-            >
-              <Plus size={18} />
-              <span className="hidden sm:inline">New Session</span>
-              <span className="sm:hidden">Add</span>
-            </button>
+            {userRole === "coach" && (
+              <button
+                onClick={() => setShowModal(true)}
+                className="btn btn-primary inline-flex items-center gap-2 text-sm flex-shrink-0"
+              >
+                <Plus size={18} />
+                <span className="hidden sm:inline">New Session</span>
+                <span className="sm:hidden">Add</span>
+              </button>
+            )}
           </div>
         </div>
 
@@ -244,16 +246,18 @@ function Attendance() {
                           </div>
 
                           <div className="flex items-center gap-3">
-                            <button
-                              onClick={(e) => {
-                                e.stopPropagation()
-                                deleteSession(session.id)
-                              }}
-                              className="p-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-all hover:scale-110"
-                              title="Delete session"
-                            >
-                              <Trash2 size={18} />
-                            </button>
+                            {userRole === "coach" && (
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation()
+                                  deleteSession(session.id)
+                                }}
+                                className="p-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-all hover:scale-110"
+                                title="Delete session"
+                              >
+                                <Trash2 size={18} />
+                              </button>
+                            )}
                             <div className="text-right mr-4">
                               <div className="text-2xl font-black text-green-600">{stats.percentage}%</div>
                               <div className="text-xs text-gray-500">
