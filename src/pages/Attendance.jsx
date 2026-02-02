@@ -125,22 +125,23 @@ function Attendance() {
   }
 
   return (
-    <div className="flex-1 p-6 bg-gradient-to-br from-gray-50 via-white to-blue-50 min-h-screen overflow-y-auto">
+    <div className="flex-1 p-4 md:p-6 bg-gray-50 min-h-screen overflow-y-auto">
       <div className="max-w-7xl mx-auto">
-        <div className="mb-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-4xl font-black bg-gradient-to-r from-primary via-secondary to-accent bg-clip-text text-transparent mb-2">
-                Attendance Tracking
+        <div className="mb-4 md:mb-6">
+          <div className="flex items-start md:items-center justify-between gap-3">
+            <div className="flex-1">
+              <h1 className="text-2xl md:text-4xl font-black bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent mb-1">
+                Attendance
               </h1>
-              <p className="text-gray-600">Track player attendance for training sessions</p>
+              <p className="text-sm md:text-base text-gray-600 hidden md:block">Track training sessions</p>
             </div>
             <button
               onClick={() => setShowModal(true)}
-              className="bg-gradient-to-r from-blue-500 to-indigo-600 text-white px-6 py-3 rounded-xl font-bold shadow-lg hover:shadow-xl hover:scale-105 transition-all duration-300 inline-flex items-center gap-2"
+              className="btn btn-primary inline-flex items-center gap-2 text-sm flex-shrink-0"
             >
-              <Plus size={20} />
-              New Session
+              <Plus size={18} />
+              <span className="hidden sm:inline">New Session</span>
+              <span className="sm:hidden">Add</span>
             </button>
           </div>
         </div>

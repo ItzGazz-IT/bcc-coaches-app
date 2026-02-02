@@ -137,17 +137,17 @@ function PlayerStats() {
   }
 
   return (
-    <div className="min-h-screen overflow-y-auto p-6 bg-gradient-to-br from-gray-50 via-white to-blue-50 print:bg-white">
+    <div className="min-h-screen overflow-y-auto p-4 md:p-6 bg-gray-50 print:bg-white">
       <div className="max-w-7xl mx-auto">
-        <div className="mb-6 print:mb-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-4xl font-black bg-gradient-to-r from-primary via-secondary to-accent bg-clip-text text-transparent mb-2 print:text-gray-900">
-                Player Statistics
+        <div className="mb-4 md:mb-6 print:mb-4">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div className="flex-1">
+              <h1 className="text-2xl md:text-4xl font-black bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent mb-1 print:text-gray-900">
+                Player Stats
               </h1>
-              <p className="text-gray-600 print:text-sm">Season performance and analytics</p>
+              <p className="text-sm md:text-base text-gray-600 print:text-sm hidden md:block">Season performance and analytics</p>
             </div>
-            <div className="flex items-center gap-3 print:hidden">
+            <div className="flex items-center gap-2 print:hidden">
               <select
                 value={selectedTeam}
                 onChange={(e) => setSelectedTeam(e.target.value)}

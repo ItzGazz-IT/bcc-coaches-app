@@ -187,26 +187,26 @@ function FitnessTests() {
   const rankings = calculatePlayerRankings()
 
   return (
-    <div className="flex-1 p-6 bg-gradient-to-br from-gray-50 via-white to-blue-50 min-h-screen overflow-y-auto">
+    <div className="flex-1 p-4 md:p-6 bg-gray-50 min-h-screen overflow-y-auto">
       <div className="max-w-7xl mx-auto">
-        <div className="mb-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-4xl font-black bg-gradient-to-r from-primary via-secondary to-accent bg-clip-text text-transparent mb-2">
-                Fitness Rankings
+        <div className="mb-4 md:mb-6">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div className="flex-1">
+              <h1 className="text-2xl md:text-4xl font-black bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent mb-1">
+                Fitness Tests
               </h1>
-              <p className="text-gray-600">Overall fitness performance rankings</p>
+              <p className="text-sm md:text-base text-gray-600 hidden md:block">Overall fitness performance rankings</p>
             </div>
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2">
               <select
                 value={filterDate}
                 onChange={(e) => setFilterDate(e.target.value)}
-                className="px-4 py-2.5 border-2 border-gray-200 rounded-xl focus:border-purple-500 focus:ring-2 focus:ring-purple-500/20 outline-none transition-all bg-white"
+                className="px-3 py-2 text-sm border-2 border-gray-200 rounded-lg focus:border-purple-500 focus:ring-2 focus:ring-purple-500/20 outline-none transition-all bg-white"
               >
                 <option value="all">All Dates</option>
                 {uniqueDates.map(date => (
                   <option key={date} value={date}>
-                    {new Date(date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}
+                    {new Date(date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })}
                   </option>
                 ))}
               </select>

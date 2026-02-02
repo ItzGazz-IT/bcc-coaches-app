@@ -92,13 +92,13 @@ function Reviews() {
   }
 
   return (
-    <div className="flex-1 p-6 bg-gradient-to-br from-gray-50 via-white to-purple-50 min-h-screen overflow-y-auto">
+    <div className="flex-1 p-4 md:p-6 bg-gray-50 min-h-screen overflow-y-auto">
       <div className="max-w-7xl mx-auto">
-        <div className="mb-6">
-          <h1 className="text-4xl font-black bg-gradient-to-r from-primary via-secondary to-accent bg-clip-text text-transparent mb-2">
-            Player Reviews
+        <div className="mb-4 md:mb-6">
+          <h1 className="text-2xl md:text-4xl font-black bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent mb-1">
+            Reviews
           </h1>
-          <p className="text-gray-600">Record and track player performance reviews</p>
+          <p className="text-sm md:text-base text-gray-600 hidden md:block">Player performance reviews</p>
         </div>
 
         {showSuccess && (

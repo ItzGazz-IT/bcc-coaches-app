@@ -316,7 +316,7 @@ function MatchCenter() {
   }
 
   return (
-    <div className="flex-1 p-6 bg-gradient-to-br from-gray-50 via-white to-green-50 min-h-screen overflow-y-auto">
+    <div className="flex-1 p-4 md:p-6 bg-gray-50 min-h-screen overflow-y-auto">
       {liveMatch ? (
         // Live Match Tracking View
         <div className="max-w-6xl mx-auto">

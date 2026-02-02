@@ -138,15 +138,15 @@ function Announcements() {
   const normalAnnouncements = announcements.filter(a => a.priority === "normal")
 
   return (
-    <div className="flex-1 p-4 md:p-6 bg-gradient-to-br from-gray-50 via-white to-indigo-50 h-screen overflow-auto">
+    <div className="flex-1 p-4 md:p-6 bg-gray-50 h-screen overflow-auto">
       <div className="max-w-5xl mx-auto">
-        <div className="mb-6">
-          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-            <div>
-              <h1 className="text-3xl md:text-4xl font-black bg-gradient-to-r from-primary via-secondary to-accent bg-clip-text text-transparent mb-2">
-                Team Announcements
+        <div className="mb-4 md:mb-6">
+          <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3">
+            <div className="flex-1">
+              <h1 className="text-2xl md:text-4xl font-black bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent mb-1">
+                Announcements
               </h1>
-              <p className="text-sm md:text-base text-gray-600">Important updates and team news</p>
+              <p className="text-sm md:text-base text-gray-600 hidden md:block">Team updates and news</p>
             </div>
             <button
               onClick={() => {

@@ -107,15 +107,15 @@ function SeasonGoals() {
   }
 
   return (
-    <div className="min-h-screen overflow-y-auto p-6 bg-gradient-to-br from-gray-50 via-white to-purple-50">
+    <div className="min-h-screen overflow-y-auto p-4 md:p-6 bg-gray-50">
       <div className="max-w-7xl mx-auto">
-        <div className="mb-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-4xl font-black bg-gradient-to-r from-primary via-secondary to-accent bg-clip-text text-transparent mb-2">
-                Season Goals & Objectives
+        <div className="mb-4 md:mb-6">
+          <div className="flex items-start md:items-center justify-between gap-3">
+            <div className="flex-1">
+              <h1 className="text-2xl md:text-4xl font-black bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent mb-1">
+                Season Goals
               </h1>
-              <p className="text-gray-600">Track team objectives and progress throughout the season</p>
+              <p className="text-sm md:text-base text-gray-600 hidden md:block">Track team objectives and progress</p>
             </div>
             <button
               onClick={() => {
@@ -130,10 +130,11 @@ function SeasonGoals() {
                 })
                 setShowModal(true)
               }}
-              className="btn btn-purple flex items-center gap-2 text-sm md:text-base"
+              className="btn btn-purple flex items-center gap-2 text-sm flex-shrink-0"
             >
-              <Plus size={20} />
-              Add Goal
+              <Plus size={18} />
+              <span className="hidden sm:inline">Add Goal</span>
+              <span className="sm:hidden">Add</span>
             </button>
           </div>
         </div>
