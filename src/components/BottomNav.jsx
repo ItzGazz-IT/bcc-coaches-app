@@ -15,6 +15,7 @@ export default function BottomNav() {
     localStorage.removeItem("bcc-user")
     localStorage.removeItem("bcc-role")
     localStorage.removeItem("bcc-player-id")
+    localStorage.removeItem("bcc-login-expiry")
     setUserRole(null)
     setCurrentUser(null)
     setCurrentPlayerId(null)

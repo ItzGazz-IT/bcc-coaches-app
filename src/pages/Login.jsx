@@ -26,8 +26,12 @@ export default function Login() {
       const coach = COACHES.find(c => c.username === username && c.password === password)
       
       if (coach) {
+        const expiryDate = new Date()
+        expiryDate.setDate(expiryDate.getDate() + 7) // 7 days from now
+        
         localStorage.setItem("bcc-user", username)
         localStorage.setItem("bcc-role", "coach")
+        localStorage.setItem("bcc-login-expiry", expiryDate.toISOString())
         setUserRole("coach")
         setCurrentUser(username)
         setCurrentPlayerId(null)
@@ -40,9 +44,13 @@ export default function Login() {
       const player = players.find(p => p.username === username && p.password === password)
       
       if (player) {
+        const expiryDate = new Date()
+        expiryDate.setDate(expiryDate.getDate() + 7) // 7 days from now
+        
         localStorage.setItem("bcc-user", username)
         localStorage.setItem("bcc-role", "player")
         localStorage.setItem("bcc-player-id", player.id)
+        localStorage.setItem("bcc-login-expiry", expiryDate.toISOString())
         setUserRole("player")
         setCurrentUser(username)
         setCurrentPlayerId(player.id)

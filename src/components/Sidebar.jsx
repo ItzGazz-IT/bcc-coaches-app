@@ -17,6 +17,27 @@ export default function Sidebar() {
   useEffect(() => {
     const role = localStorage.getItem("bcc-role")
     const playerId = localStorage.getItem("bcc-player-id")
+    const loginExpiry = localStorage.getItem("bcc-login-expiry")
+    
+    // Check if login has expired
+    if (loginExpiry) {
+      const expiryDate = new Date(loginExpiry)
+      const now = new Date()
+      
+      if (now > expiryDate) {
+        // Login expired, clear everything
+        localStorage.removeItem("bcc-user")
+        localStorage.removeItem("bcc-role")
+        localStorage.removeItem("bcc-player-id")
+        localStorage.removeItem("bcc-login-expiry")
+        setUserRole(null)
+        setCurrentUser(null)
+        setCurrentPlayerId(null)
+        window.location.href = "/"
+        return
+      }
+    }
+    
     if (role) setUserRole(role)
     if (playerId) setCurrentPlayerId(playerId)
   }, [])
@@ -32,6 +53,7 @@ export default function Sidebar() {
     localStorage.removeItem("bcc-user")
     localStorage.removeItem("bcc-role")
     localStorage.removeItem("bcc-player-id")
+    localStorage.removeItem("bcc-login-expiry")
     setUserRole(null)
     setCurrentUser(null)
     setCurrentPlayerId(null)
