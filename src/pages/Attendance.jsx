@@ -11,6 +11,7 @@ function Attendance() {
   const [expandedSession, setExpandedSession] = useState(null)
   const [newSession, setNewSession] = useState({
     date: new Date().toISOString().split('T')[0],
+    time: "18:00",
     type: "Training",
     notes: ""
   })
@@ -48,6 +49,7 @@ function Attendance() {
 
       setNewSession({
         date: new Date().toISOString().split('T')[0],
+        time: "18:00",
         type: "Training",
         notes: ""
       })
@@ -59,14 +61,43 @@ function Attendance() {
     }
   }
 
+  const getAttendanceStatus = (sessionTime) => {
+    // sessionTime format: "HH:mm"
+    const [sessionHour, sessionMinute] = sessionTime.split(':').map(Number)
+    const sessionStartMinutes = sessionHour * 60 + sessionMinute
+    const onTimeEndMinutes = sessionStartMinutes + 45 // 18:00 + 45 mins = 18:45
+
+    const now = new Date()
+    const currentHour = now.getHours()
+    const currentMinute = now.getMinutes()
+    const currentMinutes = currentHour * 60 + currentMinute
+
+    if (currentMinutes <= onTimeEndMinutes) {
+      return "on-time"
+    } else {
+      return "late"
+    }
+  }
+
   const toggleAttendance = async (sessionId, playerId, currentStatus) => {
     const session = sessions.find(s => s.id === sessionId)
     if (!session) return
 
-    const newStatus = currentStatus === "present" ? "absent" : "present"
+    let newStatus
+    if (currentStatus === "absent") {
+      // Mark as present - determine if on-time or late
+      newStatus = getAttendanceStatus(session.time)
+    } else {
+      // Toggle between on-time and late if already marked, or go back to absent
+      newStatus = "absent"
+    }
+
     const updatedAttendance = {
       ...session.attendance,
-      [playerId]: newStatus
+      [playerId]: {
+        status: newStatus,
+        timestamp: new Date().toISOString()
+      }
     }
 
     try {
@@ -90,34 +121,60 @@ function Attendance() {
   }
 
   const getAttendanceStats = (session) => {
-    if (!session.attendance) return { present: 0, absent: 0, total: 0 }
+    if (!session.attendance) return { present: 0, late: 0, absent: 0, total: 0 }
     
     const attendanceValues = Object.values(session.attendance)
-    const present = attendanceValues.filter(status => status === "present").length
-    const absent = attendanceValues.filter(status => status === "absent").length
+    const onTime = attendanceValues.filter(att => {
+      const status = typeof att === 'object' ? att.status : att
+      return status === "on-time"
+    }).length
+    const late = attendanceValues.filter(att => {
+      const status = typeof att === 'object' ? att.status : att
+      return status === "late"
+    }).length
+    const absent = attendanceValues.filter(att => {
+      const status = typeof att === 'object' ? att.status : att
+      return status === "absent"
+    }).length
+    const present = onTime + late
     
     return {
-      present,
+      onTime,
+      late,
       absent,
+      present,
       total: attendanceValues.length,
       percentage: attendanceValues.length > 0 ? Math.round((present / attendanceValues.length) * 100) : 0
     }
   }
 
   const getPlayerAttendanceHistory = (playerId) => {
-    let present = 0
+    let onTime = 0
+    let late = 0
     let total = 0
 
     sessions.forEach(session => {
       if (session.attendance && session.attendance[playerId]) {
-        total++
-        if (session.attendance[playerId] === "present") {
-          present++
+        const att = session.attendance[playerId]
+        const status = typeof att === 'object' ? att.status : att
+        
+        if (status !== "absent") {
+          total++
+          if (status === "on-time") {
+            onTime++
+          } else if (status === "late") {
+            late++
+          }
+        } else {
+          total++
         }
       }
     })
 
+    const present = onTime + late
     return {
+      onTime,
+      late,
       present,
       total,
       percentage: total > 0 ? Math.round((present / total) * 100) : 0
@@ -261,7 +318,7 @@ function Attendance() {
                             <div className="text-right mr-4">
                               <div className="text-2xl font-black text-green-600">{stats.percentage}%</div>
                               <div className="text-xs text-gray-500">
-                                {stats.present}/{stats.total} present
+                                {stats.onTime} on-time, {stats.late} late
                               </div>
                             </div>
                             {isExpanded ? <ChevronUp size={20} /> : <ChevronDown size={20} />}
@@ -274,33 +331,74 @@ function Attendance() {
                           <h4 className="font-bold text-gray-700 mb-3">Player Attendance</h4>
                           <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
                             {players.map(player => {
-                              const status = session.attendance?.[player.id] || "absent"
+                              const att = session.attendance?.[player.id]
+                              const status = typeof att === 'object' ? att?.status : att
+                              const timestamp = typeof att === 'object' ? att?.timestamp : null
                               const playerStats = getPlayerAttendanceHistory(player.id)
+
+                              const getStatusStyles = (status) => {
+                                switch(status) {
+                                  case "on-time":
+                                    return "border-green-300 bg-green-50 hover:bg-green-100"
+                                  case "late":
+                                    return "border-yellow-300 bg-yellow-50 hover:bg-yellow-100"
+                                  default:
+                                    return "border-gray-200 bg-white hover:bg-gray-50"
+                                }
+                              }
+
+                              const getStatusIcon = (status) => {
+                                switch(status) {
+                                  case "on-time":
+                                    return <CheckCircle className="text-green-600" size={18} />
+                                  case "late":
+                                    return <Clock className="text-yellow-600" size={18} />
+                                  default:
+                                    return <XCircle className="text-gray-400" size={18} />
+                                }
+                              }
+
+                              const getStatusLabel = (status) => {
+                                switch(status) {
+                                  case "on-time":
+                                    return "On-Time"
+                                  case "late":
+                                    return "Late"
+                                  default:
+                                    return "Absent"
+                                }
+                              }
 
                               return (
                                 <button
                                   key={player.id}
                                   onClick={() => toggleAttendance(session.id, player.id, status)}
-                                  className={`p-3 rounded-lg border-2 transition-all text-left ${
-                                    status === "present"
-                                      ? "border-green-300 bg-green-50 hover:bg-green-100"
-                                      : "border-gray-200 bg-white hover:bg-gray-50"
-                                  }`}
+                                  className={`p-3 rounded-lg border-2 transition-all text-left ${getStatusStyles(status)}`}
                                 >
                                   <div className="flex items-center justify-between">
                                     <div className="flex items-center gap-2">
-                                      {status === "present" ? (
-                                        <CheckCircle className="text-green-600" size={18} />
-                                      ) : (
-                                        <XCircle className="text-gray-400" size={18} />
-                                      )}
-                                      <span className="font-semibold text-gray-800">
-                                        {player.firstName} {player.lastName}
+                                      {getStatusIcon(status)}
+                                      <div>
+                                        <span className="font-semibold text-gray-800 block">
+                                          {player.firstName} {player.lastName}
+                                        </span>
+                                        {timestamp && (
+                                          <span className="text-xs text-gray-500">
+                                            {new Date(timestamp).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })}
+                                          </span>
+                                        )}
+                                      </div>
+                                    </div>
+                                    <div className="text-right">
+                                      <span className="text-xs font-semibold block" style={{
+                                        color: status === "on-time" ? "#16a34a" : status === "late" ? "#ca8a04" : "#6b7280"
+                                      }}>
+                                        {getStatusLabel(status)}
+                                      </span>
+                                      <span className="text-xs text-gray-500">
+                                        {playerStats.percentage}% overall
                                       </span>
                                     </div>
-                                    <span className="text-xs text-gray-500">
-                                      {playerStats.percentage}% overall
-                                    </span>
                                   </div>
                                 </button>
                               )
@@ -348,6 +446,20 @@ function Attendance() {
                     className="w-full px-4 py-2.5 border-2 border-gray-200 rounded-xl focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 outline-none transition-all appearance-none"
                     style={{ colorScheme: 'light' }}
                   />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">
+                    Session Start Time *
+                  </label>
+                  <input
+                    type="time"
+                    required
+                    value={newSession.time}
+                    onChange={(e) => setNewSession({...newSession, time: e.target.value})}
+                    className="w-full px-4 py-2.5 border-2 border-gray-200 rounded-xl focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 outline-none transition-all"
+                  />
+                  <p className="text-xs text-gray-500 mt-1">Players marked on-time from this time until 45 minutes later</p>
                 </div>
 
                 <div>
