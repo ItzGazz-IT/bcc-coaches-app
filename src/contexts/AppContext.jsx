@@ -88,7 +88,11 @@ export const AppProvider = ({ children }) => {
         id: doc.id,
         ...doc.data()
       }))
+      console.log("Players loaded:", playersData) // DEBUG
       setPlayers(playersData)
+      setLoading(false)
+    }, (error) => {
+      console.error("Error loading players:", error) // DEBUG
       setLoading(false)
     })
 
