@@ -105,7 +105,7 @@ function Fixtures() {
               </h1>
               <p className="text-sm md:text-base text-gray-600 hidden md:block">Team fixtures and match results</p>
             </div>
-            {userRole === "coach" && (
+            {(userRole === "coach" || userRole === "super-admin") && (
               <button
                 onClick={() => {
                   setShowModal(true)
@@ -216,7 +216,7 @@ function Fixtures() {
                           )}
                         </div>
                       </div>
-                      {userRole === "coach" && (
+                      {(userRole === "coach" || userRole === "super-admin") && (
                         <div className="flex items-center gap-2">
                           <button
                             onClick={() => handleEdit(fixture)}
@@ -283,7 +283,7 @@ function Fixtures() {
                           )}
                         </div>
                       </div>
-                      {userRole === "coach" && (
+                      {(userRole === "coach" || userRole === "super-admin") && (
                         <div className="flex items-center gap-2">
                           <button
                             onClick={() => handleEdit(fixture)}

@@ -32,7 +32,7 @@ function Reviews() {
   }
 
   const handleAddNewReview = () => {
-    if (userRole !== "coach") return
+    if (userRole !== "coach" && userRole !== "super-admin") return
     setShowReviewForm(true)
     setEditingReview(null)
     setFormData({
@@ -45,7 +45,7 @@ function Reviews() {
 
   const handleSubmit = async (e) => {
     e.preventDefault()
-    if (userRole !== "coach") return
+    if (userRole !== "coach" && userRole !== "super-admin") return
     if (selectedPlayer) {
       const now = new Date()
       const reviewData = {
@@ -72,7 +72,7 @@ function Reviews() {
   }
 
   const handleEdit = (review) => {
-    if (userRole !== "coach") return
+    if (userRole !== "coach" && userRole !== "super-admin") return
     setEditingReview(review)
     setFormData({
       rating: review.rating,
@@ -84,7 +84,7 @@ function Reviews() {
   }
 
   const handleDelete = async (id) => {
-    if (userRole !== "coach") return
+    if (userRole !== "coach" && userRole !== "super-admin") return
     if (window.confirm("Are you sure you want to delete this review?")) {
       await deleteReview(id)
     }
@@ -319,7 +319,7 @@ function Reviews() {
                 <div>
                   <div className="flex items-center justify-between mb-6">
                     <h3 className="text-xl font-bold text-gray-800">Review History</h3>
-                    {userRole === "coach" && (
+                    {(userRole === "coach" || userRole === "super-admin") && (
                       <button
                         onClick={handleAddNewReview}
                         className="flex items-center gap-2 bg-gradient-to-r from-purple-500 to-purple-600 text-white px-5 py-2.5 rounded-xl font-bold shadow-lg hover:shadow-xl hover:scale-[1.02] transition-all duration-300"
@@ -363,7 +363,7 @@ function Reviews() {
                                   />
                                 ))}
                               </div>
-                              {userRole === "coach" && (
+                              {(userRole === "coach" || userRole === "super-admin") && (
                                 <>
                                   <button
                                     onClick={() => handleEdit(review)}

@@ -81,7 +81,7 @@ function AttendanceAdmin() {
     }
   }
 
-  if (userRole !== "coach") {
+  if (userRole !== "coach" && userRole !== "super-admin") {
     return (
       <div className="flex-1 p-6 bg-gray-50 min-h-screen flex items-center justify-center">
         <div className="text-center">

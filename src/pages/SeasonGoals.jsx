@@ -209,7 +209,7 @@ function SeasonGoals() {
                             <p className="text-sm text-gray-500 italic">{goal.description}</p>
                           )}
                         </div>
-                        {userRole === "coach" && (
+                        {(userRole === "coach" || userRole === "super-admin") && (
                           <div className="flex items-center gap-2">
                             <button
                               onClick={() => handleEdit(goal)}

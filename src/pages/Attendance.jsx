@@ -204,7 +204,7 @@ function Attendance() {
               </h1>
               <p className="text-sm md:text-base text-gray-600 hidden md:block">Track training sessions</p>
             </div>
-            {userRole === "coach" && (
+            {(userRole === "coach" || userRole === "super-admin") && (
               <button
                 onClick={() => setShowModal(true)}
                 className="btn btn-primary inline-flex items-center gap-2 text-sm flex-shrink-0"
@@ -315,7 +315,7 @@ function Attendance() {
                           </div>
 
                           <div className="flex items-center gap-3">
-                            {userRole === "coach" && (
+                            {(userRole === "coach" || userRole === "super-admin") && (
                               <button
                                 onClick={(e) => {
                                   e.stopPropagation()

@@ -155,7 +155,7 @@ function Announcements() {
               </h1>
               <p className="text-sm md:text-base text-gray-600 hidden md:block">Team updates and news</p>
             </div>
-            {userRole === "coach" && (
+            {(userRole === "coach" || userRole === "super-admin") && (
               <button
                 onClick={() => {
                   setEditingAnnouncement(null)
@@ -257,7 +257,7 @@ function Announcements() {
                             <p className="text-xs text-white/80 mt-1">{announcement.team}</p>
                           </div>
                         </div>
-                        {userRole === "coach" && (
+                        {(userRole === "coach" || userRole === "super-admin") && (
                           <div className="flex items-center gap-2">
                             <button
                               onClick={() => handleEdit(announcement)}

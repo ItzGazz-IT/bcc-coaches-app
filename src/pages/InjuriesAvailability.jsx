@@ -308,7 +308,7 @@ function InjuriesAvailability() {
                           <Edit size={16} className="text-blue-600" />
                         </button>
 
-                        {userRole === "coach" && (
+                        {(userRole === "coach" || userRole === "super-admin") && (
                           <button
                             onClick={() => deleteInjury(injury.id)}
                             className="p-2 hover:bg-red-100 rounded-lg transition-colors"
@@ -358,7 +358,7 @@ function InjuriesAvailability() {
               </div>
 
               <form onSubmit={handleSubmit} className="p-6 space-y-4 overflow-y-auto flex-1">
-                {userRole === "coach" ? (
+                {(userRole === "coach" || userRole === "super-admin") ? (
                   <div>
                     <label className="block text-sm font-semibold text-gray-700 mb-2">
                       Player *

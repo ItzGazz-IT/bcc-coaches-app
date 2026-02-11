@@ -237,7 +237,7 @@ function FitnessTests() {
                     {new Date(date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })}                  </option>
                 ))}
               </select>
-              {userRole === "coach" && (
+              {(userRole === "coach" || userRole === "super-admin") && (
                 <button
                   onClick={() => {
                     setFormData({
