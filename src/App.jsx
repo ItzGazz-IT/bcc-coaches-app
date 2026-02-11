@@ -1,6 +1,7 @@
 import { HashRouter, Routes, Route } from "react-router-dom"
 import { AppProvider } from "./contexts/AppContext"
 import Login from "./pages/Login"
+import InitializeCoaches from "./pages/InitializeCoaches"
 import Dashboard from "./pages/Dashboard"
 import Players from "./pages/Players"
 import CoachesManager from "./pages/CoachesManager"
@@ -27,6 +28,7 @@ export default function App() {
       <HashRouter>
         <Routes>
           <Route path="/" element={<Login />} />
+          <Route path="/init-coaches" element={<InitializeCoaches />} />
 
           {[
             ["dashboard", Dashboard],
