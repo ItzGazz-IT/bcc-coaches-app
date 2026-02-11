@@ -75,7 +75,8 @@ export default function Sidebar() {
       items: [
         { path: "/players", label: "Players", icon: Users },
         { path: "/injuries", label: "Injuries", icon: Heart },
-        { path: "/attendance", label: "Attendance", icon: ClipboardCheck }
+        { path: "/attendance", label: "Attendance", icon: ClipboardCheck },
+        { path: "/attendance-admin", label: "Manage Attendance", icon: ClipboardCheck }
       ]
     },
     {

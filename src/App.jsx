@@ -5,6 +5,7 @@ import Dashboard from "./pages/Dashboard"
 import Players from "./pages/Players"
 import Calendar from "./pages/Calendar"
 import Attendance from "./pages/Attendance"
+import AttendanceAdmin from "./pages/AttendanceAdmin"
 import Reviews from "./pages/Reviews"
 import InjuriesAvailability from "./pages/InjuriesAvailability"
 import FitnessTests from "./pages/FitnessTests"
@@ -36,6 +37,7 @@ export default function App() {
             ["announcements", Announcements],
             ["calendar", Calendar],
             ["attendance", Attendance],
+            ["attendance-admin", AttendanceAdmin],
             ["reviews", Reviews],
             ["injuries", InjuriesAvailability],
             ["nav-settings", NavSettings],
