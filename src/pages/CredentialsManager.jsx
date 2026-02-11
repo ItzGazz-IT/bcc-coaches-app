@@ -1,7 +1,7 @@
 import { useState } from "react"
-import { Send, Phone, Copy, RefreshCw, AlertCircle, CheckCircle } from "lucide-react"
+import { Send, Phone, Copy, RefreshCw, AlertCircle, CheckCircle, Zap } from "lucide-react"
 import { useApp } from "../contexts/AppContext"
-import { createWhatsAppMessage, generateWhatsAppLink, generatePassword } from "../utils/credentialUtils"
+import { createWhatsAppMessage, generateWhatsAppLink, generatePassword, generateUsername } from "../utils/credentialUtils"
 import { doc, updateDoc } from "firebase/firestore"
 import { db } from "../firebase/config"
 
@@ -12,6 +12,7 @@ function CredentialsManager() {
   const [copiedId, setCopiedId] = useState(null)
   const [message, setMessage] = useState({ type: "", text: "" })
   const [loadingId, setLoadingId] = useState(null)
+  const [bulkLoading, setBulkLoading] = useState(false)
 
   if (userRole !== "coach") {
     return (
@@ -72,17 +73,73 @@ function CredentialsManager() {
     }
   }
 
+  const handleBulkGenerate = async () => {
+    const playersNeedingCredentials = players.filter(p => !p.username || !p.password)
+    
+    if (playersNeedingCredentials.length === 0) {
+      setMessage({ type: "info", text: "All players already have credentials!" })
+      return
+    }
+
+    if (!window.confirm(`Generate credentials for ${playersNeedingCredentials.length} players? This action cannot be undone.`)) {
+      return
+    }
+
+    setBulkLoading(true)
+    let successCount = 0
+    let errorCount = 0
+
+    try {
+      for (const player of playersNeedingCredentials) {
+        try {
+          const username = generateUsername(player.firstName, player.lastName)
+          const password = generatePassword(10)
+          
+          await updateDoc(doc(db, "players", player.id), {
+            username: username,
+            password: password
+          })
+          successCount++
+        } catch (error) {
+          console.error(`Failed to update ${player.firstName} ${player.lastName}:`, error)
+          errorCount++
+        }
+      }
+
+      setMessage({ 
+        type: "success", 
+        text: `✓ Generated credentials for ${successCount} players${errorCount > 0 ? ` (${errorCount} failed)` : ''}` 
+      })
+    } catch (error) {
+      console.error("Bulk generation error:", error)
+      setMessage({ type: "error", text: "Bulk generation failed" })
+    } finally {
+      setBulkLoading(false)
+      setTimeout(() => setMessage({ type: "", text: "" }), 3000)
+    }
+  }
+
   const teamOptions = ["All", ...new Set(players.map(p => p.team))]
 
   return (
     <div className="flex-1 p-4 md:p-6 bg-gray-50 min-h-screen overflow-y-auto">
       <div className="max-w-6xl mx-auto">
         {/* Header */}
-        <div className="mb-6">
-          <h1 className="text-3xl font-black bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent mb-2">
-            Player Credentials
-          </h1>
-          <p className="text-gray-600">Manage login credentials and send via WhatsApp</p>
+        <div className="mb-6 flex flex-col md:flex-row md:items-end md:justify-between gap-4">
+          <div>
+            <h1 className="text-3xl font-black bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent mb-2">
+              Player Credentials
+            </h1>
+            <p className="text-gray-600">Manage login credentials and send via WhatsApp</p>
+          </div>
+          <button
+            onClick={handleBulkGenerate}
+            disabled={bulkLoading || players.filter(p => !p.username || !p.password).length === 0}
+            className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 disabled:from-gray-400 disabled:to-gray-400 disabled:cursor-not-allowed text-white px-6 py-2.5 rounded-lg font-bold shadow-md hover:shadow-lg transition-all flex items-center gap-2 whitespace-nowrap"
+          >
+            <Zap size={18} />
+            {bulkLoading ? "Generating..." : "Generate All"}
+          </button>
         </div>
 
         {/* Message */}
@@ -90,10 +147,14 @@ function CredentialsManager() {
           <div className={`mb-4 p-4 rounded-xl border flex items-center gap-3 ${
             message.type === "success" 
               ? "bg-green-50 border-green-200 text-green-800"
-              : "bg-red-50 border-red-200 text-red-800"
+              : message.type === "error"
+              ? "bg-red-50 border-red-200 text-red-800"
+              : "bg-blue-50 border-blue-200 text-blue-800"
           }`}>
             {message.type === "success" ? (
               <CheckCircle size={20} />
+            ) : message.type === "error" ? (
+              <AlertCircle size={20} />
             ) : (
               <AlertCircle size={20} />
             )}
