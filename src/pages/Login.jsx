@@ -6,7 +6,8 @@ import { useApp } from "../contexts/AppContext"
 
 const COACHES = [
   { username: "Goisto", password: "Goisto@BCC26" },
-  { username: "Gareth", password: "Gareth@BCC26" }
+  { username: "Gareth", password: "Gareth@BCC26" },
+  { username: "Davie", password: "Davie@BCC26" }
 ]
 
 export default function Login() {
