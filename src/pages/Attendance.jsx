@@ -79,6 +79,18 @@ function Attendance() {
     }
   }
 
+  const getDefaultTimeForDate = (dateString) => {
+    // Check if date is Tuesday (2), Wednesday (3), or Thursday (4)
+    const date = new Date(dateString)
+    const dayOfWeek = date.getDay()
+    
+    // Sunday=0, Monday=1, Tuesday=2, Wednesday=3, Thursday=4, Friday=5, Saturday=6
+    if (dayOfWeek === 2 || dayOfWeek === 3 || dayOfWeek === 4) {
+      return "18:00"
+    }
+    return "18:00" // Default to 18:00 anyway
+  }
+
   const toggleAttendance = async (sessionId, playerId, currentStatus) => {
     const session = sessions.find(s => s.id === sessionId)
     if (!session) return
@@ -442,7 +454,11 @@ function Attendance() {
                     type="date"
                     required
                     value={newSession.date}
-                    onChange={(e) => setNewSession({...newSession, date: e.target.value})}
+                    onChange={(e) => {
+                      const selectedDate = e.target.value
+                      const defaultTime = getDefaultTimeForDate(selectedDate)
+                      setNewSession({...newSession, date: selectedDate, time: defaultTime})
+                    }}
                     className="w-full px-4 py-2.5 border-2 border-gray-200 rounded-xl focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 outline-none transition-all appearance-none"
                     style={{ colorScheme: 'light' }}
                   />
@@ -459,7 +475,10 @@ function Attendance() {
                     onChange={(e) => setNewSession({...newSession, time: e.target.value})}
                     className="w-full px-4 py-2.5 border-2 border-gray-200 rounded-xl focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 outline-none transition-all"
                   />
-                  <p className="text-xs text-gray-500 mt-1">Players marked on-time from this time until 45 minutes later</p>
+                  <p className="text-xs text-gray-500 mt-1">
+                    <span className="block">Players marked on-time from this time until 45 minutes later</span>
+                    <span className="block mt-1 font-semibold">✓ Auto-set to 18:00 on Tue/Wed/Thu</span>
+                  </p>
                 </div>
 
                 <div>
