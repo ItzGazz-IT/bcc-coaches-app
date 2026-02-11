@@ -3,6 +3,7 @@ import { AppProvider } from "./contexts/AppContext"
 import Login from "./pages/Login"
 import Dashboard from "./pages/Dashboard"
 import Players from "./pages/Players"
+import CoachesManager from "./pages/CoachesManager"
 import CredentialsManager from "./pages/CredentialsManager"
 import Calendar from "./pages/Calendar"
 import Attendance from "./pages/Attendance"
@@ -30,6 +31,7 @@ export default function App() {
           {[
             ["dashboard", Dashboard],
             ["players", Players],
+            ["coaches", CoachesManager],
             ["credentials", CredentialsManager],
             ["fitness", FitnessTests],
             ["fixtures", Fixtures],

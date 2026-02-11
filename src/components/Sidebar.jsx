@@ -1,5 +1,5 @@
 import { Link, useLocation } from "react-router-dom"
-import { LayoutDashboard, Users, Heart, CalendarDays, ClipboardCheck, Star, Trophy, LogOut, TrendingUp, Crosshair, BarChart3, Target, Bell, ChevronDown, ChevronRight, Menu, X, Moon, Sun, LineChart, Key } from "lucide-react"
+import { LayoutDashboard, Users, Heart, CalendarDays, ClipboardCheck, Star, Trophy, LogOut, TrendingUp, Crosshair, BarChart3, Target, Bell, ChevronDown, ChevronRight, Menu, X, Moon, Sun, LineChart, Key, Settings } from "lucide-react"
 import { useState, useEffect } from "react"
 import { useApp } from "../contexts/AppContext"
 import NotificationBadge from "./NotificationBadge"
@@ -74,6 +74,7 @@ export default function Sidebar() {
       key: "team",
       items: [
         { path: "/players", label: "Players", icon: Users },
+        ...(userRole === "super-admin" ? [{ path: "/coaches", label: "Coaches", icon: Settings }] : []),
         { path: "/credentials", label: "Credentials", icon: Key },
         { path: "/injuries", label: "Injuries", icon: Heart },
         { path: "/attendance", label: "Attendance", icon: ClipboardCheck },

@@ -1,39 +1,57 @@
 import logo from "../assets/bcc-logo.png"
 import { useNavigate } from "react-router-dom"
 import { Lock, User, Shield, ArrowRight, AlertCircle, Users as UsersIcon } from "lucide-react"
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { useApp } from "../contexts/AppContext"
-
-const COACHES = [
-  { username: "Goisto", password: "Goisto@BCC26" },
-  { username: "Gareth", password: "Gareth@BCC26" },
-  { username: "Davie", password: "Davie@BCC26" }
-]
+import { collection, onSnapshot } from "firebase/firestore"
+import { db } from "../firebase/config"
 
 export default function Login() {
   const navigate = useNavigate()
   const { setUserRole, setCurrentUser, setCurrentPlayerId, players } = useApp()
+  const [coaches, setCoaches] = useState([])
   const [username, setUsername] = useState("")
   const [password, setPassword] = useState("")
   const [selectedRole, setSelectedRole] = useState("coach")
   const [error, setError] = useState("")
+  const [coachesLoaded, setCoachesLoaded] = useState(false)
+
+  // Load coaches from Firestore
+  useEffect(() => {
+    const unsubscribe = onSnapshot(collection(db, "coaches"), (snapshot) => {
+      const coachesData = snapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data()
+      }))
+      setCoaches(coachesData)
+      setCoachesLoaded(true)
+    }, (error) => {
+      console.error("Error loading coaches:", error)
+      setCoachesLoaded(true)
+    })
+
+    return () => unsubscribe()
+  }, [])
 
   const handleSubmit = (e) => {
     e.preventDefault()
     setError("")
 
     if (selectedRole === "coach") {
-      // Check coach credentials
-      const coach = COACHES.find(c => c.username === username && c.password === password)
+      // Check coach credentials against Firestore coaches
+      const coach = coaches.find(c => c.username === username && c.password === password)
       
       if (coach) {
         const expiryDate = new Date()
         expiryDate.setDate(expiryDate.getDate() + 7) // 7 days from now
         
+        // Determine if this coach is Gareth (Super Admin)
+        const userRole = coach.username === "Gareth" ? "super-admin" : "coach"
+        
         localStorage.setItem("bcc-user", username)
-        localStorage.setItem("bcc-role", "coach")
+        localStorage.setItem("bcc-role", userRole)
         localStorage.setItem("bcc-login-expiry", expiryDate.toISOString())
-        setUserRole("coach")
+        setUserRole(userRole)
         setCurrentUser(username)
         setCurrentPlayerId(null)
         navigate("/dashboard")

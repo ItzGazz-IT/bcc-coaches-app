@@ -15,12 +15,13 @@ export const useApp = () => {
 
 export const AppProvider = ({ children }) => {
   const [players, setPlayers] = useState([])
+  const [coaches, setCoaches] = useState([])
   const [injuries, setInjuries] = useState([])
   const [fitnessTests, setFitnessTests] = useState([])
   const [reviews, setReviews] = useState([])
   const [fixtures, setFixtures] = useState([])
   const [loading, setLoading] = useState(true)
-  const [userRole, setUserRole] = useState(null) // 'coach' or 'player'
+  const [userRole, setUserRole] = useState(null) // 'super-admin', 'coach' or 'player'
   const [currentUser, setCurrentUser] = useState(null)
   const [currentPlayerId, setCurrentPlayerId] = useState(null) // ID of logged-in player
   const [darkMode, setDarkMode] = useState(() => {
@@ -94,6 +95,22 @@ export const AppProvider = ({ children }) => {
     }, (error) => {
       console.error("Error loading players:", error) // DEBUG
       setLoading(false)
+    })
+
+    return () => unsubscribe()
+  }, [])
+
+  // Real-time listener for coaches collection
+  useEffect(() => {
+    const unsubscribe = onSnapshot(collection(db, "coaches"), (snapshot) => {
+      const coachesData = snapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data()
+      }))
+      console.log("Coaches loaded:", coachesData) // DEBUG
+      setCoaches(coachesData)
+    }, (error) => {
+      console.error("Error loading coaches:", error) // DEBUG
     })
 
     return () => unsubscribe()
@@ -369,7 +386,43 @@ export const AppProvider = ({ children }) => {
     }
   }
 
+  // Coach management functions
+  const addCoach = async (coachData) => {
+    try {
+      await addDoc(collection(db, "coaches"), {
+        ...coachData,
+        createdAt: new Date().toISOString()
+      })
+    } catch (error) {
+      console.error("Error adding coach:", error)
+      throw error
+    }
+  }
+
+  const updateCoach = async (id, updates) => {
+    try {
+      await updateDoc(doc(db, "coaches", id), updates)
+    } catch (error) {
+      console.error("Error updating coach:", error)
+      throw error
+    }
+  }
+
+  const deleteCoach = async (id) => {
+    try {
+      await deleteDoc(doc(db, "coaches", id))
+    } catch (error) {
+      console.error("Error deleting coach:", error)
+      throw error
+    }
+  }
+
   const value = {
+    coaches,
+    setCoaches,
+    addCoach,
+    updateCoach,
+    deleteCoach,
     players,
     setPlayers,
     addPlayer,
