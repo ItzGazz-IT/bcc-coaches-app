@@ -110,6 +110,17 @@ function Players() {
   const reserveTeamCount = players.filter(p => p.team === "Reserve Team").length
   const othersCount = players.filter(p => p.team === "Others").length
 
+  if (userRole !== "coach" && userRole !== "super-admin") {
+    return (
+      <div className="flex-1 p-6 bg-gray-50 min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <Users className="mx-auto text-red-500 mb-3" size={48} />
+          <p className="text-gray-600 font-semibold">Coaches only</p>
+        </div>
+      </div>
+    )
+  }
+
   return (
     <div className="flex-1 p-4 md:p-6 bg-gray-50 min-h-screen overflow-y-auto">
       <div className="max-w-7xl mx-auto">

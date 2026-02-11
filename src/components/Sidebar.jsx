@@ -73,12 +73,12 @@ export default function Sidebar() {
       title: "Team Management",
       key: "team",
       items: [
-        { path: "/players", label: "Players", icon: Users },
+        ...(userRole === "coach" || userRole === "super-admin" ? [{ path: "/players", label: "Players", icon: Users }] : []),
         ...(userRole === "super-admin" ? [{ path: "/coaches", label: "Coaches", icon: Settings }] : []),
-        { path: "/credentials", label: "Credentials", icon: Key },
+        ...(userRole === "super-admin" ? [{ path: "/credentials", label: "Credentials", icon: Key }] : []),
         { path: "/injuries", label: "Injuries", icon: Heart },
         { path: "/attendance", label: "Attendance", icon: ClipboardCheck },
-        { path: "/attendance-admin", label: "Manage Attendance", icon: ClipboardCheck }
+        ...(userRole === "coach" || userRole === "super-admin" ? [{ path: "/attendance-admin", label: "Manage Attendance", icon: ClipboardCheck }] : [])
       ]
     },
     {
