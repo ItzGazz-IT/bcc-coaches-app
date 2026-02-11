@@ -3,6 +3,7 @@ import { UserPlus, Phone, Users, Shield, Trash2, Search, CheckCircle, Activity, 
 import { useApp } from "../contexts/AppContext"
 import { useSearchParams } from "react-router-dom"
 import { TableSkeleton } from "../components/Loading"
+import { generateUsername, generatePassword } from "../utils/credentialUtils"
 
 function Players() {
   const { players, addPlayer, updatePlayer, deletePlayer, loading, userRole } = useApp()
@@ -38,8 +39,13 @@ function Players() {
     if (formData.firstName && formData.lastName && formData.phone) {
       const playerData = { ...formData }
       
-      // If editing and password is empty, remove it from the update
-      if (editingPlayer && !formData.password) {
+      // Auto-generate credentials if creating a new player
+      if (!editingPlayer) {
+        // Generate username and password
+        playerData.username = generateUsername(formData.firstName, formData.lastName)
+        playerData.password = generatePassword(10)
+      } else if (editingPlayer && !formData.password) {
+        // If editing and password is empty, remove it from the update
         delete playerData.password
       }
       
