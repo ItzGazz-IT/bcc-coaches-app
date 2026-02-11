@@ -12,6 +12,12 @@ dist
 dist-ssr
 *.local
 .env
+.env.local
+
+# Firebase service account (NEVER commit)
+scripts/firebase-service-account.json
+scripts/firebase-service-account.json.backup
+scripts/password-reset-output.json
 
 # Editor directories and files
 .vscode/*
