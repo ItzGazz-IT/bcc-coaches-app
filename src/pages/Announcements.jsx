@@ -355,7 +355,7 @@ function Announcements() {
                     <option>All Teams</option>
                     <option>First Team</option>
                     <option>Reserve Team</option>
-                    <option>Others</option>
+                    <option>Div 1</option>
                   </select>
                 </div>
               </div>

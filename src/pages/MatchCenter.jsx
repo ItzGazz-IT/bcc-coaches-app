@@ -3,6 +3,8 @@ import { Trophy, Calendar, Clock, MapPin, Users, ChevronRight, Target, Activity,
 import { useApp } from "../contexts/AppContext"
 import { useNavigate } from "react-router-dom"
 
+const isDiv1Team = (team) => team === "Div 1" || team === "Others"
+
 function MatchCenter() {
   const { fixtures, updateFixture, players } = useApp()
   const navigate = useNavigate()
@@ -28,13 +30,13 @@ function MatchCenter() {
 
   const upcomingFixtures = fixtures
     .filter(f => f.status === "Upcoming")
-    .filter(f => selectedTeam === "All" || f.team === selectedTeam)
+    .filter(f => selectedTeam === "All" || (selectedTeam === "Div 1" ? isDiv1Team(f.team) : f.team === selectedTeam))
     .sort((a, b) => new Date(a.date) - new Date(b.date))
     .slice(0, 5)
 
   const recentResults = fixtures
     .filter(f => f.status === "Completed")
-    .filter(f => selectedTeam === "All" || f.team === selectedTeam)
+    .filter(f => selectedTeam === "All" || (selectedTeam === "Div 1" ? isDiv1Team(f.team) : f.team === selectedTeam))
     .sort((a, b) => new Date(b.date) - new Date(a.date))
     .slice(0, 5)
 
@@ -642,7 +644,7 @@ function MatchCenter() {
               <option>All</option>
               <option>First Team</option>
               <option>Reserve Team</option>
-              <option>Others</option>
+              <option>Div 1</option>
             </select>
           </div>
         </div>

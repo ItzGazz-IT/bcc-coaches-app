@@ -3,6 +3,16 @@ import { Calendar, Clock, MapPin, Trophy, Plus, Edit, Trash2, CheckCircle, Users
 import { useApp } from "../contexts/AppContext"
 import { TableSkeleton } from "../components/Loading"
 
+const getDefaultKickoffTime = (team) => {
+  if (team === "Reserve Team") return "13:45"
+  if (team === "First Team") return "15:30"
+  return ""
+}
+
+const getTeamLabel = (team) => (team === "Others" ? "Div 1" : team)
+
+const getFixtureTime = (fixture) => fixture.time || getDefaultKickoffTime(fixture.team)
+
 function Fixtures() {
   const { fixtures, addFixture, updateFixture, deleteFixture, loading, userRole, markAsSeen } = useApp()
   
@@ -17,7 +27,7 @@ function Fixtures() {
   const [filterStatus, setFilterStatus] = useState("All")
   const [formData, setFormData] = useState({
     date: "",
-    time: "",
+    time: getDefaultKickoffTime("First Team"),
     opponent: "",
     competition: "",
     venue: "",
@@ -46,7 +56,7 @@ function Fixtures() {
       setEditingFixture(null)
       setFormData({
         date: "",
-        time: "",
+        time: getDefaultKickoffTime("First Team"),
         opponent: "",
         competition: "",
         venue: "",
@@ -64,7 +74,7 @@ function Fixtures() {
     setEditingFixture(fixture)
     setFormData({
       date: fixture.date,
-      time: fixture.time || "",
+      time: fixture.time || getDefaultKickoffTime(fixture.team || "First Team"),
       opponent: fixture.opponent,
       competition: fixture.competition || "",
       venue: fixture.venue || "",
@@ -112,7 +122,7 @@ function Fixtures() {
                   setEditingFixture(null)
                   setFormData({
                     date: "",
-                    time: "",
+                    time: getDefaultKickoffTime("First Team"),
                     opponent: "",
                     competition: "",
                     venue: "",
@@ -173,68 +183,71 @@ function Fixtures() {
               <div className="p-6 border-b border-gray-100 bg-gradient-to-r from-blue-50 to-white">
                 <h2 className="text-xl font-bold text-gray-800">Upcoming Fixtures ({upcomingFixtures.length})</h2>
               </div>
-              <div className="p-6 space-y-4">
-                {upcomingFixtures.map(fixture => (
-                  <div key={fixture.id} className="p-5 rounded-xl border-2 border-blue-200 bg-gradient-to-br from-blue-50 to-white hover:shadow-lg transition-all">
-                    <div className="flex items-start justify-between">
-                      <div className="flex-1">
-                        <div className="flex items-center gap-3 mb-3">
-                          <div className="bg-blue-500 text-white px-3 py-1 rounded-lg text-sm font-bold">
-                            {fixture.team}
+              <div className="p-6 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-4">
+                {upcomingFixtures.map(fixture => {
+                  const kickoffTime = getFixtureTime(fixture)
+                  return (
+                    <div key={fixture.id} className="p-4 rounded-xl border-2 border-blue-200 bg-gradient-to-br from-blue-50 to-white hover:shadow-lg transition-all">
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="flex-1">
+                          <div className="flex items-center gap-3 mb-3">
+                            <div className="bg-blue-500 text-white px-2.5 py-1 rounded-lg text-xs font-bold">
+                              {getTeamLabel(fixture.team)}
+                            </div>
+                            <div className={`px-2.5 py-1 rounded-lg text-xs font-bold ${
+                              fixture.homeAway === "Home" ? "bg-green-100 text-green-700" : "bg-orange-100 text-orange-700"
+                            }`}>
+                              {fixture.homeAway}
+                            </div>
                           </div>
-                          <div className={`px-3 py-1 rounded-lg text-sm font-bold ${
-                            fixture.homeAway === "Home" ? "bg-green-100 text-green-700" : "bg-orange-100 text-orange-700"
-                          }`}>
-                            {fixture.homeAway}
+                          <h3 className="text-lg font-black text-gray-800 mb-2">
+                            vs {fixture.opponent}
+                          </h3>
+                          <div className="grid grid-cols-1 gap-2 text-xs">
+                            <div className="flex items-center gap-2 text-gray-600">
+                              <Calendar size={16} className="text-blue-500" />
+                              <span className="font-semibold">{new Date(fixture.date).toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' })}</span>
+                            </div>
+                            {kickoffTime && (
+                              <div className="flex items-center gap-2 text-gray-600">
+                                <Clock size={16} className="text-blue-500" />
+                                <span className="font-semibold">{kickoffTime}</span>
+                              </div>
+                            )}
+                            {fixture.venue && (
+                              <div className="flex items-center gap-2 text-gray-600">
+                                <MapPin size={16} className="text-blue-500" />
+                                <span className="font-semibold">{fixture.venue}</span>
+                              </div>
+                            )}
+                            {fixture.competition && (
+                              <div className="flex items-center gap-2 text-gray-600">
+                                <Trophy size={16} className="text-blue-500" />
+                                <span className="font-semibold">{fixture.competition}</span>
+                              </div>
+                            )}
                           </div>
                         </div>
-                        <h3 className="text-2xl font-black text-gray-800 mb-2">
-                          vs {fixture.opponent}
-                        </h3>
-                        <div className="grid grid-cols-2 gap-4 text-sm">
-                          <div className="flex items-center gap-2 text-gray-600">
-                            <Calendar size={16} className="text-blue-500" />
-                            <span className="font-semibold">{new Date(fixture.date).toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' })}</span>
+                        {(userRole === "coach" || userRole === "super-admin") && (
+                          <div className="flex items-center gap-2">
+                            <button
+                              onClick={() => handleEdit(fixture)}
+                              className="p-2 hover:bg-blue-100 rounded-lg transition-colors"
+                            >
+                              <Edit size={18} className="text-blue-600" />
+                            </button>
+                            <button
+                              onClick={() => handleDelete(fixture.id)}
+                              className="p-2 hover:bg-red-100 rounded-lg transition-colors"
+                            >
+                              <Trash2 size={18} className="text-red-600" />
+                            </button>
                           </div>
-                          {fixture.time && (
-                            <div className="flex items-center gap-2 text-gray-600">
-                              <Clock size={16} className="text-blue-500" />
-                              <span className="font-semibold">{fixture.time}</span>
-                            </div>
-                          )}
-                          {fixture.venue && (
-                            <div className="flex items-center gap-2 text-gray-600">
-                              <MapPin size={16} className="text-blue-500" />
-                              <span className="font-semibold">{fixture.venue}</span>
-                            </div>
-                          )}
-                          {fixture.competition && (
-                            <div className="flex items-center gap-2 text-gray-600">
-                              <Trophy size={16} className="text-blue-500" />
-                              <span className="font-semibold">{fixture.competition}</span>
-                            </div>
-                          )}
-                        </div>
+                        )}
                       </div>
-                      {(userRole === "coach" || userRole === "super-admin") && (
-                        <div className="flex items-center gap-2">
-                          <button
-                            onClick={() => handleEdit(fixture)}
-                            className="p-2 hover:bg-blue-100 rounded-lg transition-colors"
-                          >
-                            <Edit size={18} className="text-blue-600" />
-                          </button>
-                          <button
-                            onClick={() => handleDelete(fixture.id)}
-                            className="p-2 hover:bg-red-100 rounded-lg transition-colors"
-                          >
-                            <Trash2 size={18} className="text-red-600" />
-                          </button>
-                        </div>
-                      )}
                     </div>
-                  </div>
-                ))}
+                  )
+                })}
               </div>
             </div>
           )}
@@ -245,16 +258,16 @@ function Fixtures() {
               <div className="p-6 border-b border-gray-100 bg-gradient-to-r from-green-50 to-white">
                 <h2 className="text-xl font-bold text-gray-800">Results ({completedFixtures.length})</h2>
               </div>
-              <div className="p-6 space-y-4">
+              <div className="p-6 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-4">
                 {completedFixtures.map(fixture => (
-                  <div key={fixture.id} className="p-5 rounded-xl border-2 border-gray-200 bg-gradient-to-br from-white to-gray-50 hover:shadow-lg transition-all">
-                    <div className="flex items-start justify-between">
+                  <div key={fixture.id} className="p-4 rounded-xl border-2 border-gray-200 bg-gradient-to-br from-white to-gray-50 hover:shadow-lg transition-all">
+                    <div className="flex items-start justify-between gap-3">
                       <div className="flex-1">
                         <div className="flex items-center gap-3 mb-3">
-                          <div className="bg-gray-500 text-white px-3 py-1 rounded-lg text-sm font-bold">
-                            {fixture.team}
+                          <div className="bg-gray-500 text-white px-2.5 py-1 rounded-lg text-xs font-bold">
+                            {getTeamLabel(fixture.team)}
                           </div>
-                          <div className={`px-3 py-1 rounded-lg text-sm font-bold ${
+                          <div className={`px-2.5 py-1 rounded-lg text-xs font-bold ${
                             fixture.result === "Win" ? "bg-green-100 text-green-700" :
                             fixture.result === "Loss" ? "bg-red-100 text-red-700" :
                             "bg-gray-100 text-gray-700"
@@ -262,15 +275,15 @@ function Fixtures() {
                             {fixture.result}
                           </div>
                           {fixture.score && (
-                            <div className="text-2xl font-black text-gray-800">
+                            <div className="text-lg font-black text-gray-800">
                               {fixture.score}
                             </div>
                           )}
                         </div>
-                        <h3 className="text-2xl font-black text-gray-800 mb-2">
+                        <h3 className="text-lg font-black text-gray-800 mb-2">
                           vs {fixture.opponent}
                         </h3>
-                        <div className="grid grid-cols-2 gap-4 text-sm">
+                        <div className="grid grid-cols-1 gap-2 text-xs">
                           <div className="flex items-center gap-2 text-gray-600">
                             <Calendar size={16} className="text-gray-500" />
                             <span className="font-semibold">{new Date(fixture.date).toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' })}</span>
@@ -369,12 +382,20 @@ function Fixtures() {
                   <label className="block text-sm font-bold text-gray-700 mb-2">Team</label>
                   <select
                     value={formData.team}
-                    onChange={(e) => setFormData({ ...formData, team: e.target.value })}
+                    onChange={(e) => {
+                      const nextTeam = e.target.value
+                      const currentDefault = getDefaultKickoffTime(formData.team)
+                      const nextDefault = getDefaultKickoffTime(nextTeam)
+                      const nextTime = formData.time && formData.time !== currentDefault
+                        ? formData.time
+                        : nextDefault
+                      setFormData({ ...formData, team: nextTeam, time: nextTime })
+                    }}
                     className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-blue-500 outline-none bg-white"
                   >
                     <option>First Team</option>
                     <option>Reserve Team</option>
-                    <option>Others</option>
+                    <option>Div 1</option>
                   </select>
                 </div>
                 <div>

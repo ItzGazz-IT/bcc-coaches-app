@@ -2,6 +2,8 @@ import { useState, useMemo } from "react"
 import { Trophy, Target, TrendingUp, Award, Users, Download, Printer, Star, AlertCircle } from "lucide-react"
 import { useApp } from "../contexts/AppContext"
 
+const isDiv1Team = (team) => team === "Div 1" || team === "Others"
+
 function PlayerStats() {
   const { players, fixtures, userRole, currentPlayerId } = useApp()
   const [selectedTeam, setSelectedTeam] = useState("All")
@@ -90,7 +92,7 @@ function PlayerStats() {
   }, [displayPlayers, fixtures])
 
   const filteredStats = playerStats
-    .filter(stat => selectedTeam === "All" || stat.player.team === selectedTeam)
+    .filter(stat => selectedTeam === "All" || (selectedTeam === "Div 1" ? isDiv1Team(stat.player.team) : stat.player.team === selectedTeam))
     .sort((a, b) => {
       if (selectedStat === "goals") return b.goals - a.goals
       if (selectedStat === "appearances") return b.appearances - a.appearances
@@ -161,7 +163,7 @@ function PlayerStats() {
                 <option>All</option>
                 <option>First Team</option>
                 <option>Reserve Team</option>
-                <option>Others</option>
+                <option>Div 1</option>
               </select>
               <button
                 onClick={handleExport}

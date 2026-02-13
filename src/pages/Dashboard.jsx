@@ -8,6 +8,8 @@ import logo from "../assets/bcc-logo.png"
 import { usePullToRefresh } from "../hooks/usePullToRefresh"
 import PullToRefreshIndicator from "../components/PullToRefreshIndicator"
 
+const isDiv1Team = (team) => team === "Div 1" || team === "Others"
+
 function StatCard({ title, value, icon: Icon, gradient, delay = 0, to, subtitle }) {
   const CardContent = () => (
     <>
@@ -163,7 +165,7 @@ export default function Dashboard() {
   // Coach dashboard stats
   const firstTeamCount = players.filter(p => p.team === "First Team").length
   const reserveTeamCount = players.filter(p => p.team === "Reserve Team").length
-  const othersCount = players.filter(p => p.team === "Others").length
+  const div1Count = players.filter(p => isDiv1Team(p.team)).length
   const totalPlayers = players.length
   
   // Get set of valid player IDs
@@ -534,12 +536,12 @@ export default function Dashboard() {
             to="/players?team=Reserve Team" 
           />
           <StatCard 
-            title="Others" 
-            value={othersCount.toString()} 
+            title="Div 1" 
+            value={div1Count.toString()} 
             icon={Users} 
             gradient="bg-gradient-to-br from-purple-500 to-purple-600" 
             delay={125} 
-            to="/players?team=Others" 
+            to="/players?team=Div 1" 
           />
           <StatCard 
             title="Available" 

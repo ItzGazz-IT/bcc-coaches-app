@@ -5,6 +5,9 @@ import { useSearchParams } from "react-router-dom"
 import { TableSkeleton } from "../components/Loading"
 import { generateUsername, generatePassword } from "../utils/credentialUtils"
 
+const isDiv1Team = (team) => team === "Div 1" || team === "Others"
+const getTeamLabel = (team) => (team === "Others" ? "Div 1" : team)
+
 function Players() {
   const { players, addPlayer, updatePlayer, deletePlayer, loading, userRole } = useApp()
   const [searchParams, setSearchParams] = useSearchParams()
@@ -12,6 +15,7 @@ function Players() {
   const [formData, setFormData] = useState({
     firstName: "",
     lastName: "",
+    nickname: "",
     phone: "",
     team: "First Team",
     position: "Midfielder",
@@ -30,7 +34,7 @@ function Players() {
   useEffect(() => {
     const teamParam = searchParams.get('team')
     if (teamParam) {
-      setFilterTeam(teamParam)
+      setFilterTeam(teamParam === "Others" ? "Div 1" : teamParam)
     }
   }, [searchParams])
 
@@ -63,6 +67,7 @@ function Players() {
       setFormData({ 
         firstName: "", 
         lastName: "", 
+        nickname: "",
         phone: "", 
         team: "First Team",
         position: "Midfielder",
@@ -82,6 +87,7 @@ function Players() {
     setFormData({
       firstName: player.firstName,
       lastName: player.lastName,
+      nickname: player.nickname || "",
       phone: player.phone,
       team: player.team,
       position: player.position || "Midfielder",
@@ -101,14 +107,15 @@ function Players() {
     const matchesSearch = 
       player.firstName.toLowerCase().includes(searchTerm.toLowerCase()) ||
       player.lastName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      player.nickname?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       player.phone.includes(searchTerm)
-    const matchesTeam = filterTeam === "All" || player.team === filterTeam
+    const matchesTeam = filterTeam === "All" || (filterTeam === "Div 1" ? isDiv1Team(player.team) : player.team === filterTeam)
     return matchesSearch && matchesTeam
   })
 
   const firstTeamCount = players.filter(p => p.team === "First Team").length
   const reserveTeamCount = players.filter(p => p.team === "Reserve Team").length
-  const othersCount = players.filter(p => p.team === "Others").length
+  const div1Count = players.filter(p => isDiv1Team(p.team)).length
 
   if (userRole !== "coach" && userRole !== "super-admin") {
     return (
@@ -202,9 +209,9 @@ function Players() {
                 <div className="bg-gradient-to-br from-purple-500 to-purple-600 p-1.5 rounded-lg">
                   <Users className="text-white" size={16} />
                 </div>
-                <p className="text-xs font-bold text-gray-500 uppercase">Others</p>
+                <p className="text-xs font-bold text-gray-500 uppercase">Div 1</p>
               </div>
-              <p className="text-2xl font-black text-purple-600">{othersCount}</p>
+              <p className="text-2xl font-black text-purple-600">{div1Count}</p>
             </div>
           </div>
 
@@ -246,7 +253,7 @@ function Players() {
                 <option value="All">All Teams</option>
                 <option value="First Team">First Team</option>
                 <option value="Reserve Team">Reserve Team</option>
-                <option value="Others">Others</option>
+                <option value="Div 1">Div 1</option>
               </select>
             </div>
           </div>
@@ -275,6 +282,11 @@ function Players() {
                             {player.position}
                           </span>
                         )}
+                        {player.nickname && (
+                          <span className="px-2 py-0.5 bg-amber-100 text-amber-700 text-xs font-semibold rounded">
+                            {player.nickname}
+                          </span>
+                        )}
                         <span className={`px-2 py-0.5 rounded text-xs font-bold ${
                           player.team === "First Team" 
                             ? "bg-emerald-100 text-emerald-700" 
@@ -282,7 +294,7 @@ function Players() {
                             ? "bg-orange-100 text-orange-700"
                             : "bg-purple-100 text-purple-700"
                         }`}>
-                          {player.team}
+                          {getTeamLabel(player.team)}
                         </span>
                       </div>
                       <p className="text-sm text-gray-500 flex items-center gap-1.5">
@@ -384,6 +396,19 @@ function Players() {
 
                 <div>
                   <label className="block text-sm font-semibold text-gray-700 mb-2">
+                    Nickname / Known As
+                  </label>
+                  <input
+                    type="text"
+                    value={formData.nickname}
+                    onChange={(e) => setFormData({...formData, nickname: e.target.value})}
+                    placeholder="e.g., Speedy"
+                    className="w-full px-4 py-2.5 border-2 border-gray-200 rounded-xl focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 outline-none transition-all"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">
                     WhatsApp Number *
                   </label>
                   <input
@@ -420,7 +445,7 @@ function Players() {
                   >
                     <option value="First Team">First Team</option>
                     <option value="Reserve Team">Reserve Team</option>
-                    <option value="Others">Others</option>
+                    <option value="Div 1">Div 1</option>
                   </select>
                 </div>
 

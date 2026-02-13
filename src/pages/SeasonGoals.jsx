@@ -4,6 +4,8 @@ import { useApp } from "../contexts/AppContext"
 import { collection, addDoc, updateDoc, deleteDoc, doc, onSnapshot } from "firebase/firestore"
 import { db } from "../firebase/config"
 
+const isDiv1Team = (team) => team === "Div 1" || team === "Others"
+
 function SeasonGoals() {
   const { fixtures } = useApp()
   const [goals, setGoals] = useState([])
@@ -90,12 +92,12 @@ function SeasonGoals() {
         .filter(f => f.team === "Reserve Team" && f.scorers)
         .reduce((sum, f) => sum + (f.scorers?.filter(s => s.team === "Reserve Team").length || 0), 0)
     },
-    "Others": {
-      matches: fixtures.filter(f => f.team === "Others" && f.status === "Completed").length,
-      wins: fixtures.filter(f => f.team === "Others" && f.result === "Win").length,
+    "Div 1": {
+      matches: fixtures.filter(f => isDiv1Team(f.team) && f.status === "Completed").length,
+      wins: fixtures.filter(f => isDiv1Team(f.team) && f.result === "Win").length,
       goals: fixtures
-        .filter(f => f.team === "Others" && f.scorers)
-        .reduce((sum, f) => sum + (f.scorers?.filter(s => s.team === "Others").length || 0), 0)
+        .filter(f => isDiv1Team(f.team) && f.scorers)
+        .reduce((sum, f) => sum + (f.scorers?.filter(s => isDiv1Team(s.team)).length || 0), 0)
     }
   }
 
@@ -141,7 +143,7 @@ function SeasonGoals() {
 
         {/* Team Performance Overview */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-          {["First Team", "Reserve Team", "Others"].map(team => (
+          {["First Team", "Reserve Team", "Div 1"].map(team => (
             <div key={team} className="bg-white rounded-2xl shadow-xl border border-gray-100 p-6">
               <h3 className="text-lg font-bold text-gray-800 mb-4">{team}</h3>
               <div className="space-y-3">
@@ -364,7 +366,7 @@ function SeasonGoals() {
                   >
                     <option>First Team</option>
                     <option>Reserve Team</option>
-                    <option>Others</option>
+                    <option>Div 1</option>
                     <option>All Teams</option>
                   </select>
                 </div>
