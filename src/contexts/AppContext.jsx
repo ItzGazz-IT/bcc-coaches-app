@@ -164,6 +164,7 @@ export const AppProvider = ({ children }) => {
         id: doc.id,
         ...doc.data()
       }))
+      setFixtures(fixturesData)
       checkForNewFixtures(fixturesData, userRole)
     })
 
