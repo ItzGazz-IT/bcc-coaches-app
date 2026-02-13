@@ -12,6 +12,12 @@ const getDefaultKickoffTime = (team) => {
 
 const getTeamLabel = (team) => (team === "Others" ? "Div 1" : team)
 
+const getDateKey = (year, monthIndex, day) => {
+  const month = String(monthIndex + 1).padStart(2, "0")
+  const date = String(day).padStart(2, "0")
+  return `${year}-${month}-${date}`
+}
+
 function Calendar() {
   const { fixtures } = useApp()
   const [currentDate, setCurrentDate] = useState(new Date())
@@ -33,9 +39,7 @@ function Calendar() {
 
   // Get sessions for a specific day
   const getScheduleForDay = (day) => {
-    const dateStr = new Date(currentDate.getFullYear(), currentDate.getMonth(), day)
-      .toISOString()
-      .split('T')[0]
+    const dateStr = getDateKey(currentDate.getFullYear(), currentDate.getMonth(), day)
     
     const firestoreSessions = sessions
       .filter(session => session.date === dateStr)

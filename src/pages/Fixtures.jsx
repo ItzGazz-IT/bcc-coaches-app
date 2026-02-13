@@ -194,6 +194,11 @@ function Fixtures() {
                             <div className="bg-blue-500 text-white px-2.5 py-1 rounded-lg text-xs font-bold">
                               {getTeamLabel(fixture.team)}
                             </div>
+                            {kickoffTime && (
+                              <div className="bg-blue-100 text-blue-700 px-2.5 py-1 rounded-lg text-xs font-bold">
+                                {kickoffTime}
+                              </div>
+                            )}
                             <div className={`px-2.5 py-1 rounded-lg text-xs font-bold ${
                               fixture.homeAway === "Home" ? "bg-green-100 text-green-700" : "bg-orange-100 text-orange-700"
                             }`}>
@@ -259,62 +264,76 @@ function Fixtures() {
                 <h2 className="text-xl font-bold text-gray-800">Results ({completedFixtures.length})</h2>
               </div>
               <div className="p-6 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-4">
-                {completedFixtures.map(fixture => (
-                  <div key={fixture.id} className="p-4 rounded-xl border-2 border-gray-200 bg-gradient-to-br from-white to-gray-50 hover:shadow-lg transition-all">
-                    <div className="flex items-start justify-between gap-3">
-                      <div className="flex-1">
-                        <div className="flex items-center gap-3 mb-3">
-                          <div className="bg-gray-500 text-white px-2.5 py-1 rounded-lg text-xs font-bold">
-                            {getTeamLabel(fixture.team)}
-                          </div>
-                          <div className={`px-2.5 py-1 rounded-lg text-xs font-bold ${
-                            fixture.result === "Win" ? "bg-green-100 text-green-700" :
-                            fixture.result === "Loss" ? "bg-red-100 text-red-700" :
-                            "bg-gray-100 text-gray-700"
-                          }`}>
-                            {fixture.result}
-                          </div>
-                          {fixture.score && (
-                            <div className="text-lg font-black text-gray-800">
-                              {fixture.score}
+                {completedFixtures.map(fixture => {
+                  const kickoffTime = getFixtureTime(fixture)
+                  return (
+                    <div key={fixture.id} className="p-4 rounded-xl border-2 border-gray-200 bg-gradient-to-br from-white to-gray-50 hover:shadow-lg transition-all">
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="flex-1">
+                          <div className="flex items-center gap-3 mb-3">
+                            <div className="bg-gray-500 text-white px-2.5 py-1 rounded-lg text-xs font-bold">
+                              {getTeamLabel(fixture.team)}
                             </div>
-                          )}
-                        </div>
-                        <h3 className="text-lg font-black text-gray-800 mb-2">
-                          vs {fixture.opponent}
-                        </h3>
-                        <div className="grid grid-cols-1 gap-2 text-xs">
-                          <div className="flex items-center gap-2 text-gray-600">
-                            <Calendar size={16} className="text-gray-500" />
-                            <span className="font-semibold">{new Date(fixture.date).toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' })}</span>
+                            {kickoffTime && (
+                              <div className="bg-gray-100 text-gray-700 px-2.5 py-1 rounded-lg text-xs font-bold">
+                                {kickoffTime}
+                              </div>
+                            )}
+                            <div className={`px-2.5 py-1 rounded-lg text-xs font-bold ${
+                              fixture.result === "Win" ? "bg-green-100 text-green-700" :
+                              fixture.result === "Loss" ? "bg-red-100 text-red-700" :
+                              "bg-gray-100 text-gray-700"
+                            }`}>
+                              {fixture.result}
+                            </div>
+                            {fixture.score && (
+                              <div className="text-lg font-black text-gray-800">
+                                {fixture.score}
+                              </div>
+                            )}
                           </div>
-                          {fixture.competition && (
+                          <h3 className="text-lg font-black text-gray-800 mb-2">
+                            vs {fixture.opponent}
+                          </h3>
+                          <div className="grid grid-cols-1 gap-2 text-xs">
                             <div className="flex items-center gap-2 text-gray-600">
-                              <Trophy size={16} className="text-gray-500" />
-                              <span className="font-semibold">{fixture.competition}</span>
+                              <Calendar size={16} className="text-gray-500" />
+                              <span className="font-semibold">{new Date(fixture.date).toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' })}</span>
                             </div>
-                          )}
+                            {kickoffTime && (
+                              <div className="flex items-center gap-2 text-gray-600">
+                                <Clock size={16} className="text-gray-500" />
+                                <span className="font-semibold">{kickoffTime}</span>
+                              </div>
+                            )}
+                            {fixture.competition && (
+                              <div className="flex items-center gap-2 text-gray-600">
+                                <Trophy size={16} className="text-gray-500" />
+                                <span className="font-semibold">{fixture.competition}</span>
+                              </div>
+                            )}
+                          </div>
                         </div>
+                        {(userRole === "coach" || userRole === "super-admin") && (
+                          <div className="flex items-center gap-2">
+                            <button
+                              onClick={() => handleEdit(fixture)}
+                              className="p-2 hover:bg-blue-100 rounded-lg transition-colors"
+                            >
+                              <Edit size={18} className="text-blue-600" />
+                            </button>
+                            <button
+                              onClick={() => handleDelete(fixture.id)}
+                              className="p-2 hover:bg-red-100 rounded-lg transition-colors"
+                            >
+                              <Trash2 size={18} className="text-red-600" />
+                            </button>
+                          </div>
+                        )}
                       </div>
-                      {(userRole === "coach" || userRole === "super-admin") && (
-                        <div className="flex items-center gap-2">
-                          <button
-                            onClick={() => handleEdit(fixture)}
-                            className="p-2 hover:bg-blue-100 rounded-lg transition-colors"
-                          >
-                            <Edit size={18} className="text-blue-600" />
-                          </button>
-                          <button
-                            onClick={() => handleDelete(fixture.id)}
-                            className="p-2 hover:bg-red-100 rounded-lg transition-colors"
-                          >
-                            <Trash2 size={18} className="text-red-600" />
-                          </button>
-                        </div>
-                      )}
                     </div>
-                  </div>
-                ))}
+                  )
+                })}
               </div>
             </div>
           )}
