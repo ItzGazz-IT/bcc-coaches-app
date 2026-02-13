@@ -9,7 +9,11 @@ const getDefaultKickoffTime = (team) => {
   return ""
 }
 
-const getTeamLabel = (team) => (team === "Others" ? "Div 1" : team)
+const getTeamLabel = (team) => {
+  if (team === "Others") return "Div 1"
+  if (team === "Reserve Team") return "Reserves"
+  return team
+}
 
 const getFixtureTime = (fixture) => fixture.time || getDefaultKickoffTime(fixture.team)
 
@@ -213,12 +217,6 @@ function Fixtures() {
                               <Calendar size={16} className="text-blue-500" />
                               <span className="font-semibold">{new Date(fixture.date).toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' })}</span>
                             </div>
-                            {kickoffTime && (
-                              <div className="flex items-center gap-2 text-gray-600">
-                                <Clock size={16} className="text-blue-500" />
-                                <span className="font-semibold">{kickoffTime}</span>
-                              </div>
-                            )}
                             {fixture.venue && (
                               <div className="flex items-center gap-2 text-gray-600">
                                 <MapPin size={16} className="text-blue-500" />
@@ -300,12 +298,6 @@ function Fixtures() {
                               <Calendar size={16} className="text-gray-500" />
                               <span className="font-semibold">{new Date(fixture.date).toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' })}</span>
                             </div>
-                            {kickoffTime && (
-                              <div className="flex items-center gap-2 text-gray-600">
-                                <Clock size={16} className="text-gray-500" />
-                                <span className="font-semibold">{kickoffTime}</span>
-                              </div>
-                            )}
                             {fixture.competition && (
                               <div className="flex items-center gap-2 text-gray-600">
                                 <Trophy size={16} className="text-gray-500" />

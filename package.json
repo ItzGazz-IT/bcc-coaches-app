@@ -6,7 +6,8 @@
     "dev": "vite",
     "dev:host": "vite --host",
     "build": "vite build",
-    "seed:fixtures-2026": "node scripts/seed-fixtures-2026.cjs"
+    "seed:fixtures-2026": "node scripts/seed-fixtures-2026.cjs",
+    "seed:fixtures-reserves": "node scripts/seed-reserves-from-first-team.cjs"
   },
   "dependencies": {
     "firebase": "^12.8.0",
