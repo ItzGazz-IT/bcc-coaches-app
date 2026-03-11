@@ -18,6 +18,147 @@ const getDateKey = (year, monthIndex, day) => {
   return `${year}-${month}-${date}`
 }
 
+const MS_PER_WEEK = 7 * 24 * 60 * 60 * 1000
+const CYCLE_START_SATURDAY = new Date(2026, 2, 7)
+
+const TRAINING_CYCLE = [
+  {
+    tuesday: ["Agility Warm-up", "Tactical Training", "Systems"],
+    wednesday: ["EPS + Extensive Warm-up", "Football Conditioning", "11v11"],
+    thursday: ["Possession", "Technical Training", "Set Pieces"]
+  },
+  {
+    tuesday: ["Agility Warm-up", "Tactical Training", "Systems"],
+    wednesday: ["EPS + Extensive Warm-up", "Football Conditioning", "11v11"],
+    thursday: ["Possession", "Technical Training", "Set Pieces"]
+  },
+  {
+    tuesday: ["Passing Warm-up", "Tactical Training", "Systems"],
+    wednesday: ["FS60 + Intensive Warm-up", "Football Conditioning", "7v7"],
+    thursday: ["Agility", "Technical Training", "Finishing"]
+  },
+  {
+    tuesday: ["Passing Warm-up", "Tactical Training", "Systems"],
+    wednesday: ["FS60 + Intensive Warm-up", "Football Conditioning", "7v7"],
+    thursday: ["Agility", "Technical Training", "Finishing"]
+  },
+  {
+    tuesday: ["Possession", "Tactical Training", "Systems"],
+    wednesday: ["FS10 + Agility", "Football Conditioning", "4v4"],
+    thursday: ["Passing", "Technical Training", "Set Pieces"]
+  },
+  {
+    tuesday: ["Possession", "Tactical Training", "Systems"],
+    wednesday: ["FS10 + Agility", "Football Conditioning", "4v4"],
+    thursday: ["Passing", "Technical Training", "Set Pieces"]
+  }
+]
+
+const getCycleSaturday = (date) => {
+  const saturday = new Date(date)
+  const dayOfWeek = saturday.getDay()
+
+  if (dayOfWeek === 0) {
+    saturday.setDate(saturday.getDate() - 1)
+  } else {
+    saturday.setDate(saturday.getDate() + (6 - dayOfWeek))
+  }
+
+  saturday.setHours(0, 0, 0, 0)
+  return saturday
+}
+
+const getCycleWeekIndex = (date) => {
+  const saturday = getCycleSaturday(date)
+  const weekOffset = Math.floor((saturday.getTime() - CYCLE_START_SATURDAY.getTime()) / MS_PER_WEEK)
+  return ((weekOffset % TRAINING_CYCLE.length) + TRAINING_CYCLE.length) % TRAINING_CYCLE.length
+}
+
+const getProgramEventForDate = (date) => {
+  const dayOfWeek = date.getDay()
+  const weekProgram = TRAINING_CYCLE[getCycleWeekIndex(date)]
+
+  if (dayOfWeek === 1) {
+    return {
+      id: `program-${date.toISOString().slice(0, 10)}-break`,
+      type: "Break",
+      title: "Break",
+      time: "All day",
+      location: "Recovery",
+      description: "B - Break day.",
+      icon: Dumbbell,
+      color: "green"
+    }
+  }
+
+  if (dayOfWeek === 2) {
+    return {
+      id: `program-${date.toISOString().slice(0, 10)}-tuesday`,
+      type: "Training",
+      title: "Tuesday Program",
+      time: "18:30 - 20:00",
+      location: "Main Field",
+      description: weekProgram.tuesday.join(" | "),
+      icon: Dumbbell,
+      color: "blue"
+    }
+  }
+
+  if (dayOfWeek === 3) {
+    return {
+      id: `program-${date.toISOString().slice(0, 10)}-wednesday`,
+      type: "Training",
+      title: "Wednesday Program",
+      time: "18:30 - 20:00",
+      location: "Main Field",
+      description: weekProgram.wednesday.join(" | "),
+      icon: Dumbbell,
+      color: "indigo"
+    }
+  }
+
+  if (dayOfWeek === 4) {
+    return {
+      id: `program-${date.toISOString().slice(0, 10)}-thursday`,
+      type: "Training",
+      title: "Thursday Program",
+      time: "18:30 - 20:00",
+      location: "Main Field",
+      description: weekProgram.thursday.join(" | "),
+      icon: Dumbbell,
+      color: "teal"
+    }
+  }
+
+  if (dayOfWeek === 5) {
+    return {
+      id: `program-${date.toISOString().slice(0, 10)}-friday`,
+      type: "Recovery",
+      title: "Friday Recovery",
+      time: "All day",
+      location: "Gym / Home",
+      description: "Flexibility | Active Rest | Core Strength",
+      icon: Dumbbell,
+      color: "green"
+    }
+  }
+
+  if (dayOfWeek === 0) {
+    return {
+      id: `program-${date.toISOString().slice(0, 10)}-rest`,
+      type: "Rest",
+      title: "Rest Day",
+      time: "All day",
+      location: "Recovery",
+      description: "R - Rest day.",
+      icon: Dumbbell,
+      color: "orange"
+    }
+  }
+
+  return null
+}
+
 function Calendar() {
   const { fixtures } = useApp()
   const [currentDate, setCurrentDate] = useState(new Date())
@@ -77,53 +218,10 @@ function Calendar() {
       return allEvents
     }
 
-    // Otherwise, generate fake data for training days (Tue, Wed, Thu)
+    // Otherwise, use the weekly training program.
     const date = new Date(currentDate.getFullYear(), currentDate.getMonth(), day)
-    const dayOfWeek = date.getDay()
-    
-    // Tuesday = 2, Wednesday = 3, Thursday = 4
-    if (dayOfWeek === 2 || dayOfWeek === 3 || dayOfWeek === 4) {
-      const trainingTypes = [
-        {
-          type: "Skills Training",
-          time: "18:30 - 20:00",
-          location: "Main Field",
-          description: "Focus on passing accuracy, ball control, and positioning drills",
-          color: "blue"
-        },
-        {
-          type: "Tactical Session",
-          time: "18:30 - 20:00",
-          location: "Main Field",
-          description: "Team formations, set pieces, and game strategy analysis",
-          color: "indigo"
-        },
-        {
-          type: "Fitness Training",
-          time: "18:30 - 20:00",
-          location: "Training Ground",
-          description: "Conditioning work, sprint drills, and endurance building",
-          color: "teal"
-        }
-      ]
-
-      // Use day of week to determine training type
-      const trainingIndex = dayOfWeek === 2 ? 0 : dayOfWeek === 3 ? 1 : 2
-      const training = trainingTypes[trainingIndex]
-
-      return [{
-        id: `fake-${dateStr}`,
-        type: training.type,
-        title: training.type,
-        time: training.time,
-        location: training.location,
-        description: training.description,
-        icon: Dumbbell,
-        color: training.color
-      }]
-    }
-
-    return []
+    const programEvent = getProgramEventForDate(date)
+    return programEvent ? [programEvent] : []
   }
 
   const monthNames = ["January", "February", "March", "April", "May", "June",
@@ -194,7 +292,9 @@ function Calendar() {
       orange: "bg-orange-100 text-orange-700 border-orange-300",
       purple: "bg-purple-100 text-purple-700 border-purple-300",
       indigo: "bg-indigo-100 text-indigo-700 border-indigo-300",
-      teal: "bg-teal-100 text-teal-700 border-teal-300"
+      teal: "bg-teal-100 text-teal-700 border-teal-300",
+      red: "bg-red-100 text-red-700 border-red-300",
+      gray: "bg-gray-100 text-gray-700 border-gray-300"
     }
     return colors[color] || colors.blue
   }
