@@ -1,7 +1,9 @@
 import { useState, useEffect } from "react"
-import { Calendar, Clock, MapPin, Trophy, Plus, Edit, Trash2, CheckCircle, Users, Search } from "lucide-react"
+import { Calendar, Clock, MapPin, Trophy, Plus, Edit, Trash2, CheckCircle, Users, Search, Upload, FileText, ExternalLink, Loader2 } from "lucide-react"
 import { useApp } from "../contexts/AppContext"
 import { TableSkeleton } from "../components/Loading"
+import { storage } from "../firebase/config"
+import { ref, uploadBytes, getDownloadURL, deleteObject } from "firebase/storage"
 
 const getDefaultKickoffTime = () => ""
 
@@ -40,6 +42,13 @@ const groupFixtures = (fixtures) => {
 
 const getTeamSortKey = () => 1
 
+const sanitizeFileName = (name) => name.replace(/[^a-zA-Z0-9._-]/g, "_")
+
+const getFileExtension = (name) => {
+  const parts = name.split(".")
+  return parts.length > 1 ? parts.pop().toLowerCase() : ""
+}
+
 function Fixtures() {
   const { fixtures, addFixture, updateFixture, deleteFixture, loading, userRole, markAsSeen } = useApp()
   
@@ -64,6 +73,7 @@ function Fixtures() {
     score: ""
   })
   const [showSuccess, setShowSuccess] = useState(false)
+  const [uploadingReportFor, setUploadingReportFor] = useState(null)
 
   const handleSubmit = async (e) => {
     e.preventDefault()
@@ -117,6 +127,76 @@ function Fixtures() {
   const handleDelete = async (id) => {
     if (window.confirm("Are you sure you want to delete this fixture?")) {
       await deleteFixture(id)
+    }
+  }
+
+  const handleReportUpload = async (fixture, file) => {
+    if (!file) return
+
+    const allowedExtensions = ["pdf", "doc", "docx", "txt"]
+    const extension = getFileExtension(file.name)
+
+    if (!allowedExtensions.includes(extension)) {
+      window.alert("Please upload a PDF, DOC, DOCX, or TXT file.")
+      return
+    }
+
+    try {
+      setUploadingReportFor(fixture.id)
+
+      if (fixture.matchReport?.storagePath) {
+        try {
+          await deleteObject(ref(storage, fixture.matchReport.storagePath))
+        } catch (error) {
+          console.warn("Could not remove previous report file:", error)
+        }
+      }
+
+      const fileName = `${Date.now()}-${sanitizeFileName(file.name)}`
+      const storagePath = `match-reports/${fixture.id}/${fileName}`
+      const reportRef = ref(storage, storagePath)
+
+      await uploadBytes(reportRef, file)
+      const downloadURL = await getDownloadURL(reportRef)
+
+      await updateFixture(fixture.id, {
+        matchReport: {
+          fileName: file.name,
+          url: downloadURL,
+          uploadedAt: new Date().toISOString(),
+          contentType: file.type || "application/octet-stream",
+          size: file.size,
+          storagePath
+        }
+      })
+    } catch (error) {
+      console.error("Error uploading match report:", error)
+      window.alert("Could not upload report. Please try again.")
+    } finally {
+      setUploadingReportFor(null)
+    }
+  }
+
+  const handleReportDelete = async (fixture) => {
+    if (!fixture.matchReport) return
+
+    if (!window.confirm("Remove this match report?")) return
+
+    try {
+      setUploadingReportFor(fixture.id)
+      if (fixture.matchReport.storagePath) {
+        try {
+          await deleteObject(ref(storage, fixture.matchReport.storagePath))
+        } catch (error) {
+          console.warn("Could not remove report file from storage:", error)
+        }
+      }
+      await updateFixture(fixture.id, { matchReport: null })
+    } catch (error) {
+      console.error("Error deleting match report:", error)
+      window.alert("Could not remove report. Please try again.")
+    } finally {
+      setUploadingReportFor(null)
     }
   }
 
@@ -325,27 +405,78 @@ function Fixtures() {
                               {sortedFixtures.map(teamFixture => {
                                 const kickoffTime = getFixtureTime(teamFixture)
                                 return (
-                                  <div key={teamFixture.id} className="flex items-center gap-2">
-                                    <div className="bg-gray-500 text-white px-2.5 py-1 rounded-lg text-xs font-bold">
-                                      {getTeamLabel(teamFixture.team)}
-                                    </div>
-                                    {kickoffTime && (
-                                      <div className="bg-gray-100 text-gray-700 px-2.5 py-1 rounded-lg text-xs font-bold">
-                                        {kickoffTime}
+                                  <div key={teamFixture.id} className="space-y-2">
+                                    <div className="flex items-center gap-2 flex-wrap">
+                                      <div className="bg-gray-500 text-white px-2.5 py-1 rounded-lg text-xs font-bold">
+                                        {getTeamLabel(teamFixture.team)}
                                       </div>
-                                    )}
-                                    <div className={`px-2.5 py-1 rounded-lg text-xs font-bold ${
-                                      teamFixture.result === "Win" ? "bg-green-100 text-green-700" :
-                                      teamFixture.result === "Loss" ? "bg-red-100 text-red-700" :
-                                      "bg-gray-100 text-gray-700"
-                                    }`}>
-                                      {teamFixture.result}
-                                    </div>
-                                    {teamFixture.score && (
-                                      <div className="text-sm font-black text-gray-800">
-                                        {teamFixture.score}
+                                      {kickoffTime && (
+                                        <div className="bg-gray-100 text-gray-700 px-2.5 py-1 rounded-lg text-xs font-bold">
+                                          {kickoffTime}
+                                        </div>
+                                      )}
+                                      <div className={`px-2.5 py-1 rounded-lg text-xs font-bold ${
+                                        teamFixture.result === "Win" ? "bg-green-100 text-green-700" :
+                                        teamFixture.result === "Loss" ? "bg-red-100 text-red-700" :
+                                        "bg-gray-100 text-gray-700"
+                                      }`}>
+                                        {teamFixture.result}
                                       </div>
-                                    )}
+                                      {teamFixture.score && (
+                                        <div className="text-sm font-black text-gray-800">
+                                          {teamFixture.score}
+                                        </div>
+                                      )}
+                                    </div>
+
+                                    <div className="flex items-center gap-2 flex-wrap">
+                                      <FileText size={14} className="text-gray-500" />
+                                      {teamFixture.matchReport?.url ? (
+                                        <>
+                                          <a
+                                            href={teamFixture.matchReport.url}
+                                            target="_blank"
+                                            rel="noreferrer"
+                                            className="text-xs font-semibold text-blue-700 hover:text-blue-900 inline-flex items-center gap-1"
+                                          >
+                                            {teamFixture.matchReport.fileName || "Match Report"}
+                                            <ExternalLink size={12} />
+                                          </a>
+                                          {(userRole === "coach" || userRole === "super-admin") && (
+                                            <button
+                                              type="button"
+                                              onClick={() => handleReportDelete(teamFixture)}
+                                              disabled={uploadingReportFor === teamFixture.id}
+                                              className="text-xs font-semibold text-red-600 hover:text-red-800 disabled:opacity-50"
+                                            >
+                                              Remove
+                                            </button>
+                                          )}
+                                        </>
+                                      ) : (
+                                        <span className="text-xs text-gray-500">No report uploaded</span>
+                                      )}
+
+                                      {(userRole === "coach" || userRole === "super-admin") && (
+                                        <label className="inline-flex items-center gap-1 text-xs font-semibold text-purple-700 hover:text-purple-900 cursor-pointer">
+                                          {uploadingReportFor === teamFixture.id ? <Loader2 size={12} className="animate-spin" /> : <Upload size={12} />}
+                                          {uploadingReportFor === teamFixture.id ? "Uploading..." : (teamFixture.matchReport?.url ? "Replace" : "Upload")}
+                                          <input
+                                            type="file"
+                                            accept=".pdf,.doc,.docx,.txt"
+                                            className="hidden"
+                                            disabled={uploadingReportFor === teamFixture.id}
+                                            onChange={(e) => {
+                                              const selectedFile = e.target.files?.[0]
+                                              if (selectedFile) {
+                                                handleReportUpload(teamFixture, selectedFile)
+                                              }
+                                              e.target.value = ""
+                                            }}
+                                          />
+                                        </label>
+                                      )}
+                                    </div>
                                   </div>
                                 )
                               })}

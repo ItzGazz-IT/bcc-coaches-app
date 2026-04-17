@@ -1,5 +1,5 @@
 import { Link, useLocation } from "react-router-dom"
-import { LayoutDashboard, Users, Heart, CalendarDays, ClipboardCheck, Star, Trophy, LogOut, TrendingUp, Crosshair, BarChart3, Target, Bell, ChevronDown, ChevronRight, Menu, X, Moon, Sun, LineChart, Key, Settings, CarFront } from "lucide-react"
+import { LayoutDashboard, Users, Heart, CalendarDays, ClipboardCheck, Trophy, LogOut, BarChart3, Target, Bell, ChevronDown, ChevronRight, Menu, X, Moon, Sun, Key, Settings, CarFront } from "lucide-react"
 import { useState, useEffect } from "react"
 import { useApp } from "../contexts/AppContext"
 import NotificationBadge from "./NotificationBadge"
@@ -85,7 +85,6 @@ export default function Sidebar() {
       title: "Matches & Fixtures",
       key: "matches",
       items: [
-        { path: "/match-center", label: "Match Center", icon: Crosshair },
         { path: "/away-day", label: "Away Day Hub", icon: CarFront },
         { path: "/fixtures", label: "Fixtures", icon: Trophy },
         { path: "/calendar", label: "Calendar", icon: CalendarDays }
@@ -95,10 +94,7 @@ export default function Sidebar() {
       title: "Performance",
       key: "performance",
       items: [
-        { path: "/player-stats", label: "Player Stats", icon: BarChart3 },
-        { path: "/fitness", label: "Fitness Tests", icon: TrendingUp },
-        { path: "/reviews", label: "Reviews", icon: Star },
-        { path: "/performance-charts", label: "Analytics", icon: LineChart }
+        { path: "/player-stats", label: "Player Stats", icon: BarChart3 }
       ]
     },
     {
@@ -121,10 +117,7 @@ export default function Sidebar() {
     {
       title: "My Performance",
       items: [
-        { path: "/player-stats", label: "My Stats", icon: BarChart3 },
-        { path: "/fitness", label: "Fitness Tests", icon: TrendingUp },
-        { path: "/reviews", label: "My Reviews", icon: Star },
-        { path: "/performance-charts", label: "My Progress", icon: LineChart }
+        { path: "/player-stats", label: "My Stats", icon: BarChart3 }
       ]
     },
     {

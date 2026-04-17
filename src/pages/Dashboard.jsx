@@ -1,4 +1,4 @@
-import { CalendarDays, Users, ClipboardCheck, Star, Heart, UserPlus, AlertCircle, CheckCircle, Trophy, TrendingUp, Target, BarChart3 } from "lucide-react"
+import { CalendarDays, Users, ClipboardCheck, Heart, UserPlus, AlertCircle, CheckCircle, Trophy, Target, BarChart3 } from "lucide-react"
 import { useApp } from "../contexts/AppContext"
 import { Link } from "react-router-dom"
 import { useState, useEffect, useMemo } from "react"
@@ -41,7 +41,7 @@ function StatCard({ title, value, icon: Icon, gradient, delay = 0, to, subtitle 
 }
 
 export default function Dashboard() {
-  const { players, injuries, userRole, currentPlayerId, fitnessTests, reviews, fixtures } = useApp()
+  const { players, injuries, userRole, currentPlayerId, fixtures } = useApp()
   const [sessions, setSessions] = useState([])
   const [refreshKey, setRefreshKey] = useState(0)
   
@@ -141,24 +141,6 @@ export default function Dashboard() {
 
     return stats
   }, [currentPlayer, currentPlayerId, fixtures])
-
-  // Get player's latest fitness test
-  const latestFitnessTest = useMemo(() => {
-    if (!currentPlayerId) return null
-    const playerTests = fitnessTests
-      .filter(t => t.playerId === currentPlayerId)
-      .sort((a, b) => new Date(b.date) - new Date(a.date))
-    return playerTests[0] || null
-  }, [currentPlayerId, fitnessTests])
-
-  // Get player's recent reviews
-  const recentReviews = useMemo(() => {
-    if (!currentPlayerId) return []
-    return reviews
-      .filter(r => r.playerId === currentPlayerId)
-      .sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp))
-      .slice(0, 3)
-  }, [currentPlayerId, reviews])
 
   // Coach dashboard stats
   const totalPlayers = players.length
@@ -323,92 +305,6 @@ export default function Dashboard() {
               </div>
             </div>
 
-            {/* Latest Fitness Test */}
-            <Link to="/fitness" className="bg-white rounded-2xl shadow-xl p-6 border border-gray-100 hover:shadow-2xl transition-all duration-300 flex flex-col cursor-pointer hover:-translate-y-1">
-              <div className="flex items-center gap-3 mb-5">
-                <div className="bg-gradient-to-br from-purple-500 to-pink-600 p-3 rounded-xl shadow-lg">
-                  <TrendingUp className="text-white" size={24} />
-                </div>
-                <h2 className="text-xl font-bold text-gray-800">
-                  Latest Fitness
-                </h2>
-              </div>
-              {latestFitnessTest ? (
-                <div className="space-y-3 flex-grow">
-                  <div className="bg-purple-50 rounded-xl p-4 border border-purple-100">
-                    <p className="text-xs text-purple-600 mb-2">Test Date: {new Date(latestFitnessTest.date).toLocaleDateString('en-GB')}</p>
-                    <div className="grid grid-cols-2 gap-2 text-xs">
-                      {latestFitnessTest.beepTest && (
-                        <div>
-                          <p className="text-gray-600">Beep Test</p>
-                          <p className="text-lg font-bold text-purple-700">{latestFitnessTest.beepTest}</p>
-                        </div>
-                      )}
-                      {latestFitnessTest.sprint10m && (
-                        <div>
-                          <p className="text-gray-600">10m Sprint</p>
-                          <p className="text-lg font-bold text-purple-700">{latestFitnessTest.sprint10m}s</p>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                </div>
-              ) : (
-                <div className="flex-grow flex items-center justify-center">
-                  <p className="text-gray-400 text-sm">No fitness tests recorded yet</p>
-                </div>
-              )}
-              <div className="mt-5 pt-4 border-t border-gray-100">
-                <span className="text-sm text-purple-600 font-semibold flex items-center gap-1">
-                  View All Tests 
-                  <span className="text-lg">→</span>
-                </span>
-              </div>
-            </Link>
-
-            {/* Recent Reviews */}
-            <Link to="/reviews" className="bg-white rounded-2xl shadow-xl p-6 border border-gray-100 hover:shadow-2xl transition-all duration-300 flex flex-col cursor-pointer hover:-translate-y-1">
-              <div className="flex items-center gap-3 mb-5">
-                <div className="bg-gradient-to-br from-indigo-500 to-blue-600 p-3 rounded-xl shadow-lg">
-                  <Star className="text-white" size={24} />
-                </div>
-                <h2 className="text-xl font-bold text-gray-800">
-                  My Reviews
-                </h2>
-              </div>
-              {recentReviews.length > 0 ? (
-                <div className="space-y-2 flex-grow">
-                  {recentReviews.map((review, index) => (
-                    <div key={review.id} className="bg-indigo-50 rounded-xl p-3 border border-indigo-100">
-                      <div className="flex items-center gap-1 mb-1">
-                        {[...Array(5)].map((_, i) => (
-                          <Star 
-                            key={i} 
-                            size={12} 
-                            className={i < review.rating ? "fill-yellow-400 text-yellow-400" : "text-gray-300"} 
-                          />
-                        ))}
-                      </div>
-                      <p className="text-xs text-indigo-600 truncate">{review.comments || "No comments"}</p>
-                      <p className="text-[10px] text-gray-500 mt-1">
-                        {new Date(review.timestamp).toLocaleDateString('en-GB')}
-                      </p>
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <div className="flex-grow flex items-center justify-center">
-                  <p className="text-gray-400 text-sm">No reviews yet</p>
-                </div>
-              )}
-              <div className="mt-5 pt-4 border-t border-gray-100">
-                <span className="text-sm text-indigo-600 font-semibold flex items-center gap-1">
-                  View All Reviews 
-                  <span className="text-lg">→</span>
-                </span>
-              </div>
-            </Link>
-
             {/* Upcoming Fixtures */}
             <Link to="/fixtures" className="bg-white rounded-2xl shadow-xl p-6 border border-gray-100 hover:shadow-2xl transition-all duration-300 flex flex-col cursor-pointer hover:-translate-y-1 md:col-span-2 xl:col-span-1">
               <div className="flex items-center gap-3 mb-5">
@@ -460,9 +356,9 @@ export default function Dashboard() {
                   <BarChart3 className="text-blue-600 mb-2" size={20} />
                   <p className="text-sm font-bold text-blue-800">My Statistics</p>
                 </Link>
-                <Link to="/fitness" className="bg-gradient-to-br from-purple-50 to-purple-100 hover:from-purple-100 hover:to-purple-200 rounded-xl p-4 border border-purple-200 transition-all">
-                  <TrendingUp className="text-purple-600 mb-2" size={20} />
-                  <p className="text-sm font-bold text-purple-800">Fitness Tests</p>
+                <Link to="/away-day" className="bg-gradient-to-br from-purple-50 to-purple-100 hover:from-purple-100 hover:to-purple-200 rounded-xl p-4 border border-purple-200 transition-all">
+                  <Trophy className="text-purple-600 mb-2" size={20} />
+                  <p className="text-sm font-bold text-purple-800">Away Day Hub</p>
                 </Link>
                 <Link to="/fixtures" className="bg-gradient-to-br from-orange-50 to-orange-100 hover:from-orange-100 hover:to-orange-200 rounded-xl p-4 border border-orange-200 transition-all">
                   <Trophy className="text-orange-600 mb-2" size={20} />
@@ -593,28 +489,28 @@ export default function Dashboard() {
             </div>
           </Link>
 
-          <Link to="/reviews" className="bg-white rounded-2xl shadow-xl p-6 border border-gray-100 hover:shadow-2xl transition-all duration-300 flex flex-col cursor-pointer hover:-translate-y-1">
+          <Link to="/fixtures" className="bg-white rounded-2xl shadow-xl p-6 border border-gray-100 hover:shadow-2xl transition-all duration-300 flex flex-col cursor-pointer hover:-translate-y-1">
             <div className="flex items-center gap-3 mb-5">
               <div className="bg-gradient-to-br from-purple-500 to-pink-600 p-3 rounded-xl shadow-lg">
-                <Star className="text-white" size={24} />
+                <Trophy className="text-white" size={24} />
               </div>
               <h2 className="text-xl font-bold text-gray-800">
-                Performance
+                Match Results
               </h2>
             </div>
             <div className="space-y-4 flex-grow">
               <div className="bg-purple-50 rounded-xl p-4 border border-purple-100">
-                <p className="text-sm text-purple-600 mb-1">Recent Reviews</p>
-                <p className="text-3xl font-bold text-purple-700">0</p>
+                <p className="text-sm text-purple-600 mb-1">Completed Matches</p>
+                <p className="text-3xl font-bold text-purple-700">{fixtures.filter(f => f.status === "Completed").length}</p>
               </div>
               <div className="bg-pink-50 rounded-xl p-4 border border-pink-100">
-                <p className="text-sm text-pink-600 mb-1">This Week</p>
-                <p className="text-3xl font-bold text-pink-700">0</p>
+                <p className="text-sm text-pink-600 mb-1">Upcoming Fixtures</p>
+                <p className="text-3xl font-bold text-pink-700">{fixtures.filter(f => f.status === "Upcoming").length}</p>
               </div>
             </div>
             <div className="mt-5 pt-4 border-t border-gray-100">
               <span className="text-sm text-purple-600 font-semibold flex items-center gap-1">
-                View Reviews 
+                View Fixtures & Results 
                 <span className="text-lg">→</span>
               </span>
             </div>

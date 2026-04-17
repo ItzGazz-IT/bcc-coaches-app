@@ -8,16 +8,12 @@ import CredentialsManager from "./pages/CredentialsManager"
 import Calendar from "./pages/Calendar"
 import Attendance from "./pages/Attendance"
 import AttendanceAdmin from "./pages/AttendanceAdmin"
-import Reviews from "./pages/Reviews"
 import InjuriesAvailability from "./pages/InjuriesAvailability"
-import FitnessTests from "./pages/FitnessTests"
-import MatchCenter from "./pages/MatchCenter"
 import Fixtures from "./pages/Fixtures"
 import PlayerStats from "./pages/PlayerStats"
 import SeasonGoals from "./pages/SeasonGoals"
 import Announcements from "./pages/Announcements"
 import NavSettings from "./pages/NavSettings"
-import PerformanceCharts from "./pages/PerformanceCharts"
 import AwayDayHub from "./pages/AwayDayHub"
 import Sidebar from "./components/Sidebar"
 import BottomNav from "./components/BottomNav"
@@ -34,19 +30,15 @@ export default function App() {
             ["players", Players],
             ["coaches", CoachesManager],
             ["credentials", CredentialsManager],
-            ["fitness", FitnessTests],
             ["fixtures", Fixtures],
-            ["match-center", MatchCenter],
             ["player-stats", PlayerStats],
             ["season-goals", SeasonGoals],
             ["announcements", Announcements],
             ["calendar", Calendar],
             ["attendance", Attendance],
             ["attendance-admin", AttendanceAdmin],
-            ["reviews", Reviews],
             ["injuries", InjuriesAvailability],
             ["nav-settings", NavSettings],
-            ["performance-charts", PerformanceCharts],
             ["away-day", AwayDayHub]
           ].map(([path, Page]) => (
             <Route

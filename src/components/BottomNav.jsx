@@ -1,5 +1,5 @@
 import { Link, useLocation, useNavigate } from "react-router-dom"
-import { LayoutDashboard, Users, Trophy, BarChart3, MoreHorizontal, Heart, TrendingUp, Star, CalendarDays, Crosshair, Target, ClipboardCheck, Bell, X, Settings, LogOut, Moon, Sun, LineChart, CarFront } from "lucide-react"
+import { LayoutDashboard, Users, Trophy, BarChart3, MoreHorizontal, Heart, CalendarDays, Target, ClipboardCheck, Bell, X, Settings, LogOut, Moon, Sun, CarFront } from "lucide-react"
 import { useApp } from "../contexts/AppContext"
 import NotificationBadge from "./NotificationBadge"
 import { useState, useEffect } from "react"
@@ -32,28 +32,21 @@ export default function BottomNav() {
   ]
 
   const coachMoreNav = [
-    { path: "/match-center", label: "Match Center", icon: Crosshair },
     { path: "/away-day", label: "Away Day Hub", icon: CarFront },
-    { path: "/fitness", label: "Fitness Tests", icon: TrendingUp },
-    { path: "/reviews", label: "Reviews", icon: Star },
     { path: "/injuries", label: "Injuries", icon: Heart },
     { path: "/attendance", label: "Attendance", icon: ClipboardCheck },
     { path: "/season-goals", label: "Season Goals", icon: Target },
     { path: "/calendar", label: "Calendar", icon: CalendarDays },
-    { path: "/announcements", label: "Announcements", icon: Bell },
-    { path: "/performance-charts", label: "Analytics", icon: LineChart }
+    { path: "/announcements", label: "Announcements", icon: Bell }
   ]
 
   // Available player navigation items
   const availablePlayerItems = {
     stats: { path: "/player-stats", label: "Stats", icon: BarChart3 },
-    fitness: { path: "/fitness", label: "Fitness", icon: TrendingUp },
-    reviews: { path: "/reviews", label: "My Reviews", icon: Star },
     availability: { path: "/injuries", label: "Availability", icon: Heart },
     awayDay: { path: "/away-day", label: "Away Day", icon: CarFront },
     calendar: { path: "/calendar", label: "Calendar", icon: CalendarDays },
-    announcements: { path: "/announcements", label: "Announcements", icon: Bell },
-    charts: { path: "/performance-charts", label: "My Progress", icon: LineChart }
+    announcements: { path: "/announcements", label: "Announcements", icon: Bell }
   }
 
   // Load player nav preferences from localStorage
@@ -62,8 +55,8 @@ export default function BottomNav() {
       const savedMain = localStorage.getItem("playerNavMain")
       const savedMore = localStorage.getItem("playerNavMore")
       
-      const mainIds = savedMain ? JSON.parse(savedMain) : ["stats", "fitness"]
-      const moreIds = savedMore ? JSON.parse(savedMore) : ["reviews", "availability", "awayDay", "calendar", "announcements"]
+      const mainIds = savedMain ? JSON.parse(savedMain) : ["stats", "awayDay"]
+      const moreIds = savedMore ? JSON.parse(savedMore) : ["availability", "calendar", "announcements"]
       
       setPlayerNavMain(mainIds.map(id => availablePlayerItems[id]).filter(Boolean))
       setPlayerNavMore(moreIds.map(id => availablePlayerItems[id]).filter(Boolean))
