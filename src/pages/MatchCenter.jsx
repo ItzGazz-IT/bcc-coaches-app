@@ -767,98 +767,10 @@ function MatchCenter() {
             </div>
           </div>
 
-          {/* Recent Results */}
-          <div className="bg-white rounded-2xl shadow-xl border border-gray-100 overflow-hidden">
-            <div className="p-6 border-b border-gray-100 bg-gradient-to-r from-green-50 to-white flex items-center justify-between">
-              <h2 className="text-xl font-bold text-gray-800">Recent Results</h2>
-              <button
-                onClick={() => navigate("/fixtures")}
-                className="text-green-600 hover:text-green-700 font-semibold text-sm flex items-center gap-1"
-              >
-                View All <ChevronRight size={16} />
-              </button>
-            </div>
-            <div className="p-6">
-              {recentResults.length === 0 ? (
-                <div className="text-center py-12">
-                  <Trophy className="mx-auto text-gray-300 mb-3" size={48} />
-                  <p className="text-gray-500 font-medium">No recent results</p>
-                </div>
-              ) : (
-                <div className="space-y-4">
-                  {recentResults.map(fixture => (
-                    <div key={fixture.id} className="p-4 rounded-xl border-2 border-gray-200 bg-gradient-to-br from-white to-gray-50 hover:shadow-md transition-all">
-                      <div className="flex items-center justify-between mb-2">
-                        <div className="flex items-center gap-2">
-                          <div className="bg-gray-500 text-white px-2 py-1 rounded text-xs font-bold">
-                            Squad
-                          </div>
-                          <div className={`px-2 py-1 rounded text-xs font-bold ${
-                            fixture.result === "Win" ? "bg-green-100 text-green-700" :
-                            fixture.result === "Loss" ? "bg-red-100 text-red-700" :
-                            "bg-gray-100 text-gray-700"
-                          }`}>
-                            {fixture.result}
-                          </div>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          {fixture.score && (
-                            <div className="text-xl font-black text-gray-800">
-                              {fixture.score}
-                            </div>
-                          )}
-                          <button
-                            onClick={() => handleMatchClick(fixture)}
-                            className="p-2 hover:bg-blue-100 rounded-lg transition-colors"
-                            title="Edit match details"
-                          >
-                            <Edit size={16} className="text-blue-600" />
-                          </button>
-                          <button
-                            onClick={() => handleShareToWhatsApp(fixture)}
-                            className="p-2 hover:bg-green-100 rounded-lg transition-colors"
-                            title="Share to WhatsApp"
-                          >
-                            <Share2 size={16} className="text-green-600" />
-                          </button>
-                        </div>
-                      </div>
-                      <h3 className="text-lg font-black text-gray-800 mb-2">vs {fixture.opponent}</h3>
-                      <div className="flex items-center gap-4 text-xs text-gray-600">
-                        <div className="flex items-center gap-1">
-                          <Calendar size={14} />
-                          <span>{new Date(fixture.date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })}</span>
-                        </div>
-                        {fixture.competition && (
-                          <div className="flex items-center gap-1">
-                            <Trophy size={14} />
-                            <span>{fixture.competition}</span>
-                          </div>
-                        )}
-                      </div>
-                      {(fixture.scorers?.length > 0 || fixture.yellowCards?.length > 0 || fixture.redCards?.length > 0) && (
-                        <div className="mt-3 pt-3 border-t border-gray-200 flex items-center gap-4 text-xs">
-                          {fixture.scorers?.length > 0 && (
-                            <span className="text-green-700 font-semibold">⚽ {fixture.scorers.length}</span>
-                          )}
-                          {fixture.yellowCards?.length > 0 && (
-                            <span className="text-yellow-600 font-semibold">🟨 {fixture.yellowCards.length}</span>
-                          )}
-                          {fixture.redCards?.length > 0 && (
-                            <span className="text-red-600 font-semibold">🟥 {fixture.redCards.length}</span>
-                          )}
-                        </div>
-                      )}
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-          </div>
         </div>
 
-        {/* Win Rate */}
-        {stats.totalMatches > 0 && (
+        {/* Win Rate - hidden (no past matches shown) */}
+        {false && stats.totalMatches > 0 && (
           <div className="mt-6 bg-white rounded-2xl shadow-xl border border-gray-100 p-6">
             <h2 className="text-xl font-bold text-gray-800 mb-4">Performance Overview</h2>
             <div className="grid grid-cols-3 gap-4">
