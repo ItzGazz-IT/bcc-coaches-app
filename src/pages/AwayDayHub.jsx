@@ -234,6 +234,7 @@ function AwayDayHub() {
     return sorted.filter((game) => !isPastGame(game))
   }, [games, showPastGames])
   const canManage = isCoachUser(userRole)
+  const isPlayerUser = userRole === "player"
   const currentPlayer = useMemo(() => players.find((player) => player.id === currentPlayerId) || null, [players, currentPlayerId])
 
   const teamPlayers = useMemo(() => {
@@ -862,7 +863,8 @@ function AwayDayHub() {
           </form>
         )}
 
-        <section className="grid grid-cols-1 xl:grid-cols-3 gap-5">
+        <section className={`grid gap-5 ${isPlayerUser ? "grid-cols-1" : "grid-cols-1 xl:grid-cols-3"}`}>
+          {!isPlayerUser && (
           <aside className="rounded-2xl border border-slate-200 bg-white shadow-md p-4 xl:col-span-1">
             <div className="mb-3 flex items-center justify-between gap-2">
               <h2 className="font-bold text-slate-800">Away Games</h2>
@@ -896,13 +898,14 @@ function AwayDayHub() {
               </div>
             )}
           </aside>
+          )}
 
           {!selectedGame ? (
-            <div className="xl:col-span-2 rounded-2xl border border-dashed border-slate-300 bg-white/80 p-8 text-center text-slate-600">
+            <div className={`${isPlayerUser ? "" : "xl:col-span-2"} rounded-2xl border border-dashed border-slate-300 bg-white/80 p-8 text-center text-slate-600`}>
               Select an away game to manage attendance, transport, and lineup.
             </div>
           ) : (
-            <div className="xl:col-span-2 space-y-5">
+            <div className={`${isPlayerUser ? "" : "xl:col-span-2"} space-y-5`}>
               <section className="rounded-2xl border border-slate-200 bg-white shadow-md p-5">
                 <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-3">
                   <div>
@@ -1115,6 +1118,7 @@ function AwayDayHub() {
                     <h4 className="font-bold text-cyan-900 mb-2">Your Transport Offer</h4>
                     {playerOffer ? (
                       <div className="text-sm text-cyan-900 space-y-1">
+                        <p><span className="font-bold">Offered by:</span> {playerOffer.by || getPlayerName(currentPlayer) || "You"}</p>
                         <p><span className="font-bold">Seats:</span> {playerOffer.seats || 0}</p>
                         <p><span className="font-bold">From:</span> {playerOffer.from || "Not set"}</p>
                         <p><span className="font-bold">Notes:</span> {playerOffer.notes || "None"}</p>
