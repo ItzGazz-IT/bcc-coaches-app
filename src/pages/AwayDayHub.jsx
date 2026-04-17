@@ -133,7 +133,10 @@ const emptyLineup = {
   bench: [],
   notes: "",
   publishedAt: null,
-  publishedBy: null
+  publishedBy: null,
+  isConfirmed: false,
+  confirmedAt: null,
+  confirmedBy: null
 }
 
 const lineupTeams = [
@@ -556,10 +559,18 @@ function AwayDayHub() {
   const handleSaveLineup = async () => {
     if (!selectedGame || !canManage) return
     const teamLineup = lineupForms[activeLineupTeam] || emptyLineup
+    if (teamLineup.isConfirmed) {
+      setFeedback("error", "This lineup is confirmed and locked. Unlock it to make changes.")
+      return
+    }
+
     const payload = {
       ...teamLineup,
       publishedAt: new Date().toISOString(),
-      publishedBy: currentUser || "coach"
+      publishedBy: currentUser || "coach",
+      isConfirmed: false,
+      confirmedAt: null,
+      confirmedBy: null
     }
 
     const currentLineups = getGameLineups(selectedGame)
@@ -579,6 +590,76 @@ function AwayDayHub() {
 
     const ok = await updateSelectedGame(updatePayload)
     if (ok) setFeedback("success", `${lineupTeams.find((team) => team.id === activeLineupTeam)?.label || "Team"} lineup published.`)
+  }
+
+  const handleConfirmLineup = async () => {
+    if (!selectedGame || !canManage) return
+    const teamLineup = lineupForms[activeLineupTeam] || emptyLineup
+
+    if ((teamLineup.starters || []).length === 0) {
+      setFeedback("error", "Select at least one starter before confirming lineup.")
+      return
+    }
+
+    const payload = {
+      ...teamLineup,
+      publishedAt: new Date().toISOString(),
+      publishedBy: currentUser || "coach",
+      isConfirmed: true,
+      confirmedAt: new Date().toISOString(),
+      confirmedBy: currentUser || "coach"
+    }
+
+    const currentLineups = getGameLineups(selectedGame)
+    const updatedLineups = {
+      ...currentLineups,
+      [activeLineupTeam]: payload
+    }
+
+    const updatePayload = {
+      lineups: updatedLineups
+    }
+
+    if (activeLineupTeam === "firstTeam") {
+      updatePayload.lineup = payload
+    }
+
+    const ok = await updateSelectedGame(updatePayload)
+    if (ok) setFeedback("success", `${lineupTeams.find((team) => team.id === activeLineupTeam)?.label || "Team"} lineup confirmed and locked.`)
+  }
+
+  const handleUnlockConfirmedLineup = async () => {
+    if (!selectedGame || !canManage) return
+    const teamLineup = lineupForms[activeLineupTeam] || emptyLineup
+
+    if (!teamLineup.isConfirmed) {
+      setFeedback("error", "This lineup is already editable.")
+      return
+    }
+
+    const payload = {
+      ...teamLineup,
+      isConfirmed: false,
+      confirmedAt: null,
+      confirmedBy: null
+    }
+
+    const currentLineups = getGameLineups(selectedGame)
+    const updatedLineups = {
+      ...currentLineups,
+      [activeLineupTeam]: payload
+    }
+
+    const updatePayload = {
+      lineups: updatedLineups
+    }
+
+    if (activeLineupTeam === "firstTeam") {
+      updatePayload.lineup = payload
+    }
+
+    const ok = await updateSelectedGame(updatePayload)
+    if (ok) setFeedback("success", `${lineupTeams.find((team) => team.id === activeLineupTeam)?.label || "Team"} lineup unlocked for edits.`)
   }
 
   const attendanceEntries = selectedGame ? Object.entries(selectedGame.attendance || {}) : []
@@ -606,6 +687,8 @@ function AwayDayHub() {
   const lineupLockedBySubmission = submissionState.isLocked
   const canEditLineup = canManage && (!lineupLockedBySubmission || lineupOverrideEnabled)
   const activeLineup = lineupForms[activeLineupTeam] || emptyLineup
+  const activeLineupConfirmed = Boolean(activeLineup.isConfirmed)
+  const canEditActiveLineup = canEditLineup && !activeLineupConfirmed
 
   const handleToggleManualLock = async () => {
     if (!selectedGame || !canManage) return
@@ -1066,7 +1149,7 @@ function AwayDayHub() {
                           }
                         }))}
                         placeholder="Formation"
-                        disabled={!canEditLineup || saving}
+                        disabled={!canEditActiveLineup || saving}
                         className="rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-indigo-500 disabled:opacity-50"
                       />
                       <input
@@ -1079,10 +1162,20 @@ function AwayDayHub() {
                           }
                         }))}
                         placeholder="Lineup notes"
-                        disabled={!canEditLineup || saving}
+                        disabled={!canEditActiveLineup || saving}
                         className="rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-indigo-500 md:col-span-2 disabled:opacity-50"
                       />
                     </div>
+
+                    {activeLineupConfirmed && (
+                      <div className="mb-4 rounded-xl border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-800">
+                        <p className="font-semibold">This lineup is confirmed and locked.</p>
+                        <p className="text-xs mt-1">
+                          Confirmed by {activeLineup.confirmedBy || "coach"}
+                          {activeLineup.confirmedAt ? ` on ${new Date(activeLineup.confirmedAt).toLocaleString("en-GB")}` : ""}
+                        </p>
+                      </div>
+                    )}
 
                     <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-4">
                       <div className="rounded-xl border border-emerald-200 bg-emerald-50 p-3">
@@ -1094,7 +1187,7 @@ function AwayDayHub() {
                               <button
                                 key={player.id}
                                 onClick={() => handleToggleLineupPlayer("starters", player.id)}
-                                disabled={!canEditLineup || saving}
+                                disabled={!canEditActiveLineup || saving}
                                 className={`w-full text-left px-2.5 py-2 rounded-lg text-sm transition-colors ${
                                   active ? "bg-emerald-600 text-white" : "bg-white text-slate-700 hover:bg-emerald-100"
                                 } disabled:opacity-50`}
@@ -1115,7 +1208,7 @@ function AwayDayHub() {
                               <button
                                 key={`${player.id}-bench`}
                                 onClick={() => handleToggleLineupPlayer("bench", player.id)}
-                                disabled={!canEditLineup || saving}
+                                disabled={!canEditActiveLineup || saving}
                                 className={`w-full text-left px-2.5 py-2 rounded-lg text-sm transition-colors ${
                                   active ? "bg-indigo-600 text-white" : "bg-white text-slate-700 hover:bg-indigo-100"
                                 } disabled:opacity-50`}
@@ -1128,13 +1221,31 @@ function AwayDayHub() {
                       </div>
                     </div>
 
-                    <button
-                      onClick={handleSaveLineup}
-                      disabled={saving || !canEditLineup}
-                      className="rounded-xl bg-slate-900 text-white px-4 py-2.5 text-sm font-bold hover:bg-slate-700 transition-colors disabled:opacity-60"
-                    >
-                      Publish {lineupTeams.find((team) => team.id === activeLineupTeam)?.label || "Team"} Lineup
-                    </button>
+                    <div className="flex flex-wrap items-center gap-2">
+                      <button
+                        onClick={handleSaveLineup}
+                        disabled={saving || !canEditActiveLineup}
+                        className="rounded-xl bg-slate-900 text-white px-4 py-2.5 text-sm font-bold hover:bg-slate-700 transition-colors disabled:opacity-60"
+                      >
+                        Save Draft
+                      </button>
+                      <button
+                        onClick={handleConfirmLineup}
+                        disabled={saving || !canEditActiveLineup}
+                        className="rounded-xl bg-emerald-600 text-white px-4 py-2.5 text-sm font-bold hover:bg-emerald-700 transition-colors disabled:opacity-60"
+                      >
+                        Confirm and Lock
+                      </button>
+                      {activeLineupConfirmed && (
+                        <button
+                          onClick={handleUnlockConfirmedLineup}
+                          disabled={saving || !canEditLineup}
+                          className="rounded-xl border border-amber-300 bg-amber-50 text-amber-800 px-4 py-2.5 text-sm font-bold hover:bg-amber-100 transition-colors disabled:opacity-60"
+                        >
+                          Unlock for Edits
+                        </button>
+                      )}
+                    </div>
                   </>
                 ) : (
                   <div className="space-y-4">
@@ -1174,6 +1285,7 @@ function AwayDayHub() {
                           <div className="mt-3 rounded-xl border border-slate-200 bg-slate-50 p-3 text-sm text-slate-700">
                             <p><span className="font-bold">Formation:</span> {lineup.formation || "Not set"}</p>
                             <p><span className="font-bold">Notes:</span> {lineup.notes || "No notes"}</p>
+                            <p><span className="font-bold">Status:</span> {lineup.isConfirmed ? "Confirmed" : "Draft"}</p>
                           </div>
                         </div>
                       )
