@@ -4,11 +4,49 @@ import { useApp } from "../contexts/AppContext"
 import { addDoc, collection, doc, onSnapshot, orderBy, query, updateDoc } from "firebase/firestore"
 import { db } from "../firebase/config"
 
-const getTeamLabel = () => "Squad"
+const getTeamLabel = () => "All Teams"
 
 const isCoachUser = (role) => role === "coach" || role === "super-admin"
 
 const getPlayerName = (player) => `${player?.firstName || ""} ${player?.lastName || ""}`.trim()
+
+const normalizeText = (value) => String(value || "").trim().replace(/\s+/g, " ").toUpperCase()
+
+const buildAwayGameKey = (item) => [item?.date || "", normalizeText(item?.opponent || item?.title || "")].join("|")
+
+const getGameDisplayTitle = (game) => {
+  if (game?.opponent) return `Away Day vs ${game.opponent}`
+  if (game?.title) return game.title
+  return "Away Day"
+}
+
+const getGameDataScore = (game) => {
+  const attendanceCount = Object.keys(game?.attendance || {}).length
+  const offerCount = Object.keys(game?.transportOffers || {}).length
+  const requestCount = Object.keys(game?.transportRequests || {}).length
+  const lineupCount = (game?.lineup?.starters?.length || 0) + (game?.lineup?.bench?.length || 0)
+  const multiLineupCount = Object.values(game?.lineups || {}).reduce(
+    (sum, lineup) => sum + (lineup?.starters?.length || 0) + (lineup?.bench?.length || 0),
+    0
+  )
+
+  return attendanceCount + offerCount + requestCount + lineupCount + multiLineupCount
+}
+
+const pickPreferredGame = (currentGame, nextGame) => {
+  if (!currentGame) return nextGame
+
+  const currentScore = getGameDataScore(currentGame)
+  const nextScore = getGameDataScore(nextGame)
+
+  if (nextScore !== currentScore) {
+    return nextScore > currentScore ? nextGame : currentGame
+  }
+
+  const currentCreatedAt = new Date(currentGame.createdAt || 0).getTime()
+  const nextCreatedAt = new Date(nextGame.createdAt || 0).getTime()
+  return nextCreatedAt > currentCreatedAt ? nextGame : currentGame
+}
 
 const parseSeatCount = (value) => {
   const parsed = Number.parseInt(value, 10)
@@ -174,7 +212,14 @@ function AwayDayHub() {
 
   const selectedGame = useMemo(() => games.find((game) => game.id === selectedGameId) || null, [games, selectedGameId])
   const visibleGames = useMemo(() => {
-    const sorted = [...games].sort((a, b) => new Date(a.date) - new Date(b.date))
+    const deduped = new Map()
+
+    for (const game of games) {
+      const key = buildAwayGameKey(game)
+      deduped.set(key, pickPreferredGame(deduped.get(key), game))
+    }
+
+    const sorted = Array.from(deduped.values()).sort((a, b) => new Date(a.date) - new Date(b.date))
     if (showPastGames) return sorted
     return sorted.filter((game) => !isPastGame(game))
   }, [games, showPastGames])
@@ -239,9 +284,10 @@ function AwayDayHub() {
       (fixture) => (fixture.homeAway || "").toLowerCase() === "away"
     )
 
+    const existingGameKeys = new Set(games.map((game) => buildAwayGameKey(game)))
     const missing = awayFixtures.filter(
       (fixture) =>
-        !games.some((game) => game.fixtureId === fixture.id) &&
+        !existingGameKeys.has(buildAwayGameKey(fixture)) &&
         !creatingFixtureIdsRef.current.has(fixture.id)
     )
 
@@ -258,7 +304,7 @@ function AwayDayHub() {
       try {
         await addDoc(collection(db, "awayGames"), {
           fixtureId: fixture.id,
-          title: `Squad vs ${fixture.opponent}`,
+          title: `Away Day vs ${fixture.opponent}`,
           opponent: fixture.opponent || "",
           date: fixture.date || "",
           time: fixture.time || "",
@@ -747,7 +793,7 @@ function AwayDayHub() {
                         : "border-slate-200 hover:border-slate-300 hover:bg-slate-50"
                     }`}
                   >
-                    <p className="text-sm font-bold text-slate-800">{game.title || `Away vs ${game.opponent}`}</p>
+                    <p className="text-sm font-bold text-slate-800">{getGameDisplayTitle(game)}</p>
                     <p className="text-xs text-slate-500 mt-1">{game.date} {game.time ? `at ${game.time}` : ""}</p>
                     <p className="text-xs font-semibold text-cyan-700 mt-1">{getTeamLabel(game.team)}</p>
                   </button>
@@ -765,7 +811,7 @@ function AwayDayHub() {
               <section className="rounded-2xl border border-slate-200 bg-white shadow-md p-5">
                 <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-3">
                   <div>
-                    <h3 className="text-2xl font-black text-slate-800">{selectedGame.title || `Away vs ${selectedGame.opponent}`}</h3>
+                    <h3 className="text-2xl font-black text-slate-800">{getGameDisplayTitle(selectedGame)}</h3>
                     <p className="text-sm text-slate-600 mt-1">Opposition: {selectedGame.opponent}</p>
                     <div className="mt-2 inline-flex items-center gap-2 text-xs font-bold">
                       <span className={`px-2 py-1 rounded-full ${submissionState.isLocked ? "bg-red-100 text-red-700" : "bg-emerald-100 text-emerald-700"}`}>
