@@ -28,6 +28,14 @@ const getKickoffDateTime = (date, time) => {
   return kickoff
 }
 
+const isPastGame = (game, nowDate = new Date()) => {
+  const todayStart = new Date(nowDate)
+  todayStart.setHours(0, 0, 0, 0)
+  const kickoff = getKickoffDateTime(game?.date, game?.time)
+  if (!kickoff) return false
+  return kickoff.getTime() < todayStart.getTime()
+}
+
 const getSubmissionState = (game) => {
   if (!game) {
     return {
@@ -90,6 +98,26 @@ const emptyLineup = {
   publishedBy: null
 }
 
+const lineupTeams = [
+  { id: "firstTeam", label: "First Team" },
+  { id: "reserveTeam", label: "Reserve Team" }
+]
+
+const normalizeLineup = (lineup) => ({
+  ...emptyLineup,
+  ...(lineup || {}),
+  starters: lineup?.starters || [],
+  bench: lineup?.bench || []
+})
+
+const getGameLineups = (game) => {
+  const savedLineups = game?.lineups || {}
+  return {
+    firstTeam: normalizeLineup(savedLineups.firstTeam || game?.lineup),
+    reserveTeam: normalizeLineup(savedLineups.reserveTeam)
+  }
+}
+
 function AwayDayHub() {
   const { players, fixtures, userRole, currentPlayerId, currentUser } = useApp()
   const [games, setGames] = useState([])
@@ -97,6 +125,7 @@ function AwayDayHub() {
   const [showCreatePanel, setShowCreatePanel] = useState(false)
   const [saving, setSaving] = useState(false)
   const [syncingFixtures, setSyncingFixtures] = useState(false)
+  const [showPastGames, setShowPastGames] = useState(false)
   const [lockMinutesInput, setLockMinutesInput] = useState("90")
   const [message, setMessage] = useState({ type: "", text: "" })
   const creatingFixtureIdsRef = useRef(new Set())
@@ -117,7 +146,8 @@ function AwayDayHub() {
 
   const [offerForm, setOfferForm] = useState({ seats: "", from: "", notes: "" })
   const [requestForm, setRequestForm] = useState({ seats: "1", pickup: "", notes: "" })
-  const [lineupForm, setLineupForm] = useState(emptyLineup)
+  const [lineupForms, setLineupForms] = useState(getGameLineups(null))
+  const [activeLineupTeam, setActiveLineupTeam] = useState("firstTeam")
 
   useEffect(() => {
     const q = query(collection(db, "awayGames"), orderBy("date", "asc"))
@@ -143,6 +173,11 @@ function AwayDayHub() {
   }, [selectedGameId])
 
   const selectedGame = useMemo(() => games.find((game) => game.id === selectedGameId) || null, [games, selectedGameId])
+  const visibleGames = useMemo(() => {
+    const sorted = [...games].sort((a, b) => new Date(a.date) - new Date(b.date))
+    if (showPastGames) return sorted
+    return sorted.filter((game) => !isPastGame(game))
+  }, [games, showPastGames])
   const canManage = isCoachUser(userRole)
   const currentPlayer = useMemo(() => players.find((player) => player.id === currentPlayerId) || null, [players, currentPlayerId])
 
@@ -175,15 +210,10 @@ function AwayDayHub() {
 
   useEffect(() => {
     if (!selectedGame) {
-      setLineupForm(emptyLineup)
+      setLineupForms(getGameLineups(null))
       return
     }
-    setLineupForm({
-      ...emptyLineup,
-      ...selectedGame.lineup,
-      starters: selectedGame.lineup?.starters || [],
-      bench: selectedGame.lineup?.bench || []
-    })
+    setLineupForms(getGameLineups(selectedGame))
   }, [selectedGame])
 
   useEffect(() => {
@@ -268,6 +298,16 @@ function AwayDayHub() {
     if (!canManage) return
     syncAwayGamesFromFixtures({ silent: true })
   }, [canManage, fixtures, games, currentUser])
+
+  useEffect(() => {
+    if (!selectedGameId) return
+    if (visibleGames.some((game) => game.id === selectedGameId)) return
+    if (visibleGames.length > 0) {
+      setSelectedGameId(visibleGames[0].id)
+      return
+    }
+    setSelectedGameId("")
+  }, [selectedGameId, visibleGames])
 
   useEffect(() => {
     if (!selectedGame) {
@@ -443,9 +483,10 @@ function AwayDayHub() {
   }
 
   const handleToggleLineupPlayer = (section, playerId) => {
-    setLineupForm((prev) => {
-      const starters = prev.starters.filter((id) => id !== playerId)
-      const bench = prev.bench.filter((id) => id !== playerId)
+    setLineupForms((prev) => {
+      const teamLineup = prev[activeLineupTeam] || emptyLineup
+      const starters = teamLineup.starters.filter((id) => id !== playerId)
+      const bench = teamLineup.bench.filter((id) => id !== playerId)
       const target = section === "starters" ? starters : bench
 
       if (!target.includes(playerId)) {
@@ -454,22 +495,41 @@ function AwayDayHub() {
 
       return {
         ...prev,
-        starters,
-        bench
+        [activeLineupTeam]: {
+          ...teamLineup,
+          starters,
+          bench
+        }
       }
     })
   }
 
   const handleSaveLineup = async () => {
     if (!selectedGame || !canManage) return
+    const teamLineup = lineupForms[activeLineupTeam] || emptyLineup
     const payload = {
-      ...lineupForm,
+      ...teamLineup,
       publishedAt: new Date().toISOString(),
       publishedBy: currentUser || "coach"
     }
 
-    const ok = await updateSelectedGame({ lineup: payload })
-    if (ok) setFeedback("success", "Lineup published.")
+    const currentLineups = getGameLineups(selectedGame)
+    const updatedLineups = {
+      ...currentLineups,
+      [activeLineupTeam]: payload
+    }
+
+    const updatePayload = {
+      lineups: updatedLineups
+    }
+
+    // Keep legacy lineup field aligned for existing read paths.
+    if (activeLineupTeam === "firstTeam") {
+      updatePayload.lineup = payload
+    }
+
+    const ok = await updateSelectedGame(updatePayload)
+    if (ok) setFeedback("success", `${lineupTeams.find((team) => team.id === activeLineupTeam)?.label || "Team"} lineup published.`)
   }
 
   const attendanceEntries = selectedGame ? Object.entries(selectedGame.attendance || {}) : []
@@ -496,6 +556,7 @@ function AwayDayHub() {
   const showPlayerCountdown = userRole === "player" && !submissionState.isLocked && cutoffMs !== null
   const lineupLockedBySubmission = submissionState.isLocked
   const canEditLineup = canManage && (!lineupLockedBySubmission || lineupOverrideEnabled)
+  const activeLineup = lineupForms[activeLineupTeam] || emptyLineup
 
   const handleToggleManualLock = async () => {
     if (!selectedGame || !canManage) return
@@ -662,12 +723,21 @@ function AwayDayHub() {
 
         <section className="grid grid-cols-1 xl:grid-cols-3 gap-5">
           <aside className="rounded-2xl border border-slate-200 bg-white shadow-md p-4 xl:col-span-1">
-            <h2 className="font-bold text-slate-800 mb-3">Away Games</h2>
-            {games.length === 0 ? (
+            <div className="mb-3 flex items-center justify-between gap-2">
+              <h2 className="font-bold text-slate-800">Away Games</h2>
+              <button
+                type="button"
+                onClick={() => setShowPastGames((prev) => !prev)}
+                className="rounded-lg border border-slate-300 px-2.5 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-50"
+              >
+                {showPastGames ? "Hide Past" : "Show Past"}
+              </button>
+            </div>
+            {visibleGames.length === 0 ? (
               <p className="text-sm text-slate-500">No games created yet.</p>
             ) : (
               <div className="space-y-2 max-h-[540px] overflow-y-auto pr-1">
-                {games.map((game) => (
+                {visibleGames.map((game) => (
                   <button
                     key={game.id}
                     onClick={() => setSelectedGameId(game.id)}
@@ -922,16 +992,43 @@ function AwayDayHub() {
                       </div>
                     )}
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-4">
+                      <div className="md:col-span-3 grid grid-cols-2 gap-2">
+                        {lineupTeams.map((team) => (
+                          <button
+                            key={team.id}
+                            onClick={() => setActiveLineupTeam(team.id)}
+                            className={`rounded-lg border px-3 py-2 text-sm font-bold transition-colors ${
+                              activeLineupTeam === team.id
+                                ? "border-slate-900 bg-slate-900 text-white"
+                                : "border-slate-300 bg-white text-slate-700 hover:bg-slate-50"
+                            }`}
+                          >
+                            {team.label}
+                          </button>
+                        ))}
+                      </div>
                       <input
-                        value={lineupForm.formation}
-                        onChange={(event) => setLineupForm((prev) => ({ ...prev, formation: event.target.value }))}
+                        value={activeLineup.formation}
+                        onChange={(event) => setLineupForms((prev) => ({
+                          ...prev,
+                          [activeLineupTeam]: {
+                            ...(prev[activeLineupTeam] || emptyLineup),
+                            formation: event.target.value
+                          }
+                        }))}
                         placeholder="Formation"
                         disabled={!canEditLineup || saving}
                         className="rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-indigo-500 disabled:opacity-50"
                       />
                       <input
-                        value={lineupForm.notes || ""}
-                        onChange={(event) => setLineupForm((prev) => ({ ...prev, notes: event.target.value }))}
+                        value={activeLineup.notes || ""}
+                        onChange={(event) => setLineupForms((prev) => ({
+                          ...prev,
+                          [activeLineupTeam]: {
+                            ...(prev[activeLineupTeam] || emptyLineup),
+                            notes: event.target.value
+                          }
+                        }))}
                         placeholder="Lineup notes"
                         disabled={!canEditLineup || saving}
                         className="rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-indigo-500 md:col-span-2 disabled:opacity-50"
@@ -943,7 +1040,7 @@ function AwayDayHub() {
                         <p className="font-bold text-emerald-800 text-sm mb-2">Starting XI</p>
                         <div className="space-y-1.5 max-h-64 overflow-y-auto pr-1">
                           {teamPlayers.map((player) => {
-                            const active = lineupForm.starters.includes(player.id)
+                            const active = activeLineup.starters.includes(player.id)
                             return (
                               <button
                                 key={player.id}
@@ -964,7 +1061,7 @@ function AwayDayHub() {
                         <p className="font-bold text-indigo-800 text-sm mb-2">Bench</p>
                         <div className="space-y-1.5 max-h-64 overflow-y-auto pr-1">
                           {teamPlayers.map((player) => {
-                            const active = lineupForm.bench.includes(player.id)
+                            const active = activeLineup.bench.includes(player.id)
                             return (
                               <button
                                 key={`${player.id}-bench`}
@@ -987,41 +1084,51 @@ function AwayDayHub() {
                       disabled={saving || !canEditLineup}
                       className="rounded-xl bg-slate-900 text-white px-4 py-2.5 text-sm font-bold hover:bg-slate-700 transition-colors disabled:opacity-60"
                     >
-                      Publish Lineup
+                      Publish {lineupTeams.find((team) => team.id === activeLineupTeam)?.label || "Team"} Lineup
                     </button>
                   </>
                 ) : (
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div className="rounded-xl border border-emerald-200 bg-emerald-50 p-3">
-                      <p className="font-bold text-emerald-800 text-sm mb-2">Starting XI ({selectedGame.lineup?.starters?.length || 0})</p>
-                      <div className="space-y-1 text-sm text-emerald-900">
-                        {(selectedGame.lineup?.starters || []).length === 0 ? (
-                          <p>No lineup published yet.</p>
-                        ) : (
-                          (selectedGame.lineup?.starters || []).map((id) => {
-                            const player = players.find((item) => item.id === id)
-                            return <p key={id}>{getPlayerName(player)}</p>
-                          })
-                        )}
-                      </div>
-                    </div>
-                    <div className="rounded-xl border border-indigo-200 bg-indigo-50 p-3">
-                      <p className="font-bold text-indigo-800 text-sm mb-2">Bench ({selectedGame.lineup?.bench?.length || 0})</p>
-                      <div className="space-y-1 text-sm text-indigo-900">
-                        {(selectedGame.lineup?.bench || []).length === 0 ? (
-                          <p>No bench published yet.</p>
-                        ) : (
-                          (selectedGame.lineup?.bench || []).map((id) => {
-                            const player = players.find((item) => item.id === id)
-                            return <p key={id}>{getPlayerName(player)}</p>
-                          })
-                        )}
-                      </div>
-                    </div>
-                    <div className="md:col-span-2 rounded-xl border border-slate-200 bg-slate-50 p-3 text-sm text-slate-700">
-                      <p><span className="font-bold">Formation:</span> {selectedGame.lineup?.formation || "Not set"}</p>
-                      <p><span className="font-bold">Notes:</span> {selectedGame.lineup?.notes || "No notes"}</p>
-                    </div>
+                  <div className="space-y-4">
+                    {lineupTeams.map((team) => {
+                      const lineup = getGameLineups(selectedGame)[team.id]
+                      return (
+                        <div key={team.id} className="rounded-xl border border-slate-200 p-3">
+                          <p className="font-bold text-slate-800 text-sm mb-3">{team.label} Lineup</p>
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div className="rounded-xl border border-emerald-200 bg-emerald-50 p-3">
+                              <p className="font-bold text-emerald-800 text-sm mb-2">Starting XI ({lineup.starters.length})</p>
+                              <div className="space-y-1 text-sm text-emerald-900">
+                                {lineup.starters.length === 0 ? (
+                                  <p>No lineup published yet.</p>
+                                ) : (
+                                  lineup.starters.map((id) => {
+                                    const player = players.find((item) => item.id === id)
+                                    return <p key={`${team.id}-starter-${id}`}>{getPlayerName(player)}</p>
+                                  })
+                                )}
+                              </div>
+                            </div>
+                            <div className="rounded-xl border border-indigo-200 bg-indigo-50 p-3">
+                              <p className="font-bold text-indigo-800 text-sm mb-2">Bench ({lineup.bench.length})</p>
+                              <div className="space-y-1 text-sm text-indigo-900">
+                                {lineup.bench.length === 0 ? (
+                                  <p>No bench published yet.</p>
+                                ) : (
+                                  lineup.bench.map((id) => {
+                                    const player = players.find((item) => item.id === id)
+                                    return <p key={`${team.id}-bench-${id}`}>{getPlayerName(player)}</p>
+                                  })
+                                )}
+                              </div>
+                            </div>
+                          </div>
+                          <div className="mt-3 rounded-xl border border-slate-200 bg-slate-50 p-3 text-sm text-slate-700">
+                            <p><span className="font-bold">Formation:</span> {lineup.formation || "Not set"}</p>
+                            <p><span className="font-bold">Notes:</span> {lineup.notes || "No notes"}</p>
+                          </div>
+                        </div>
+                      )
+                    })}
                   </div>
                 )}
               </section>
