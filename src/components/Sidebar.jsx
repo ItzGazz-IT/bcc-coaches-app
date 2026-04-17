@@ -1,5 +1,5 @@
 import { Link, useLocation } from "react-router-dom"
-import { LayoutDashboard, Users, Heart, CalendarDays, ClipboardCheck, Star, Trophy, LogOut, TrendingUp, Crosshair, BarChart3, Target, Bell, ChevronDown, ChevronRight, Menu, X, Moon, Sun, LineChart, Key, Settings } from "lucide-react"
+import { LayoutDashboard, Users, Heart, CalendarDays, ClipboardCheck, Star, Trophy, LogOut, TrendingUp, Crosshair, BarChart3, Target, Bell, ChevronDown, ChevronRight, Menu, X, Moon, Sun, LineChart, Key, Settings, CarFront } from "lucide-react"
 import { useState, useEffect } from "react"
 import { useApp } from "../contexts/AppContext"
 import NotificationBadge from "./NotificationBadge"
@@ -86,6 +86,7 @@ export default function Sidebar() {
       key: "matches",
       items: [
         { path: "/match-center", label: "Match Center", icon: Crosshair },
+        { path: "/away-day", label: "Away Day Hub", icon: CarFront },
         { path: "/fixtures", label: "Fixtures", icon: Trophy },
         { path: "/calendar", label: "Calendar", icon: CalendarDays }
       ]
@@ -129,6 +130,7 @@ export default function Sidebar() {
     {
       title: "Team",
       items: [
+        { path: "/away-day", label: "Away Day Hub", icon: CarFront },
         { path: "/fixtures", label: "Fixtures", icon: Trophy },
         { path: "/calendar", label: "Calendar", icon: CalendarDays },
         { path: "/injuries", label: "Availability", icon: Heart }

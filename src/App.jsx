@@ -18,6 +18,7 @@ import SeasonGoals from "./pages/SeasonGoals"
 import Announcements from "./pages/Announcements"
 import NavSettings from "./pages/NavSettings"
 import PerformanceCharts from "./pages/PerformanceCharts"
+import AwayDayHub from "./pages/AwayDayHub"
 import Sidebar from "./components/Sidebar"
 import BottomNav from "./components/BottomNav"
 
@@ -45,7 +46,8 @@ export default function App() {
             ["reviews", Reviews],
             ["injuries", InjuriesAvailability],
             ["nav-settings", NavSettings],
-            ["performance-charts", PerformanceCharts]
+            ["performance-charts", PerformanceCharts],
+            ["away-day", AwayDayHub]
           ].map(([path, Page]) => (
             <Route
               key={path}
