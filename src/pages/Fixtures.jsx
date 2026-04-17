@@ -60,7 +60,7 @@ function Fixtures() {
   const [showModal, setShowModal] = useState(false)
   const [editingFixture, setEditingFixture] = useState(null)
   const [searchTerm, setSearchTerm] = useState("")
-  const [filterStatus, setFilterStatus] = useState("All")
+  const [activeTab, setActiveTab] = useState("fixtures")
   const [formData, setFormData] = useState({
     date: "",
     time: getDefaultKickoffTime(),
@@ -204,8 +204,7 @@ function Fixtures() {
     .filter(fixture => {
       const matchesSearch = fixture.opponent.toLowerCase().includes(searchTerm.toLowerCase()) ||
                            fixture.competition?.toLowerCase().includes(searchTerm.toLowerCase())
-      const matchesStatus = filterStatus === "All" || fixture.status === filterStatus
-      return matchesSearch && matchesStatus
+      return matchesSearch
     })
     .sort((a, b) => new Date(a.date) - new Date(b.date))
 
@@ -263,7 +262,7 @@ function Fixtures() {
           <TableSkeleton rows={3} />
         ) : (
           <>
-        {/* Filters */}
+        {/* Search + Tabs */}
         <div className="mb-6 flex gap-4">
           <div className="relative flex-1 max-w-md">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={20} />
@@ -275,21 +274,34 @@ function Fixtures() {
               className="w-full pl-11 pr-4 py-3 border-2 border-gray-200 rounded-xl focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 outline-none transition-all"
             />
           </div>
-          <select
-            value={filterStatus}
-            onChange={(e) => setFilterStatus(e.target.value)}
-            className="px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-blue-500 outline-none bg-white font-semibold"
-          >
-            <option value="All">All Fixtures</option>
-            <option value="Upcoming">Upcoming</option>
-            <option value="Completed">Completed</option>
-          </select>
+          <div className="inline-flex bg-white border-2 border-gray-200 rounded-xl p-1">
+            <button
+              onClick={() => setActiveTab("fixtures")}
+              className={`px-4 py-2 rounded-lg text-sm font-bold transition-all ${
+                activeTab === "fixtures"
+                  ? "bg-blue-500 text-white"
+                  : "text-gray-600 hover:bg-gray-100"
+              }`}
+            >
+              Fixtures
+            </button>
+            <button
+              onClick={() => setActiveTab("results")}
+              className={`px-4 py-2 rounded-lg text-sm font-bold transition-all ${
+                activeTab === "results"
+                  ? "bg-green-500 text-white"
+                  : "text-gray-600 hover:bg-gray-100"
+              }`}
+            >
+              Results
+            </button>
+          </div>
         </div>
 
         {/* Fixtures List */}
         <div className="flex-1 overflow-y-auto space-y-6">
           {/* Upcoming Fixtures */}
-          {(filterStatus === "All" || filterStatus === "Upcoming") && groupedUpcomingFixtures.length > 0 && (
+          {activeTab === "fixtures" && groupedUpcomingFixtures.length > 0 && (
             <div className="bg-white rounded-2xl shadow-xl border border-gray-100 overflow-hidden">
               <div className="p-6 border-b border-gray-100 bg-gradient-to-r from-blue-50 to-white">
                 <h2 className="text-xl font-bold text-gray-800">Upcoming Fixtures ({groupedUpcomingFixtures.length})</h2>
@@ -388,7 +400,7 @@ function Fixtures() {
           )}
 
           {/* Completed Fixtures */}
-          {(filterStatus === "All" || filterStatus === "Completed") && groupedCompletedFixtures.length > 0 && (
+          {activeTab === "results" && groupedCompletedFixtures.length > 0 && (
             <div className="bg-white rounded-2xl shadow-xl border border-gray-100 overflow-hidden">
               <div className="p-6 border-b border-gray-100 bg-gradient-to-r from-green-50 to-white">
                 <h2 className="text-xl font-bold text-gray-800">Results ({groupedCompletedFixtures.length})</h2>
@@ -538,11 +550,19 @@ function Fixtures() {
             </div>
           )}
 
-          {filteredFixtures.length === 0 && (
+          {activeTab === "fixtures" && groupedUpcomingFixtures.length === 0 && (
             <div className="bg-white rounded-2xl shadow-xl border border-gray-100 p-12 text-center">
               <Trophy className="mx-auto text-gray-300 mb-3" size={64} />
-              <p className="text-gray-500 font-medium text-lg">No fixtures found</p>
-              <p className="text-gray-400 mt-1">Click "Add Fixture" to create one</p>
+              <p className="text-gray-500 font-medium text-lg">No upcoming fixtures found</p>
+              <p className="text-gray-400 mt-1">Try adjusting your search or add a new fixture</p>
+            </div>
+          )}
+
+          {activeTab === "results" && groupedCompletedFixtures.length === 0 && (
+            <div className="bg-white rounded-2xl shadow-xl border border-gray-100 p-12 text-center">
+              <Trophy className="mx-auto text-gray-300 mb-3" size={64} />
+              <p className="text-gray-500 font-medium text-lg">No results found</p>
+              <p className="text-gray-400 mt-1">Completed matches will appear here</p>
             </div>
           )}
         </div>
