@@ -531,11 +531,14 @@ function AwayDayHub() {
   const handleToggleLineupPlayer = (section, playerId) => {
     setLineupForms((prev) => {
       const teamLineup = prev[activeLineupTeam] || emptyLineup
+      const wasInSection = section === "starters"
+        ? teamLineup.starters.includes(playerId)
+        : teamLineup.bench.includes(playerId)
       const starters = teamLineup.starters.filter((id) => id !== playerId)
       const bench = teamLineup.bench.filter((id) => id !== playerId)
       const target = section === "starters" ? starters : bench
 
-      if (!target.includes(playerId)) {
+      if (!wasInSection) {
         target.push(playerId)
       }
 
