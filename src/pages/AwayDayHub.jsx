@@ -33,6 +33,13 @@ const getGameDataScore = (game) => {
   return attendanceCount + offerCount + requestCount + lineupCount + multiLineupCount
 }
 
+const getPlayerSelectionStatus = (lineup, playerId) => {
+  if (!playerId || !lineup) return "Not selected"
+  if ((lineup.starters || []).includes(playerId)) return "Starting XI"
+  if ((lineup.bench || []).includes(playerId)) return "Bench"
+  return "Not selected"
+}
+
 const pickPreferredGame = (currentGame, nextGame) => {
   if (!currentGame) return nextGame
 
@@ -689,6 +696,8 @@ function AwayDayHub() {
   const activeLineup = lineupForms[activeLineupTeam] || emptyLineup
   const activeLineupConfirmed = Boolean(activeLineup.isConfirmed)
   const canEditActiveLineup = canEditLineup && !activeLineupConfirmed
+  const playerOffer = currentPlayerId ? selectedGame?.transportOffers?.[currentPlayerId] || null : null
+  const playerRequest = currentPlayerId ? selectedGame?.transportRequests?.[currentPlayerId] || null : null
 
   const handleToggleManualLock = async () => {
     if (!selectedGame || !canManage) return
@@ -1064,41 +1073,71 @@ function AwayDayHub() {
                 </section>
               )}
 
-              <section className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-                <div className="rounded-2xl border border-slate-200 bg-white shadow-sm p-4">
-                  <h4 className="font-bold text-slate-800 mb-3">Transport Offers</h4>
-                  {transportOfferEntries.length === 0 ? (
-                    <p className="text-sm text-slate-500">No transport offers yet.</p>
-                  ) : (
-                    <div className="space-y-2 max-h-56 overflow-y-auto pr-1">
-                      {transportOfferEntries.map(([playerId, value]) => (
-                        <div key={playerId} className="rounded-xl border border-cyan-200 bg-cyan-50 p-3">
-                          <p className="font-semibold text-cyan-900">{value?.by || getPlayerName(players.find((player) => player.id === playerId)) || "Player"}</p>
-                          <p className="text-xs text-cyan-800">Seats: {value?.seats || 0} {value?.from ? `| From: ${value.from}` : ""}</p>
-                          {value?.notes && <p className="text-xs text-cyan-700 mt-1">{value.notes}</p>}
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </div>
+              {canManage ? (
+                <section className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                  <div className="rounded-2xl border border-slate-200 bg-white shadow-sm p-4">
+                    <h4 className="font-bold text-slate-800 mb-3">Transport Offers</h4>
+                    {transportOfferEntries.length === 0 ? (
+                      <p className="text-sm text-slate-500">No transport offers yet.</p>
+                    ) : (
+                      <div className="space-y-2 max-h-56 overflow-y-auto pr-1">
+                        {transportOfferEntries.map(([playerId, value]) => (
+                          <div key={playerId} className="rounded-xl border border-cyan-200 bg-cyan-50 p-3">
+                            <p className="font-semibold text-cyan-900">{value?.by || getPlayerName(players.find((player) => player.id === playerId)) || "Player"}</p>
+                            <p className="text-xs text-cyan-800">Seats: {value?.seats || 0} {value?.from ? `| From: ${value.from}` : ""}</p>
+                            {value?.notes && <p className="text-xs text-cyan-700 mt-1">{value.notes}</p>}
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
 
-                <div className="rounded-2xl border border-slate-200 bg-white shadow-sm p-4">
-                  <h4 className="font-bold text-slate-800 mb-3">Transport Requests</h4>
-                  {transportRequestEntries.length === 0 ? (
-                    <p className="text-sm text-slate-500">No transport requests yet.</p>
-                  ) : (
-                    <div className="space-y-2 max-h-56 overflow-y-auto pr-1">
-                      {transportRequestEntries.map(([playerId, value]) => (
-                        <div key={playerId} className="rounded-xl border border-orange-200 bg-orange-50 p-3">
-                          <p className="font-semibold text-orange-900">{value?.by || getPlayerName(players.find((player) => player.id === playerId)) || "Player"}</p>
-                          <p className="text-xs text-orange-800">Seats: {value?.seats || 0} {value?.pickup ? `| Pickup: ${value.pickup}` : ""}</p>
-                          {value?.notes && <p className="text-xs text-orange-700 mt-1">{value.notes}</p>}
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              </section>
+                  <div className="rounded-2xl border border-slate-200 bg-white shadow-sm p-4">
+                    <h4 className="font-bold text-slate-800 mb-3">Transport Requests</h4>
+                    {transportRequestEntries.length === 0 ? (
+                      <p className="text-sm text-slate-500">No transport requests yet.</p>
+                    ) : (
+                      <div className="space-y-2 max-h-56 overflow-y-auto pr-1">
+                        {transportRequestEntries.map(([playerId, value]) => (
+                          <div key={playerId} className="rounded-xl border border-orange-200 bg-orange-50 p-3">
+                            <p className="font-semibold text-orange-900">{value?.by || getPlayerName(players.find((player) => player.id === playerId)) || "Player"}</p>
+                            <p className="text-xs text-orange-800">Seats: {value?.seats || 0} {value?.pickup ? `| Pickup: ${value.pickup}` : ""}</p>
+                            {value?.notes && <p className="text-xs text-orange-700 mt-1">{value.notes}</p>}
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                </section>
+              ) : (
+                <section className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                  <div className="rounded-2xl border border-cyan-200 bg-cyan-50 shadow-sm p-4">
+                    <h4 className="font-bold text-cyan-900 mb-2">Your Transport Offer</h4>
+                    {playerOffer ? (
+                      <div className="text-sm text-cyan-900 space-y-1">
+                        <p><span className="font-bold">Seats:</span> {playerOffer.seats || 0}</p>
+                        <p><span className="font-bold">From:</span> {playerOffer.from || "Not set"}</p>
+                        <p><span className="font-bold">Notes:</span> {playerOffer.notes || "None"}</p>
+                      </div>
+                    ) : (
+                      <p className="text-sm text-cyan-800">You have not added a transport offer for this game.</p>
+                    )}
+                  </div>
+
+                  <div className="rounded-2xl border border-orange-200 bg-orange-50 shadow-sm p-4">
+                    <h4 className="font-bold text-orange-900 mb-2">Your Transport Request</h4>
+                    {playerRequest ? (
+                      <div className="text-sm text-orange-900 space-y-1">
+                        <p><span className="font-bold">Seats:</span> {playerRequest.seats || 0}</p>
+                        <p><span className="font-bold">Pickup:</span> {playerRequest.pickup || "Not set"}</p>
+                        <p><span className="font-bold">Notes:</span> {playerRequest.notes || "None"}</p>
+                      </div>
+                    ) : (
+                      <p className="text-sm text-orange-800">You have not added a transport request for this game.</p>
+                    )}
+                  </div>
+                </section>
+              )}
 
               <section className="rounded-2xl border border-slate-200 bg-white shadow-sm p-4">
                 <h4 className="font-bold text-slate-800 mb-3 inline-flex items-center gap-2"><ShieldCheck size={18} /> Match Lineup</h4>
@@ -1248,49 +1287,80 @@ function AwayDayHub() {
                     </div>
                   </>
                 ) : (
-                  <div className="space-y-4">
-                    {lineupTeams.map((team) => {
-                      const lineup = getGameLineups(selectedGame)[team.id]
-                      return (
-                        <div key={team.id} className="rounded-xl border border-slate-200 p-3">
-                          <p className="font-bold text-slate-800 text-sm mb-3">{team.label} Lineup</p>
-                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <div className="rounded-xl border border-emerald-200 bg-emerald-50 p-3">
-                              <p className="font-bold text-emerald-800 text-sm mb-2">Starting XI ({lineup.starters.length})</p>
-                              <div className="space-y-1 text-sm text-emerald-900">
-                                {lineup.starters.length === 0 ? (
-                                  <p>No lineup published yet.</p>
-                                ) : (
-                                  lineup.starters.map((id) => {
-                                    const player = players.find((item) => item.id === id)
-                                    return <p key={`${team.id}-starter-${id}`}>{getPlayerName(player)}</p>
-                                  })
-                                )}
-                              </div>
-                            </div>
-                            <div className="rounded-xl border border-indigo-200 bg-indigo-50 p-3">
-                              <p className="font-bold text-indigo-800 text-sm mb-2">Bench ({lineup.bench.length})</p>
-                              <div className="space-y-1 text-sm text-indigo-900">
-                                {lineup.bench.length === 0 ? (
-                                  <p>No bench published yet.</p>
-                                ) : (
-                                  lineup.bench.map((id) => {
-                                    const player = players.find((item) => item.id === id)
-                                    return <p key={`${team.id}-bench-${id}`}>{getPlayerName(player)}</p>
-                                  })
-                                )}
-                              </div>
+                  userRole === "player" && currentPlayerId ? (
+                    <div className="space-y-4">
+                      <div className="rounded-xl border border-slate-200 bg-slate-50 p-3 text-sm text-slate-700">
+                        <p className="font-bold text-slate-800 mb-1">Your Selection Status</p>
+                        <p>This view only shows lineup information relevant to you.</p>
+                      </div>
+                      {lineupTeams.map((team) => {
+                        const lineup = getGameLineups(selectedGame)[team.id]
+                        const myStatus = getPlayerSelectionStatus(lineup, currentPlayerId)
+                        return (
+                          <div key={team.id} className="rounded-xl border border-slate-200 p-3">
+                            <p className="font-bold text-slate-800 text-sm mb-2">{team.label}</p>
+                            <p className={`text-sm font-semibold ${
+                              myStatus === "Starting XI"
+                                ? "text-emerald-700"
+                                : myStatus === "Bench"
+                                ? "text-indigo-700"
+                                : "text-slate-600"
+                            }`}>
+                              {myStatus}
+                            </p>
+                            <div className="mt-2 text-xs text-slate-600 space-y-1">
+                              <p><span className="font-bold">Formation:</span> {lineup.formation || "Not set"}</p>
+                              <p><span className="font-bold">Status:</span> {lineup.isConfirmed ? "Confirmed" : "Draft"}</p>
                             </div>
                           </div>
-                          <div className="mt-3 rounded-xl border border-slate-200 bg-slate-50 p-3 text-sm text-slate-700">
-                            <p><span className="font-bold">Formation:</span> {lineup.formation || "Not set"}</p>
-                            <p><span className="font-bold">Notes:</span> {lineup.notes || "No notes"}</p>
-                            <p><span className="font-bold">Status:</span> {lineup.isConfirmed ? "Confirmed" : "Draft"}</p>
+                        )
+                      })}
+                    </div>
+                  ) : (
+                    <div className="space-y-4">
+                      {lineupTeams.map((team) => {
+                        const lineup = getGameLineups(selectedGame)[team.id]
+                        return (
+                          <div key={team.id} className="rounded-xl border border-slate-200 p-3">
+                            <p className="font-bold text-slate-800 text-sm mb-3">{team.label} Lineup</p>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                              <div className="rounded-xl border border-emerald-200 bg-emerald-50 p-3">
+                                <p className="font-bold text-emerald-800 text-sm mb-2">Starting XI ({lineup.starters.length})</p>
+                                <div className="space-y-1 text-sm text-emerald-900">
+                                  {lineup.starters.length === 0 ? (
+                                    <p>No lineup published yet.</p>
+                                  ) : (
+                                    lineup.starters.map((id) => {
+                                      const player = players.find((item) => item.id === id)
+                                      return <p key={`${team.id}-starter-${id}`}>{getPlayerName(player)}</p>
+                                    })
+                                  )}
+                                </div>
+                              </div>
+                              <div className="rounded-xl border border-indigo-200 bg-indigo-50 p-3">
+                                <p className="font-bold text-indigo-800 text-sm mb-2">Bench ({lineup.bench.length})</p>
+                                <div className="space-y-1 text-sm text-indigo-900">
+                                  {lineup.bench.length === 0 ? (
+                                    <p>No bench published yet.</p>
+                                  ) : (
+                                    lineup.bench.map((id) => {
+                                      const player = players.find((item) => item.id === id)
+                                      return <p key={`${team.id}-bench-${id}`}>{getPlayerName(player)}</p>
+                                    })
+                                  )}
+                                </div>
+                              </div>
+                            </div>
+                            <div className="mt-3 rounded-xl border border-slate-200 bg-slate-50 p-3 text-sm text-slate-700">
+                              <p><span className="font-bold">Formation:</span> {lineup.formation || "Not set"}</p>
+                              <p><span className="font-bold">Notes:</span> {lineup.notes || "No notes"}</p>
+                              <p><span className="font-bold">Status:</span> {lineup.isConfirmed ? "Confirmed" : "Draft"}</p>
+                            </div>
                           </div>
-                        </div>
-                      )
-                    })}
-                  </div>
+                        )
+                      })}
+                    </div>
+                  )
                 )}
               </section>
 
