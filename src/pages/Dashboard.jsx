@@ -1,4 +1,4 @@
-import { CalendarDays, Users, ClipboardCheck, Heart, UserPlus, AlertCircle, CheckCircle, Trophy, Target, BarChart3 } from "lucide-react"
+import { CalendarDays, Users, ClipboardCheck, Heart, UserPlus, AlertCircle, CheckCircle, Trophy, Target, BarChart3, Shield } from "lucide-react"
 import { useApp } from "../contexts/AppContext"
 import { Link } from "react-router-dom"
 import { useState, useEffect, useMemo } from "react"
@@ -142,6 +142,34 @@ export default function Dashboard() {
     return stats
   }, [currentPlayer, currentPlayerId, fixtures])
 
+  const playerAvailability = useMemo(() => {
+    if (!currentPlayerId) return { label: "Available", color: "text-green-700", bg: "bg-green-50", border: "border-green-100" }
+
+    const activeStatus = injuries
+      .filter(i => i.playerId === currentPlayerId && i.status !== "recovered")
+      .sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0))[0]
+
+    if (!activeStatus) {
+      return { label: "Available", color: "text-green-700", bg: "bg-green-50", border: "border-green-100" }
+    }
+
+    if (activeStatus.status === "injured") {
+      return { label: "Injured", color: "text-red-700", bg: "bg-red-50", border: "border-red-100" }
+    }
+
+    if (activeStatus.status === "unavailable") {
+      return { label: "Unavailable", color: "text-amber-700", bg: "bg-amber-50", border: "border-amber-100" }
+    }
+
+    return { label: "Available", color: "text-green-700", bg: "bg-green-50", border: "border-green-100" }
+  }, [injuries, currentPlayerId])
+
+  const upcomingPlayerFixtures = useMemo(() => {
+    return fixtures
+      .filter(f => f.status === "Upcoming" && new Date(f.date) >= new Date())
+      .sort((a, b) => new Date(a.date) - new Date(b.date))
+  }, [fixtures])
+
   // Coach dashboard stats
   const totalPlayers = players.length
   
@@ -240,6 +268,9 @@ export default function Dashboard() {
               Welcome, {currentPlayer.firstName}!
             </h1>
             <p className="text-sm md:text-base text-gray-600">Squad • {currentPlayer.position}</p>
+            <div className={`inline-flex items-center mt-2 px-3 py-1.5 rounded-lg border ${playerAvailability.bg} ${playerAvailability.border}`}>
+              <span className={`text-xs font-bold uppercase tracking-wide ${playerAvailability.color}`}>Status: {playerAvailability.label}</span>
+            </div>
           </div>
 
           {/* Player Stats Overview */}
@@ -305,8 +336,32 @@ export default function Dashboard() {
               </div>
             </div>
 
+            {/* My Availability */}
+            <Link to="/injuries" className="bg-white rounded-2xl shadow-xl p-6 border border-gray-100 hover:shadow-2xl transition-all duration-300 flex flex-col cursor-pointer hover:-translate-y-1">
+              <div className="flex items-center gap-3 mb-5">
+                <div className="bg-gradient-to-br from-teal-500 to-cyan-600 p-3 rounded-xl shadow-lg">
+                  <Heart className="text-white" size={24} />
+                </div>
+                <h2 className="text-xl font-bold text-gray-800">
+                  My Availability
+                </h2>
+              </div>
+              <div className="space-y-3 flex-grow">
+                <div className={`${playerAvailability.bg} rounded-xl p-4 border ${playerAvailability.border}`}>
+                  <p className={`font-bold text-lg ${playerAvailability.color}`}>{playerAvailability.label}</p>
+                  <p className="text-xs text-gray-600 mt-1">Keep this updated so coaches see your current status.</p>
+                </div>
+              </div>
+              <div className="mt-5 pt-4 border-t border-gray-100">
+                <span className="text-sm text-teal-600 font-semibold flex items-center gap-1">
+                  Update Status
+                  <span className="text-lg">→</span>
+                </span>
+              </div>
+            </Link>
+
             {/* Upcoming Fixtures */}
-            <Link to="/fixtures" className="bg-white rounded-2xl shadow-xl p-6 border border-gray-100 hover:shadow-2xl transition-all duration-300 flex flex-col cursor-pointer hover:-translate-y-1 md:col-span-2 xl:col-span-1">
+            <Link to="/fixtures" className="bg-white rounded-2xl shadow-xl p-6 border border-gray-100 hover:shadow-2xl transition-all duration-300 flex flex-col cursor-pointer hover:-translate-y-1">
               <div className="flex items-center gap-3 mb-5">
                 <div className="bg-gradient-to-br from-orange-500 to-red-600 p-3 rounded-xl shadow-lg">
                   <Trophy className="text-white" size={24} />
@@ -316,9 +371,7 @@ export default function Dashboard() {
                 </h2>
               </div>
               <div className="space-y-3 flex-grow">
-                {fixtures
-                  .filter(f => f.status === "Scheduled" && new Date(f.date) >= new Date())
-                  .sort((a, b) => new Date(a.date) - new Date(b.date))
+                {upcomingPlayerFixtures
                   .slice(0, 3)
                   .map(fixture => (
                     <div key={fixture.id} className="bg-orange-50 rounded-xl p-3 border border-orange-100">
@@ -329,7 +382,7 @@ export default function Dashboard() {
                       <p className="text-xs text-gray-500">{fixture.homeAway === "Home" ? "Home" : "Away"} • {fixture.competition}</p>
                     </div>
                   ))}
-                {fixtures.filter(f => f.status === "Scheduled").length === 0 && (
+                {upcomingPlayerFixtures.length === 0 && (
                   <p className="text-gray-400 text-sm text-center py-4">No upcoming fixtures</p>
                 )}
               </div>
