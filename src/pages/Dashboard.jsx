@@ -1,4 +1,4 @@
-import { CalendarDays, Users, ClipboardCheck, Heart, UserPlus, AlertCircle, CheckCircle, Trophy, Target, BarChart3, Shield } from "lucide-react"
+import { CalendarDays, Users, ClipboardCheck, Heart, UserPlus, AlertCircle, CheckCircle, Trophy, Target, BarChart3 } from "lucide-react"
 import { useApp } from "../contexts/AppContext"
 import { Link } from "react-router-dom"
 import { useState, useEffect, useMemo } from "react"
@@ -75,73 +75,6 @@ export default function Dashboard() {
     return null
   }, [userRole, currentPlayerId, players])
 
-  // Calculate player-specific stats
-  const playerStats = useMemo(() => {
-    if (!currentPlayer) return null
-
-    const stats = {
-      goals: 0,
-      appearances: 0,
-      yellowCards: 0,
-      redCards: 0,
-      cleanSheets: 0
-    }
-
-    fixtures.filter(f => f.status === "Completed").forEach(fixture => {
-      // Count goals
-      if (fixture.scorers) {
-        fixture.scorers.forEach(scorer => {
-          if (scorer.playerId === currentPlayerId) {
-            stats.goals++
-            stats.appearances++
-          }
-        })
-      }
-
-      // Count yellow cards
-      if (fixture.yellowCards) {
-        fixture.yellowCards.forEach(card => {
-          if (card.playerId === currentPlayerId) {
-            stats.yellowCards++
-            if (!fixture.scorers?.some(s => s.playerId === currentPlayerId)) {
-              stats.appearances++
-            }
-          }
-        })
-      }
-
-      // Count red cards
-      if (fixture.redCards) {
-        fixture.redCards.forEach(card => {
-          if (card.playerId === currentPlayerId) {
-            stats.redCards++
-            if (!fixture.scorers?.some(s => s.playerId === currentPlayerId) &&
-                !fixture.yellowCards?.some(c => c.playerId === currentPlayerId)) {
-              stats.appearances++
-            }
-          }
-        })
-      }
-
-      // Count clean sheets
-      if (fixture.result === "Win" && 
-          (currentPlayer.position === "Goalkeeper" || currentPlayer.position === "Defender")) {
-        const ourScore = fixture.homeAway === "Home" ? 
-          parseInt(fixture.score?.split('-')[0] || 0) : 
-          parseInt(fixture.score?.split('-')[1] || 0)
-        const theirScore = fixture.homeAway === "Home" ? 
-          parseInt(fixture.score?.split('-')[1] || 0) : 
-          parseInt(fixture.score?.split('-')[0] || 0)
-
-        if (theirScore === 0 && stats.appearances > 0) {
-          stats.cleanSheets++
-        }
-      }
-    })
-
-    return stats
-  }, [currentPlayer, currentPlayerId, fixtures])
-
   const playerAvailability = useMemo(() => {
     if (!currentPlayerId) return { label: "Available", color: "text-green-700", bg: "bg-green-50", border: "border-green-100" }
 
@@ -168,6 +101,12 @@ export default function Dashboard() {
     return fixtures
       .filter(f => f.status === "Upcoming" && new Date(f.date) >= new Date())
       .sort((a, b) => new Date(a.date) - new Date(b.date))
+  }, [fixtures])
+
+  const recentPlayerResults = useMemo(() => {
+    return fixtures
+      .filter(f => f.status === "Completed")
+      .sort((a, b) => new Date(b.date) - new Date(a.date))
   }, [fixtures])
 
   // Coach dashboard stats
@@ -273,49 +212,6 @@ export default function Dashboard() {
             </div>
           </div>
 
-          {/* Player Stats Overview */}
-          {playerStats && (
-            <div className="grid grid-cols-2 md:grid-cols-5 gap-3 md:gap-4 mb-6">
-              <StatCard 
-                title="Appearances" 
-                value={playerStats.appearances.toString()} 
-                icon={Trophy} 
-                gradient="bg-gradient-to-br from-blue-500 to-blue-600" 
-                to="/player-stats" 
-              />
-              <StatCard 
-                title="Goals" 
-                value={playerStats.goals.toString()} 
-                icon={Target} 
-                gradient="bg-gradient-to-br from-green-500 to-green-600" 
-                to="/player-stats" 
-              />
-              <StatCard 
-                title="Yellow Cards" 
-                value={playerStats.yellowCards.toString()} 
-                icon={AlertCircle} 
-                gradient="bg-gradient-to-br from-amber-500 to-amber-600" 
-                to="/player-stats" 
-              />
-              <StatCard 
-                title="Red Cards" 
-                value={playerStats.redCards.toString()} 
-                icon={AlertCircle} 
-                gradient="bg-gradient-to-br from-red-500 to-red-600" 
-                to="/player-stats" 
-              />
-              {(currentPlayer.position === "Goalkeeper" || currentPlayer.position === "Defender") && (
-                <StatCard 
-                  title="Clean Sheets" 
-                  value={playerStats.cleanSheets.toString()} 
-                  icon={Shield} 
-                  gradient="bg-gradient-to-br from-emerald-500 to-emerald-600" 
-                  to="/player-stats" 
-                />
-              )}
-            </div>
-          )}
-
           <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 md:gap-5">
             {/* Next Session */}
             <div className="bg-white rounded-2xl shadow-xl p-6 border border-gray-100 hover:shadow-2xl transition-all duration-300 flex flex-col hover:-translate-y-1">
@@ -336,14 +232,14 @@ export default function Dashboard() {
               </div>
             </div>
 
-            {/* My Availability */}
+            {/* My Injour/Absences */}
             <Link to="/injuries" className="bg-white rounded-2xl shadow-xl p-6 border border-gray-100 hover:shadow-2xl transition-all duration-300 flex flex-col cursor-pointer hover:-translate-y-1">
               <div className="flex items-center gap-3 mb-5">
                 <div className="bg-gradient-to-br from-teal-500 to-cyan-600 p-3 rounded-xl shadow-lg">
                   <Heart className="text-white" size={24} />
                 </div>
                 <h2 className="text-xl font-bold text-gray-800">
-                  My Availability
+                  My Injour/Absences
                 </h2>
               </div>
               <div className="space-y-3 flex-grow">
@@ -394,8 +290,40 @@ export default function Dashboard() {
               </div>
             </Link>
 
+            {/* Recent Results */}
+            <Link to="/fixtures?tab=results" className="bg-white rounded-2xl shadow-xl p-6 border border-gray-100 hover:shadow-2xl transition-all duration-300 flex flex-col cursor-pointer hover:-translate-y-1">
+              <div className="flex items-center gap-3 mb-5">
+                <div className="bg-gradient-to-br from-emerald-500 to-green-600 p-3 rounded-xl shadow-lg">
+                  <CheckCircle className="text-white" size={24} />
+                </div>
+                <h2 className="text-xl font-bold text-gray-800">
+                  Recent Results
+                </h2>
+              </div>
+              <div className="space-y-3 flex-grow">
+                {recentPlayerResults.slice(0, 3).map(fixture => (
+                  <div key={fixture.id} className="bg-emerald-50 rounded-xl p-3 border border-emerald-100">
+                    <p className="text-xs text-emerald-700 mb-1">
+                      {new Date(fixture.date).toLocaleDateString('en-GB')}
+                    </p>
+                    <p className="text-sm font-bold text-emerald-900">vs {fixture.opponent}</p>
+                    <p className="text-xs text-gray-600">{fixture.result || "Result"}{fixture.score ? ` • ${fixture.score}` : ""}</p>
+                  </div>
+                ))}
+                {recentPlayerResults.length === 0 && (
+                  <p className="text-gray-400 text-sm text-center py-4">No results yet</p>
+                )}
+              </div>
+              <div className="mt-5 pt-4 border-t border-gray-100">
+                <span className="text-sm text-emerald-700 font-semibold flex items-center gap-1">
+                  Open Results Tab
+                  <span className="text-lg">→</span>
+                </span>
+              </div>
+            </Link>
+
             {/* Quick Links */}
-            <div className="bg-white rounded-2xl shadow-xl p-6 border border-gray-100 md:col-span-2">
+            <div className="bg-white rounded-2xl shadow-xl p-6 border border-gray-100 md:col-span-2 xl:col-span-3">
               <div className="flex items-center gap-3 mb-5">
                 <div className="bg-gradient-to-br from-cyan-500 to-teal-600 p-3 rounded-xl shadow-lg">
                   <BarChart3 className="text-white" size={24} />
@@ -405,13 +333,13 @@ export default function Dashboard() {
                 </h2>
               </div>
               <div className="grid grid-cols-2 gap-3">
-                <Link to="/player-stats" className="bg-gradient-to-br from-blue-50 to-blue-100 hover:from-blue-100 hover:to-blue-200 rounded-xl p-4 border border-blue-200 transition-all">
-                  <BarChart3 className="text-blue-600 mb-2" size={20} />
-                  <p className="text-sm font-bold text-blue-800">My Statistics</p>
-                </Link>
                 <Link to="/away-day" className="bg-gradient-to-br from-purple-50 to-purple-100 hover:from-purple-100 hover:to-purple-200 rounded-xl p-4 border border-purple-200 transition-all">
                   <Trophy className="text-purple-600 mb-2" size={20} />
                   <p className="text-sm font-bold text-purple-800">Away Day Hub</p>
+                </Link>
+                <Link to="/chat" className="bg-gradient-to-br from-blue-50 to-blue-100 hover:from-blue-100 hover:to-blue-200 rounded-xl p-4 border border-blue-200 transition-all">
+                  <ClipboardCheck className="text-blue-600 mb-2" size={20} />
+                  <p className="text-sm font-bold text-blue-800">Coach Chat</p>
                 </Link>
                 <Link to="/fixtures" className="bg-gradient-to-br from-orange-50 to-orange-100 hover:from-orange-100 hover:to-orange-200 rounded-xl p-4 border border-orange-200 transition-all">
                   <Trophy className="text-orange-600 mb-2" size={20} />

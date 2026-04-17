@@ -15,6 +15,7 @@ import SeasonGoals from "./pages/SeasonGoals"
 import Announcements from "./pages/Announcements"
 import NavSettings from "./pages/NavSettings"
 import AwayDayHub from "./pages/AwayDayHub"
+import Chat from "./pages/Chat"
 import Sidebar from "./components/Sidebar"
 import BottomNav from "./components/BottomNav"
 
@@ -35,6 +36,7 @@ export default function App() {
             ["season-goals", SeasonGoals],
             ["announcements", Announcements],
             ["calendar", Calendar],
+            ["chat", Chat],
             ["attendance", Attendance],
             ["attendance-admin", AttendanceAdmin],
             ["injuries", InjuriesAvailability],

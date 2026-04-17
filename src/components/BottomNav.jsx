@@ -1,5 +1,5 @@
 import { Link, useLocation, useNavigate } from "react-router-dom"
-import { LayoutDashboard, Users, Trophy, BarChart3, MoreHorizontal, Heart, CalendarDays, Target, ClipboardCheck, Bell, X, Settings, LogOut, Moon, Sun, CarFront } from "lucide-react"
+import { LayoutDashboard, Users, Trophy, BarChart3, MoreHorizontal, Heart, CalendarDays, Target, ClipboardCheck, Bell, X, Settings, LogOut, Moon, Sun, CarFront, MessageCircle } from "lucide-react"
 import { useApp } from "../contexts/AppContext"
 import NotificationBadge from "./NotificationBadge"
 import { useState, useEffect } from "react"
@@ -33,6 +33,7 @@ export default function BottomNav() {
 
   const coachMoreNav = [
     { path: "/away-day", label: "Away Day Hub", icon: CarFront },
+    { path: "/chat", label: "Player Chat", icon: MessageCircle },
     { path: "/injuries", label: "Injuries", icon: Heart },
     { path: "/attendance", label: "Attendance", icon: ClipboardCheck },
     { path: "/season-goals", label: "Season Goals", icon: Target },
@@ -42,9 +43,9 @@ export default function BottomNav() {
 
   // Available player navigation items
   const availablePlayerItems = {
-    stats: { path: "/player-stats", label: "Stats", icon: BarChart3 },
-    availability: { path: "/injuries", label: "Availability", icon: Heart },
+    availability: { path: "/injuries", label: "Injour/Absences", icon: Heart },
     awayDay: { path: "/away-day", label: "Away Day", icon: CarFront },
+    chat: { path: "/chat", label: "Chat", icon: MessageCircle },
     calendar: { path: "/calendar", label: "Calendar", icon: CalendarDays },
     announcements: { path: "/announcements", label: "Announcements", icon: Bell }
   }
@@ -55,7 +56,7 @@ export default function BottomNav() {
       const savedMain = localStorage.getItem("playerNavMain")
       const savedMore = localStorage.getItem("playerNavMore")
       
-      const mainIds = savedMain ? JSON.parse(savedMain) : ["stats", "awayDay"]
+      const mainIds = savedMain ? JSON.parse(savedMain) : ["awayDay", "chat"]
       const moreIds = savedMore ? JSON.parse(savedMore) : ["availability", "calendar", "announcements"]
       
       setPlayerNavMain(mainIds.map(id => availablePlayerItems[id]).filter(Boolean))

@@ -4,6 +4,7 @@ import { useApp } from "../contexts/AppContext"
 import { TableSkeleton } from "../components/Loading"
 import { storage } from "../firebase/config"
 import { ref, uploadBytes, getDownloadURL, deleteObject } from "firebase/storage"
+import { useSearchParams } from "react-router-dom"
 
 const getDefaultKickoffTime = () => ""
 
@@ -51,6 +52,7 @@ const getFileExtension = (name) => {
 
 function Fixtures() {
   const { fixtures, addFixture, updateFixture, deleteFixture, loading, userRole, markAsSeen } = useApp()
+  const [searchParams, setSearchParams] = useSearchParams()
   
   // Mark fixtures as seen when component mounts
   useEffect(() => {
@@ -60,7 +62,7 @@ function Fixtures() {
   const [showModal, setShowModal] = useState(false)
   const [editingFixture, setEditingFixture] = useState(null)
   const [searchTerm, setSearchTerm] = useState("")
-  const [activeTab, setActiveTab] = useState("fixtures")
+  const [activeTab, setActiveTab] = useState(searchParams.get("tab") === "results" ? "results" : "fixtures")
   const [formData, setFormData] = useState({
     date: "",
     time: getDefaultKickoffTime(),
@@ -74,6 +76,18 @@ function Fixtures() {
   })
   const [showSuccess, setShowSuccess] = useState(false)
   const [uploadingReportFor, setUploadingReportFor] = useState(null)
+
+  useEffect(() => {
+    const tabFromUrl = searchParams.get("tab")
+    if (tabFromUrl === "results" || tabFromUrl === "fixtures") {
+      setActiveTab(tabFromUrl)
+    }
+  }, [searchParams])
+
+  const handleTabChange = (tab) => {
+    setActiveTab(tab)
+    setSearchParams({ tab })
+  }
 
   const handleSubmit = async (e) => {
     e.preventDefault()
@@ -276,7 +290,7 @@ function Fixtures() {
           </div>
           <div className="inline-flex bg-white border-2 border-gray-200 rounded-xl p-1">
             <button
-              onClick={() => setActiveTab("fixtures")}
+              onClick={() => handleTabChange("fixtures")}
               className={`px-4 py-2 rounded-lg text-sm font-bold transition-all ${
                 activeTab === "fixtures"
                   ? "bg-blue-500 text-white"
@@ -286,7 +300,7 @@ function Fixtures() {
               Fixtures
             </button>
             <button
-              onClick={() => setActiveTab("results")}
+              onClick={() => handleTabChange("results")}
               className={`px-4 py-2 rounded-lg text-sm font-bold transition-all ${
                 activeTab === "results"
                   ? "bg-green-500 text-white"

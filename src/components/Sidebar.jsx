@@ -1,5 +1,5 @@
 import { Link, useLocation } from "react-router-dom"
-import { LayoutDashboard, Users, Heart, CalendarDays, ClipboardCheck, Trophy, LogOut, BarChart3, Target, Bell, ChevronDown, ChevronRight, Menu, X, Moon, Sun, Key, Settings, CarFront } from "lucide-react"
+import { LayoutDashboard, Users, Heart, CalendarDays, ClipboardCheck, Trophy, LogOut, BarChart3, Target, Bell, ChevronDown, ChevronRight, Menu, X, Moon, Sun, Key, Settings, CarFront, MessageCircle } from "lucide-react"
 import { useState, useEffect } from "react"
 import { useApp } from "../contexts/AppContext"
 import NotificationBadge from "./NotificationBadge"
@@ -86,6 +86,7 @@ export default function Sidebar() {
       key: "matches",
       items: [
         { path: "/away-day", label: "Away Day Hub", icon: CarFront },
+        { path: "/chat", label: "Player Chat", icon: MessageCircle },
         { path: "/fixtures", label: "Fixtures", icon: Trophy },
         { path: "/calendar", label: "Calendar", icon: CalendarDays }
       ]
@@ -115,18 +116,13 @@ export default function Sidebar() {
       ]
     },
     {
-      title: "My Performance",
-      items: [
-        { path: "/player-stats", label: "My Stats", icon: BarChart3 }
-      ]
-    },
-    {
       title: "Team",
       items: [
+        { path: "/chat", label: "Coach Chat", icon: MessageCircle },
         { path: "/away-day", label: "Away Day Hub", icon: CarFront },
         { path: "/fixtures", label: "Fixtures", icon: Trophy },
         { path: "/calendar", label: "Calendar", icon: CalendarDays },
-        { path: "/injuries", label: "Availability", icon: Heart }
+        { path: "/injuries", label: "Injour/Absences", icon: Heart }
       ]
     }
   ]

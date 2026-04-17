@@ -1,16 +1,16 @@
 import { useState, useEffect } from "react"
 import { useNavigate } from "react-router-dom"
 import { ChevronLeft, GripVertical } from "lucide-react"
-import { BarChart3, Heart, CalendarDays, Bell, CarFront } from "lucide-react"
+import { Heart, CalendarDays, Bell, CarFront, MessageCircle } from "lucide-react"
 
 export default function NavSettings() {
   const navigate = useNavigate()
   
   // Available navigation items (Home and Fixtures are fixed)
   const availableItems = [
-    { id: "stats", label: "Stats", icon: BarChart3, path: "/player-stats" },
     { id: "awayDay", label: "Away Day", icon: CarFront, path: "/away-day" },
-    { id: "availability", label: "Availability", icon: Heart, path: "/injuries" },
+    { id: "chat", label: "Chat", icon: MessageCircle, path: "/chat" },
+    { id: "availability", label: "Injour/Absences", icon: Heart, path: "/injuries" },
     { id: "calendar", label: "Calendar", icon: CalendarDays, path: "/calendar" },
     { id: "announcements", label: "Announcements", icon: Bell, path: "/announcements" }
   ]
@@ -18,7 +18,7 @@ export default function NavSettings() {
   // Load saved preferences or use defaults
   const [selectedMain, setSelectedMain] = useState(() => {
     const saved = localStorage.getItem("playerNavMain")
-    return saved ? JSON.parse(saved) : ["stats", "awayDay"]
+    return saved ? JSON.parse(saved) : ["awayDay", "chat"]
   })
 
   const [selectedMore, setSelectedMore] = useState(() => {
