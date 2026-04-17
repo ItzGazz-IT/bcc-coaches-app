@@ -122,7 +122,7 @@ export default function Sidebar() {
         { path: "/away-day", label: "Away Day Hub", icon: CarFront },
         { path: "/fixtures", label: "Fixtures", icon: Trophy },
         { path: "/calendar", label: "Calendar", icon: CalendarDays },
-        { path: "/injuries", label: "Injour/Absences", icon: Heart }
+        { path: "/injuries", label: "Injury or No Attendance", icon: Heart }
       ]
     }
   ]

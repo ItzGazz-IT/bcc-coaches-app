@@ -10,7 +10,7 @@ export default function NavSettings() {
   const availableItems = [
     { id: "awayDay", label: "Away Day", icon: CarFront, path: "/away-day" },
     { id: "chat", label: "Chat", icon: MessageCircle, path: "/chat" },
-    { id: "availability", label: "Injour/Absences", icon: Heart, path: "/injuries" },
+    { id: "availability", label: "Injury or No Attendance", icon: Heart, path: "/injuries" },
     { id: "calendar", label: "Calendar", icon: CalendarDays, path: "/calendar" },
     { id: "announcements", label: "Announcements", icon: Bell, path: "/announcements" }
   ]

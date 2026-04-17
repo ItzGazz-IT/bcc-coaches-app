@@ -91,7 +91,7 @@ export default function Dashboard() {
     }
 
     if (activeStatus.status === "unavailable") {
-      return { label: "Unavailable", color: "text-amber-700", bg: "bg-amber-50", border: "border-amber-100" }
+      return { label: "No Attendance", color: "text-amber-700", bg: "bg-amber-50", border: "border-amber-100" }
     }
 
     return { label: "Available", color: "text-green-700", bg: "bg-green-50", border: "border-green-100" }
@@ -232,14 +232,14 @@ export default function Dashboard() {
               </div>
             </div>
 
-            {/* My Injour/Absences */}
+            {/* My Injury or No Attendance */}
             <Link to="/injuries" className="bg-white rounded-2xl shadow-xl p-6 border border-gray-100 hover:shadow-2xl transition-all duration-300 flex flex-col cursor-pointer hover:-translate-y-1">
               <div className="flex items-center gap-3 mb-5">
                 <div className="bg-gradient-to-br from-teal-500 to-cyan-600 p-3 rounded-xl shadow-lg">
                   <Heart className="text-white" size={24} />
                 </div>
                 <h2 className="text-xl font-bold text-gray-800">
-                  My Injour/Absences
+                  My Injury or No Attendance
                 </h2>
               </div>
               <div className="space-y-3 flex-grow">
@@ -251,6 +251,29 @@ export default function Dashboard() {
               <div className="mt-5 pt-4 border-t border-gray-100">
                 <span className="text-sm text-teal-600 font-semibold flex items-center gap-1">
                   Update Status
+                  <span className="text-lg">→</span>
+                </span>
+              </div>
+            </Link>
+
+            {/* Away Day Hub Shortcut */}
+            <Link to="/away-day" className="bg-white rounded-2xl shadow-xl p-6 border border-gray-100 hover:shadow-2xl transition-all duration-300 flex flex-col cursor-pointer hover:-translate-y-1">
+              <div className="flex items-center gap-3 mb-5">
+                <div className="bg-gradient-to-br from-purple-500 to-indigo-600 p-3 rounded-xl shadow-lg">
+                  <Trophy className="text-white" size={24} />
+                </div>
+                <h2 className="text-xl font-bold text-gray-800">
+                  Away Day Hub
+                </h2>
+              </div>
+              <div className="space-y-3 flex-grow">
+                <div className="bg-purple-50 rounded-xl p-4 border border-purple-100">
+                  <p className="text-purple-800 font-semibold text-sm">Travel plans, attendance, and lineup updates in one place.</p>
+                </div>
+              </div>
+              <div className="mt-5 pt-4 border-t border-gray-100">
+                <span className="text-sm text-purple-700 font-semibold flex items-center gap-1">
+                  Open Away Day Hub
                   <span className="text-lg">→</span>
                 </span>
               </div>

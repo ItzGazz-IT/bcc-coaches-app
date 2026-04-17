@@ -43,7 +43,7 @@ export default function BottomNav() {
 
   // Available player navigation items
   const availablePlayerItems = {
-    availability: { path: "/injuries", label: "Injour/Absences", icon: Heart },
+    availability: { path: "/injuries", label: "Injury or No Attendance", icon: Heart },
     awayDay: { path: "/away-day", label: "Away Day", icon: CarFront },
     chat: { path: "/chat", label: "Chat", icon: MessageCircle },
     calendar: { path: "/calendar", label: "Calendar", icon: CalendarDays },

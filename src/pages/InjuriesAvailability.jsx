@@ -113,7 +113,7 @@ function InjuriesAvailability() {
           <div className="flex items-start md:items-center justify-between gap-3">
             <div className="flex-1">
               <h1 className="text-2xl md:text-4xl font-black bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent mb-1">
-                {userRole === "player" ? "Injour/Absences" : "Injuries"}
+                {userRole === "player" ? "Injury or No Attendance" : "Injuries"}
               </h1>
               <p className="text-sm md:text-base text-gray-600 hidden md:block">
                 {userRole === "player" ? "Track your injury and absence status" : "Player health and availability"}
@@ -201,7 +201,7 @@ function InjuriesAvailability() {
         {/* Injuries List */}
         <div className="bg-white rounded-2xl shadow-xl border border-gray-100">
           <div className="p-6 border-b border-gray-100">
-            <h2 className="text-xl font-bold text-gray-800 mb-4">{userRole === "player" ? "My Injour/Absences" : "Player Status"}</h2>
+            <h2 className="text-xl font-bold text-gray-800 mb-4">{userRole === "player" ? "My Injury or No Attendance" : "Player Status"}</h2>
 
             <div className="flex gap-3">
               <div className="relative flex-1">
@@ -232,7 +232,7 @@ function InjuriesAvailability() {
             {filteredInjuries.length === 0 ? (
               <div className="text-center py-12">
                 <CheckCircle className="mx-auto text-green-300 mb-3" size={48} />
-                <p className="text-gray-500 font-medium">{userRole === "player" ? "No active Injour/Absences" : "All players are available"}</p>
+                <p className="text-gray-500 font-medium">{userRole === "player" ? "No active Injury or No Attendance entries" : "All players are available"}</p>
                 <p className="text-gray-400 text-sm mt-1">{userRole === "player" ? "You have not reported any injuries or absences" : "No injuries or unavailability reported"}</p>
               </div>
             ) : (
