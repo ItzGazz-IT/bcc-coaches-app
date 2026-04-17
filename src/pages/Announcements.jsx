@@ -13,8 +13,7 @@ function Announcements() {
     title: "",
     message: "",
     type: "info",
-    priority: "normal",
-    team: "All Teams"
+    priority: "normal"
   })
 
   // Mark announcements as seen when component mounts
@@ -62,8 +61,7 @@ function Announcements() {
         title: "",
         message: "",
         type: "info",
-        priority: "normal",
-        team: "All Teams"
+        priority: "normal"
       })
     }
   }
@@ -74,8 +72,7 @@ function Announcements() {
       title: announcement.title,
       message: announcement.message,
       type: announcement.type,
-      priority: announcement.priority,
-      team: announcement.team
+      priority: announcement.priority
     })
     setShowModal(true)
   }
@@ -163,8 +160,7 @@ function Announcements() {
                     title: "",
                     message: "",
                     type: "info",
-                    priority: "normal",
-                    team: "All Teams"
+                    priority: "normal"
                   })
                   setShowModal(true)
                 }}
@@ -181,7 +177,7 @@ function Announcements() {
           <div className="bg-white rounded-2xl shadow-xl border border-gray-100 p-12 text-center">
             <Bell className="mx-auto text-gray-300 mb-4" size={64} />
             <h3 className="text-xl font-bold text-gray-800 mb-2">No Announcements Yet</h3>
-            <p className="text-gray-500 mb-6">Create your first team announcement to get started</p>
+            <p className="text-gray-500 mb-6">Create your first squad announcement to get started</p>
             <button
               onClick={() => setShowModal(true)}
               className="bg-gradient-to-r from-indigo-500 to-indigo-600 text-white px-6 py-3 rounded-xl font-bold hover:from-indigo-600 hover:to-indigo-700 transition-all"
@@ -209,7 +205,6 @@ function Announcements() {
                           {getTypeIcon(announcement.type)}
                           <div className="flex-1">
                             <h3 className="font-bold text-lg">{announcement.title}</h3>
-                            <p className="text-xs text-white/80 mt-1">{announcement.team}</p>
                           </div>
                         </div>
                         <div className="flex items-center gap-2">
@@ -254,7 +249,6 @@ function Announcements() {
                           {getTypeIcon(announcement.type)}
                           <div className="flex-1">
                             <h3 className="font-bold text-lg">{announcement.title}</h3>
-                            <p className="text-xs text-white/80 mt-1">{announcement.team}</p>
                           </div>
                         </div>
                         {(userRole === "coach" || userRole === "super-admin") && (
@@ -318,7 +312,7 @@ function Announcements() {
                 />
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-bold text-gray-700 mb-2">Type</label>
                   <select
@@ -345,19 +339,6 @@ function Announcements() {
                   </select>
                 </div>
 
-                <div>
-                  <label className="block text-sm font-bold text-gray-700 mb-2">Team</label>
-                  <select
-                    value={formData.team}
-                    onChange={(e) => setFormData({ ...formData, team: e.target.value })}
-                    className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-indigo-500 outline-none"
-                  >
-                    <option>All Teams</option>
-                    <option>First Team</option>
-                    <option>Reserve Team</option>
-                    <option>Div 1</option>
-                  </select>
-                </div>
               </div>
 
               <div>

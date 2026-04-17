@@ -5,9 +5,6 @@ import { useSearchParams } from "react-router-dom"
 import { TableSkeleton } from "../components/Loading"
 import { generateUsername, generatePassword } from "../utils/credentialUtils"
 
-const isDiv1Team = (team) => team === "Div 1" || team === "Others"
-const getTeamLabel = (team) => (team === "Others" ? "Div 1" : team)
-
 function Players() {
   const { players, addPlayer, updatePlayer, deletePlayer, loading, userRole } = useApp()
   const [searchParams, setSearchParams] = useSearchParams()
@@ -17,7 +14,7 @@ function Players() {
     lastName: "",
     nickname: "",
     phone: "",
-    team: "First Team",
+    team: "Squad",
     position: "Midfielder",
     emergencyContact: "",
     username: "",
@@ -25,17 +22,12 @@ function Players() {
   })
   
   const [searchTerm, setSearchTerm] = useState("")
-  const [filterTeam, setFilterTeam] = useState("All")
   const [showSuccess, setShowSuccess] = useState(false)
   const [showModal, setShowModal] = useState(false)
   const [editingPlayer, setEditingPlayer] = useState(null)
 
-  // Check for team filter from URL params
   useEffect(() => {
-    const teamParam = searchParams.get('team')
-    if (teamParam) {
-      setFilterTeam(teamParam === "Others" ? "Div 1" : teamParam)
-    }
+    searchParams.get("team")
   }, [searchParams])
 
   const handleSubmit = async (e) => {
@@ -69,7 +61,7 @@ function Players() {
         lastName: "", 
         nickname: "",
         phone: "", 
-        team: "First Team",
+        team: "Squad",
         position: "Midfielder",
         emergencyContact: "",
         username: "",
@@ -89,7 +81,7 @@ function Players() {
       lastName: player.lastName,
       nickname: player.nickname || "",
       phone: player.phone,
-      team: player.team,
+      team: player.team || "Squad",
       position: player.position || "Midfielder",
       emergencyContact: player.emergencyContact || "",
       username: player.username || "",
@@ -109,13 +101,8 @@ function Players() {
       player.lastName.toLowerCase().includes(searchTerm.toLowerCase()) ||
       player.nickname?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       player.phone.includes(searchTerm)
-    const matchesTeam = filterTeam === "All" || (filterTeam === "Div 1" ? isDiv1Team(player.team) : player.team === filterTeam)
-    return matchesSearch && matchesTeam
+    return matchesSearch
   })
-
-  const firstTeamCount = players.filter(p => p.team === "First Team").length
-  const reserveTeamCount = players.filter(p => p.team === "Reserve Team").length
-  const div1Count = players.filter(p => isDiv1Team(p.team)).length
 
   if (userRole !== "coach" && userRole !== "super-admin") {
     return (
@@ -166,7 +153,7 @@ function Players() {
         )}
 
         {/* Stats Cards */}
-        <div className="grid grid-cols-2 lg:grid-cols-5 gap-3 mb-4">
+        <div className="grid grid-cols-2 lg:grid-cols-2 gap-3 mb-4">
           <div className="bg-white rounded-xl p-3 shadow-sm border border-gray-100">
             <div className="flex flex-col gap-1">
               <div className="flex items-center gap-2">
@@ -179,42 +166,6 @@ function Players() {
             </div>
           </div>
           
-          <div className="bg-white rounded-xl p-3 shadow-sm border border-gray-100">
-            <div className="flex flex-col gap-1">
-              <div className="flex items-center gap-2">
-                <div className="bg-gradient-to-br from-emerald-500 to-emerald-600 p-1.5 rounded-lg">
-                  <Shield className="text-white" size={16} />
-                </div>
-                <p className="text-xs font-bold text-gray-500 uppercase truncate">First</p>
-              </div>
-              <p className="text-2xl font-black text-emerald-600">{firstTeamCount}</p>
-            </div>
-          </div>
-
-          <div className="bg-white rounded-xl p-3 shadow-sm border border-gray-100">
-            <div className="flex flex-col gap-1">
-              <div className="flex items-center gap-2">
-                <div className="bg-gradient-to-br from-orange-500 to-orange-600 p-1.5 rounded-lg">
-                  <Activity className="text-white" size={16} />
-                </div>
-                <p className="text-xs font-bold text-gray-500 uppercase truncate">Reserve</p>
-              </div>
-              <p className="text-2xl font-black text-orange-600">{reserveTeamCount}</p>
-            </div>
-          </div>
-
-          <div className="bg-white rounded-xl p-3 shadow-sm border border-gray-100">
-            <div className="flex flex-col gap-1">
-              <div className="flex items-center gap-2">
-                <div className="bg-gradient-to-br from-purple-500 to-purple-600 p-1.5 rounded-lg">
-                  <Users className="text-white" size={16} />
-                </div>
-                <p className="text-xs font-bold text-gray-500 uppercase">Div 1</p>
-              </div>
-              <p className="text-2xl font-black text-purple-600">{div1Count}</p>
-            </div>
-          </div>
-
           <div className="bg-white rounded-xl p-3 shadow-sm border border-gray-100">
             <div className="flex flex-col gap-1">
               <div className="flex items-center gap-2">
@@ -244,17 +195,6 @@ function Players() {
                   className="w-full pl-9 pr-3 py-2 text-sm border-2 border-gray-200 rounded-lg focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 outline-none transition-all"
                 />
               </div>
-              
-              <select
-                value={filterTeam}
-                onChange={(e) => setFilterTeam(e.target.value)}
-                className="px-3 py-2 text-sm border-2 border-gray-200 rounded-lg focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 outline-none transition-all bg-white"
-              >
-                <option value="All">All Teams</option>
-                <option value="First Team">First Team</option>
-                <option value="Reserve Team">Reserve Team</option>
-                <option value="Div 1">Div 1</option>
-              </select>
             </div>
           </div>
 
@@ -287,14 +227,8 @@ function Players() {
                             {player.nickname}
                           </span>
                         )}
-                        <span className={`px-2 py-0.5 rounded text-xs font-bold ${
-                          player.team === "First Team" 
-                            ? "bg-emerald-100 text-emerald-700" 
-                            : player.team === "Reserve Team"
-                            ? "bg-orange-100 text-orange-700"
-                            : "bg-purple-100 text-purple-700"
-                        }`}>
-                          {getTeamLabel(player.team)}
+                        <span className="px-2 py-0.5 rounded text-xs font-bold bg-indigo-100 text-indigo-700">
+                          Squad
                         </span>
                       </div>
                       <p className="text-sm text-gray-500 flex items-center gap-1.5">
@@ -436,16 +370,14 @@ function Players() {
 
                 <div>
                   <label className="block text-sm font-semibold text-gray-700 mb-2">
-                    Team *
+                    Squad
                   </label>
                   <select
                     value={formData.team}
                     onChange={(e) => setFormData({...formData, team: e.target.value})}
                     className="w-full px-4 py-2.5 border-2 border-gray-200 rounded-xl focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 outline-none transition-all bg-white"
                   >
-                    <option value="First Team">First Team</option>
-                    <option value="Reserve Team">Reserve Team</option>
-                    <option value="Div 1">Div 1</option>
+                    <option value="Squad">Squad</option>
                   </select>
                 </div>
 

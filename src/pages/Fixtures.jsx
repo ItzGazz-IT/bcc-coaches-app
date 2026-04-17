@@ -3,17 +3,9 @@ import { Calendar, Clock, MapPin, Trophy, Plus, Edit, Trash2, CheckCircle, Users
 import { useApp } from "../contexts/AppContext"
 import { TableSkeleton } from "../components/Loading"
 
-const getDefaultKickoffTime = (team) => {
-  if (team === "Reserve Team") return "13:45"
-  if (team === "First Team") return "15:30"
-  return ""
-}
+const getDefaultKickoffTime = () => ""
 
-const getTeamLabel = (team) => {
-  if (team === "Others") return "Div 1"
-  if (team === "Reserve Team") return "Reserves"
-  return team
-}
+const getTeamLabel = () => "Squad"
 
 const getFixtureTime = (fixture) => fixture.time || getDefaultKickoffTime(fixture.team)
 
@@ -46,12 +38,7 @@ const groupFixtures = (fixtures) => {
   return Array.from(groups.values()).sort((a, b) => new Date(a.date) - new Date(b.date))
 }
 
-const getTeamSortKey = (team) => {
-  if (team === "Reserve Team") return 1
-  if (team === "First Team") return 2
-  if (team === "Others" || team === "Div 1") return 3
-  return 4
-}
+const getTeamSortKey = () => 1
 
 function Fixtures() {
   const { fixtures, addFixture, updateFixture, deleteFixture, loading, userRole, markAsSeen } = useApp()
@@ -67,12 +54,12 @@ function Fixtures() {
   const [filterStatus, setFilterStatus] = useState("All")
   const [formData, setFormData] = useState({
     date: "",
-    time: getDefaultKickoffTime("First Team"),
+    time: getDefaultKickoffTime(),
     opponent: "",
     competition: "",
     venue: "",
     homeAway: "Home",
-    team: "First Team",
+    team: "Squad",
     result: "",
     score: ""
   })
@@ -83,6 +70,7 @@ function Fixtures() {
     if (formData.date && formData.opponent) {
       const fixtureData = {
         ...formData,
+        team: "Squad",
         status: formData.result ? "Completed" : "Upcoming"
       }
 
@@ -96,12 +84,12 @@ function Fixtures() {
       setEditingFixture(null)
       setFormData({
         date: "",
-        time: getDefaultKickoffTime("First Team"),
+        time: getDefaultKickoffTime(),
         opponent: "",
         competition: "",
         venue: "",
         homeAway: "Home",
-        team: "First Team",
+        team: "Squad",
         result: "",
         score: ""
       })
@@ -114,12 +102,12 @@ function Fixtures() {
     setEditingFixture(fixture)
     setFormData({
       date: fixture.date,
-      time: fixture.time || getDefaultKickoffTime(fixture.team || "First Team"),
+      time: fixture.time || getDefaultKickoffTime(),
       opponent: fixture.opponent,
       competition: fixture.competition || "",
       venue: fixture.venue || "",
       homeAway: fixture.homeAway || "Home",
-      team: fixture.team || "First Team",
+      team: "Squad",
       result: fixture.result || "",
       score: fixture.score || ""
     })
@@ -165,12 +153,12 @@ function Fixtures() {
                   setEditingFixture(null)
                   setFormData({
                     date: "",
-                    time: getDefaultKickoffTime("First Team"),
+                    time: getDefaultKickoffTime(),
                     opponent: "",
                     competition: "",
                     venue: "",
                     homeAway: "Home",
-                    team: "First Team",
+                    team: "Squad",
                     result: "",
                     score: ""
                   })
@@ -271,7 +259,7 @@ function Fixtures() {
                               return (
                                 <div key={`${teamFixture.id}-time`} className="flex items-center gap-2 text-gray-600">
                                   <Clock size={16} className="text-blue-500" />
-                                  <span className="font-semibold">{getTeamLabel(teamFixture.team)} {kickoffTime}</span>
+                                  <span className="font-semibold">{kickoffTime}</span>
                                 </div>
                               )
                             })}
@@ -296,14 +284,14 @@ function Fixtures() {
                                 <button
                                   onClick={() => handleEdit(teamFixture)}
                                   className="p-2 hover:bg-blue-100 rounded-lg transition-colors"
-                                  title={`Edit ${getTeamLabel(teamFixture.team)}`}
+                                  title="Edit fixture"
                                 >
                                   <Edit size={16} className="text-blue-600" />
                                 </button>
                                 <button
                                   onClick={() => handleDelete(teamFixture.id)}
                                   className="p-2 hover:bg-red-100 rounded-lg transition-colors"
-                                  title={`Delete ${getTeamLabel(teamFixture.team)}`}
+                                  title="Delete fixture"
                                 >
                                   <Trash2 size={16} className="text-red-600" />
                                 </button>
@@ -377,7 +365,7 @@ function Fixtures() {
                               return (
                                 <div key={`${teamFixture.id}-time`} className="flex items-center gap-2 text-gray-600">
                                   <Clock size={16} className="text-gray-500" />
-                                  <span className="font-semibold">{getTeamLabel(teamFixture.team)} {kickoffTime}</span>
+                                  <span className="font-semibold">{kickoffTime}</span>
                                 </div>
                               )
                             })}
@@ -396,14 +384,14 @@ function Fixtures() {
                                 <button
                                   onClick={() => handleEdit(teamFixture)}
                                   className="p-2 hover:bg-blue-100 rounded-lg transition-colors"
-                                  title={`Edit ${getTeamLabel(teamFixture.team)}`}
+                                  title="Edit fixture"
                                 >
                                   <Edit size={16} className="text-blue-600" />
                                 </button>
                                 <button
                                   onClick={() => handleDelete(teamFixture.id)}
                                   className="p-2 hover:bg-red-100 rounded-lg transition-colors"
-                                  title={`Delete ${getTeamLabel(teamFixture.team)}`}
+                                  title="Delete fixture"
                                 >
                                   <Trash2 size={16} className="text-red-600" />
                                 </button>
@@ -478,26 +466,6 @@ function Fixtures() {
               </div>
 
               <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-bold text-gray-700 mb-2">Team</label>
-                  <select
-                    value={formData.team}
-                    onChange={(e) => {
-                      const nextTeam = e.target.value
-                      const currentDefault = getDefaultKickoffTime(formData.team)
-                      const nextDefault = getDefaultKickoffTime(nextTeam)
-                      const nextTime = formData.time && formData.time !== currentDefault
-                        ? formData.time
-                        : nextDefault
-                      setFormData({ ...formData, team: nextTeam, time: nextTime })
-                    }}
-                    className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-blue-500 outline-none bg-white"
-                  >
-                    <option>First Team</option>
-                    <option>Reserve Team</option>
-                    <option>Div 1</option>
-                  </select>
-                </div>
                 <div>
                   <label className="block text-sm font-bold text-gray-700 mb-2">Home/Away</label>
                   <select

@@ -4,13 +4,7 @@ import { collection, onSnapshot, query, orderBy } from "firebase/firestore"
 import { db } from "../firebase/config"
 import { useApp } from "../contexts/AppContext"
 
-const getDefaultKickoffTime = (team) => {
-  if (team === "Reserve Team") return "13:45"
-  if (team === "First Team") return "15:30"
-  return ""
-}
-
-const getTeamLabel = (team) => (team === "Others" ? "Div 1" : team)
+const getDefaultKickoffTime = () => ""
 
 const getDateKey = (year, monthIndex, day) => {
   const month = String(monthIndex + 1).padStart(2, "0")
@@ -203,9 +197,9 @@ function Calendar() {
         id: fixture.id,
         type: "Match",
         title: `${fixture.homeAway} vs ${fixture.opponent}`,
-        time: fixture.time || getDefaultKickoffTime(fixture.team) || "TBC",
+        time: fixture.time || getDefaultKickoffTime() || "TBC",
         location: fixture.venue || (fixture.homeAway === "Home" ? "Home Ground" : "Away"),
-        description: `${fixture.competition || "Friendly"} - ${getTeamLabel(fixture.team)}`,
+        description: `${fixture.competition || "Friendly"} - Squad`,
         icon: Trophy,
         color: fixture.status === "Completed" ? "gray" : "red",
         fixtureData: fixture

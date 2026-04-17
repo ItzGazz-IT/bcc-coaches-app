@@ -556,7 +556,7 @@ function FitnessTests() {
                     <option value="">Select Player</option>
                     {players.map(player => (
                       <option key={player.id} value={player.id}>
-                        {player.firstName} {player.lastName} ({player.team})
+                        {player.firstName} {player.lastName} (Squad)
                       </option>
                     ))}
                   </select>

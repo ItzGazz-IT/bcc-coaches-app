@@ -258,14 +258,8 @@ function InjuriesAvailability() {
                             {injury.status === 'recovered' ? 'Recovered' :
                              injury.type === 'injury' ? 'Injured' : 'Unavailable'}
                           </span>
-                          <span className={`px-2 py-1 rounded text-xs font-bold ${
-                            player.team === "First Team" 
-                              ? "bg-emerald-100 text-emerald-700" 
-                              : player.team === "Reserve Team"
-                              ? "bg-orange-100 text-orange-700"
-                              : "bg-purple-100 text-purple-700"
-                          }`}>
-                            {player.team}
+                          <span className="px-2 py-1 rounded text-xs font-bold bg-indigo-100 text-indigo-700">
+                            Squad
                           </span>
                         </div>
 
@@ -372,7 +366,7 @@ function InjuriesAvailability() {
                       <option value="">Select Player</option>
                       {players.map(player => (
                         <option key={player.id} value={player.id}>
-                          {player.firstName} {player.lastName} ({player.team})
+                          {player.firstName} {player.lastName} (Squad)
                         </option>
                       ))}
                     </select>

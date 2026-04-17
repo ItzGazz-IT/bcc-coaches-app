@@ -2,11 +2,8 @@ import { useState, useMemo } from "react"
 import { Trophy, Target, TrendingUp, Award, Users, Download, Printer, Star, AlertCircle } from "lucide-react"
 import { useApp } from "../contexts/AppContext"
 
-const isDiv1Team = (team) => team === "Div 1" || team === "Others"
-
 function PlayerStats() {
   const { players, fixtures, userRole, currentPlayerId } = useApp()
-  const [selectedTeam, setSelectedTeam] = useState("All")
   const [selectedStat, setSelectedStat] = useState("goals")
 
   // Filter players based on role
@@ -76,9 +73,8 @@ function PlayerStats() {
 
         if (theirScore === 0) {
           Object.values(stats).forEach(playerStat => {
-            if (playerStat.player.team === fixture.team && 
-                (playerStat.player.position === "Goalkeeper" || 
-                 playerStat.player.position === "Defender")) {
+            if (playerStat.player.position === "Goalkeeper" || 
+                 playerStat.player.position === "Defender") {
               if (playerStat.appearances > 0) {
                 playerStat.cleanSheets++
               }
@@ -92,7 +88,6 @@ function PlayerStats() {
   }, [displayPlayers, fixtures])
 
   const filteredStats = playerStats
-    .filter(stat => selectedTeam === "All" || (selectedTeam === "Div 1" ? isDiv1Team(stat.player.team) : stat.player.team === selectedTeam))
     .sort((a, b) => {
       if (selectedStat === "goals") return b.goals - a.goals
       if (selectedStat === "appearances") return b.appearances - a.appearances
@@ -118,10 +113,10 @@ function PlayerStats() {
 
   const handleExport = () => {
     const csvContent = [
-      ["Player", "Team", "Position", "Appearances", "Goals", "Yellow Cards", "Red Cards", "Clean Sheets"],
+      ["Player", "Squad", "Position", "Appearances", "Goals", "Yellow Cards", "Red Cards", "Clean Sheets"],
       ...filteredStats.map(stat => [
         `${stat.player.firstName} ${stat.player.lastName}`,
-        stat.player.team,
+        "Squad",
         stat.player.position,
         stat.appearances,
         stat.goals,
@@ -155,16 +150,6 @@ function PlayerStats() {
               <p className="text-sm md:text-base text-gray-600 print:text-sm hidden md:block">Season performance and analytics</p>
             </div>
             <div className="flex items-center gap-2 print:hidden">
-              <select
-                value={selectedTeam}
-                onChange={(e) => setSelectedTeam(e.target.value)}
-                className="px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-blue-500 outline-none bg-white font-semibold"
-              >
-                <option>All</option>
-                <option>First Team</option>
-                <option>Reserve Team</option>
-                <option>Div 1</option>
-              </select>
               <button
                 onClick={handleExport}
                 className="btn bg-green-500 text-white hover:bg-green-600 flex items-center gap-2 text-sm md:text-base"
@@ -304,7 +289,7 @@ function PlayerStats() {
                         <p className="font-bold text-gray-800">
                           {stat.player.firstName} {stat.player.lastName}
                         </p>
-                        <p className="text-xs text-gray-500">{stat.player.team}</p>
+                        <p className="text-xs text-gray-500">Squad</p>
                       </div>
                       <div className="text-2xl font-black text-blue-600">{stat.appearances}</div>
                     </div>
@@ -406,7 +391,7 @@ function PlayerStats() {
                         {stat.player.firstName} {stat.player.lastName}
                       </p>
                     </td>
-                    <td className="px-6 py-4 text-sm text-gray-600">{stat.player.team}</td>
+                    <td className="px-6 py-4 text-sm text-gray-600">Squad</td>
                     <td className="px-6 py-4 text-sm text-gray-600">{stat.player.position}</td>
                     <td className="px-6 py-4 text-center font-bold text-gray-800">{stat.appearances}</td>
                     <td className="px-6 py-4 text-center">

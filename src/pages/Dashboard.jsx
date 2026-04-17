@@ -1,4 +1,4 @@
-import { CalendarDays, Users, ClipboardCheck, Star, Heart, Shield, UserPlus, Activity, AlertCircle, CheckCircle, Trophy, TrendingUp, Target, BarChart3 } from "lucide-react"
+import { CalendarDays, Users, ClipboardCheck, Star, Heart, UserPlus, AlertCircle, CheckCircle, Trophy, TrendingUp, Target, BarChart3 } from "lucide-react"
 import { useApp } from "../contexts/AppContext"
 import { Link } from "react-router-dom"
 import { useState, useEffect, useMemo } from "react"
@@ -7,8 +7,6 @@ import { db } from "../firebase/config"
 import logo from "../assets/bcc-logo.png"
 import { usePullToRefresh } from "../hooks/usePullToRefresh"
 import PullToRefreshIndicator from "../components/PullToRefreshIndicator"
-
-const isDiv1Team = (team) => team === "Div 1" || team === "Others"
 
 function StatCard({ title, value, icon: Icon, gradient, delay = 0, to, subtitle }) {
   const CardContent = () => (
@@ -163,9 +161,6 @@ export default function Dashboard() {
   }, [currentPlayerId, reviews])
 
   // Coach dashboard stats
-  const firstTeamCount = players.filter(p => p.team === "First Team").length
-  const reserveTeamCount = players.filter(p => p.team === "Reserve Team").length
-  const div1Count = players.filter(p => isDiv1Team(p.team)).length
   const totalPlayers = players.length
   
   // Get set of valid player IDs
@@ -262,7 +257,7 @@ export default function Dashboard() {
             <h1 className="text-2xl md:text-4xl font-black bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent mb-1">
               Welcome, {currentPlayer.firstName}!
             </h1>
-            <p className="text-sm md:text-base text-gray-600">{currentPlayer.team} • {currentPlayer.position}</p>
+            <p className="text-sm md:text-base text-gray-600">Squad • {currentPlayer.position}</p>
           </div>
 
           {/* Player Stats Overview */}
@@ -510,7 +505,7 @@ export default function Dashboard() {
           <p className="text-sm md:text-base text-gray-600">BCC Team Management</p>
         </div>
 
-        <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-3 md:gap-4 mb-6">
+        <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-4 gap-3 md:gap-4 mb-6">
           <StatCard 
             title="Total Players" 
             value={totalPlayers.toString()} 
@@ -520,35 +515,11 @@ export default function Dashboard() {
             to="/players" 
           />
           <StatCard 
-            title="First Team" 
-            value={firstTeamCount.toString()} 
-            icon={Shield} 
-            gradient="bg-gradient-to-br from-emerald-500 to-emerald-600" 
-            delay={50} 
-            to="/players?team=First Team" 
-          />
-          <StatCard 
-            title="Reserve Team" 
-            value={reserveTeamCount.toString()} 
-            icon={Activity} 
-            gradient="bg-gradient-to-br from-orange-500 to-orange-600" 
-            delay={100} 
-            to="/players?team=Reserve Team" 
-          />
-          <StatCard 
-            title="Div 1" 
-            value={div1Count.toString()} 
-            icon={Users} 
-            gradient="bg-gradient-to-br from-purple-500 to-purple-600" 
-            delay={125} 
-            to="/players?team=Div 1" 
-          />
-          <StatCard 
             title="Available" 
             value={availablePlayers.toString()} 
             icon={CheckCircle} 
             gradient="bg-gradient-to-br from-green-500 to-green-600" 
-            delay={150} 
+            delay={50} 
             to="/players" 
             subtitle="Ready to play"
           />
@@ -557,7 +528,7 @@ export default function Dashboard() {
             value={injuredCount.toString()} 
             icon={Heart} 
             gradient="bg-gradient-to-br from-red-500 to-red-600" 
-            delay={200} 
+            delay={100} 
             to="/injuries" 
             subtitle="In recovery"
           />
@@ -566,7 +537,7 @@ export default function Dashboard() {
             value={unavailableCount.toString()} 
             icon={AlertCircle} 
             gradient="bg-gradient-to-br from-amber-500 to-amber-600" 
-            delay={250} 
+            delay={150} 
             to="/injuries" 
             subtitle="Not selected"
           />

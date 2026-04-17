@@ -3,12 +3,9 @@ import { Trophy, Calendar, Clock, MapPin, Users, ChevronRight, Target, Activity,
 import { useApp } from "../contexts/AppContext"
 import { useNavigate } from "react-router-dom"
 
-const isDiv1Team = (team) => team === "Div 1" || team === "Others"
-
 function MatchCenter() {
   const { fixtures, updateFixture, players } = useApp()
   const navigate = useNavigate()
-  const [selectedTeam, setSelectedTeam] = useState("All")
   const [selectedMatch, setSelectedMatch] = useState(null)
   const [showMatchDetails, setShowMatchDetails] = useState(false)
   const [matchDetails, setMatchDetails] = useState({
@@ -30,13 +27,11 @@ function MatchCenter() {
 
   const upcomingFixtures = fixtures
     .filter(f => f.status === "Upcoming")
-    .filter(f => selectedTeam === "All" || (selectedTeam === "Div 1" ? isDiv1Team(f.team) : f.team === selectedTeam))
     .sort((a, b) => new Date(a.date) - new Date(b.date))
     .slice(0, 5)
 
   const recentResults = fixtures
     .filter(f => f.status === "Completed")
-    .filter(f => selectedTeam === "All" || (selectedTeam === "Div 1" ? isDiv1Team(f.team) : f.team === selectedTeam))
     .sort((a, b) => new Date(b.date) - new Date(a.date))
     .slice(0, 5)
 
@@ -118,7 +113,7 @@ function MatchCenter() {
     }
     
     let message = `*MATCH RESULT*\n\n`
-    message += `${fixture.team}\n`
+    message += `Squad\n`
     message += `vs ${fixture.opponent}\n\n`
     message += `*Score:* ${fixture.score || "N/A"}\n`
     message += `*Result:* ${fixture.result}\n`
@@ -450,7 +445,7 @@ function MatchCenter() {
               >
                 <option value="">Select {liveMatch.team} Scorer</option>
                 {players
-                  .filter(p => p.team === liveMatch.team)
+                  .filter(() => true)
                   .map(player => (
                     <option key={player.id} value={player.id}>
                       {player.firstName} {player.lastName} - {player.position}
@@ -494,7 +489,7 @@ function MatchCenter() {
                   >
                     <option value="">Select Player</option>
                     {players
-                      .filter(p => p.team === liveMatch.team)
+                      .filter(() => true)
                       .map(player => (
                         <option key={player.id} value={player.id}>
                           {player.firstName} {player.lastName}
@@ -516,7 +511,7 @@ function MatchCenter() {
                   >
                     <option value="">Select Player</option>
                     {players
-                      .filter(p => p.team === liveMatch.team)
+                      .filter(() => true)
                       .map(player => (
                         <option key={player.id} value={player.id}>
                           {player.firstName} {player.lastName}
@@ -636,16 +631,9 @@ function MatchCenter() {
               </h1>
               <p className="text-gray-600">Live fixtures, results, and match statistics</p>
             </div>
-            <select
-              value={selectedTeam}
-              onChange={(e) => setSelectedTeam(e.target.value)}
-              className="px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-green-500 outline-none bg-white font-semibold"
-            >
-              <option>All</option>
-              <option>First Team</option>
-              <option>Reserve Team</option>
-              <option>Div 1</option>
-            </select>
+            <div className="px-4 py-3 border-2 border-gray-200 rounded-xl bg-white font-semibold text-gray-700">
+              Squad View
+            </div>
           </div>
         </div>
 
@@ -737,7 +725,7 @@ function MatchCenter() {
                       <div className="flex items-center justify-between mb-2">
                         <div className="flex items-center gap-2">
                           <div className="bg-blue-500 text-white px-2 py-1 rounded text-xs font-bold">
-                            {fixture.team}
+                            Squad
                           </div>
                           <div className={`px-2 py-1 rounded text-xs font-bold ${
                             fixture.homeAway === "Home" ? "bg-green-100 text-green-700" : "bg-orange-100 text-orange-700"
@@ -803,7 +791,7 @@ function MatchCenter() {
                       <div className="flex items-center justify-between mb-2">
                         <div className="flex items-center gap-2">
                           <div className="bg-gray-500 text-white px-2 py-1 rounded text-xs font-bold">
-                            {fixture.team}
+                            Squad
                           </div>
                           <div className={`px-2 py-1 rounded text-xs font-bold ${
                             fixture.result === "Win" ? "bg-green-100 text-green-700" :
@@ -943,7 +931,7 @@ function MatchCenter() {
                         >
                           <option value="">Select Player</option>
                           {players
-                            .filter(p => p.team === selectedMatch.team)
+                            .filter(() => true)
                             .map(player => (
                               <option key={player.id} value={player.id}>
                                 {player.firstName} {player.lastName} - {player.position}
@@ -997,7 +985,7 @@ function MatchCenter() {
                         >
                           <option value="">Select Player</option>
                           {players
-                            .filter(p => p.team === selectedMatch.team)
+                            .filter(() => true)
                             .map(player => (
                               <option key={player.id} value={player.id}>
                                 {player.firstName} {player.lastName} - {player.position}
@@ -1051,7 +1039,7 @@ function MatchCenter() {
                         >
                           <option value="">Select Player</option>
                           {players
-                            .filter(p => p.team === selectedMatch.team)
+                            .filter(() => true)
                             .map(player => (
                               <option key={player.id} value={player.id}>
                                 {player.firstName} {player.lastName} - {player.position}

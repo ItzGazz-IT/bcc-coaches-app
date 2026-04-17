@@ -4,12 +4,7 @@ import { useApp } from "../contexts/AppContext"
 import { addDoc, collection, doc, onSnapshot, orderBy, query, updateDoc } from "firebase/firestore"
 import { db } from "../firebase/config"
 
-const isDiv1Team = (team) => team === "Div 1" || team === "Others"
-
-const getTeamLabel = (team) => {
-  if (team === "Others") return "Div 1"
-  return team
-}
+const getTeamLabel = () => "Squad"
 
 const isCoachUser = (role) => role === "coach" || role === "super-admin"
 
@@ -116,7 +111,7 @@ function AwayDayHub() {
     meetingTime: "",
     meetingPoint: "",
     venue: "",
-    team: "First Team",
+    team: "Squad",
     notes: ""
   })
 
@@ -152,12 +147,7 @@ function AwayDayHub() {
   const currentPlayer = useMemo(() => players.find((player) => player.id === currentPlayerId) || null, [players, currentPlayerId])
 
   const teamPlayers = useMemo(() => {
-    if (!selectedGame) return players
-    if (selectedGame.team === "All Teams") return players
-    if (selectedGame.team === "Div 1") {
-      return players.filter((player) => isDiv1Team(player.team))
-    }
-    return players.filter((player) => player.team === selectedGame.team)
+    return players
   }, [players, selectedGame])
 
   useEffect(() => {
@@ -238,14 +228,14 @@ function AwayDayHub() {
       try {
         await addDoc(collection(db, "awayGames"), {
           fixtureId: fixture.id,
-          title: `${getTeamLabel(fixture.team || "Team")} vs ${fixture.opponent}`,
+          title: `Squad vs ${fixture.opponent}`,
           opponent: fixture.opponent || "",
           date: fixture.date || "",
           time: fixture.time || "",
           meetingTime: "",
           meetingPoint: "",
           venue: fixture.venue || "",
-          team: fixture.team === "Others" ? "Div 1" : (fixture.team || "First Team"),
+          team: "Squad",
           notes: fixture.competition ? `Auto-created from fixture (${fixture.competition})` : "Auto-created from fixture",
           attendance: {},
           transportOffers: {},
@@ -312,8 +302,8 @@ function AwayDayHub() {
 
   const handleCreateGame = async (event) => {
     event.preventDefault()
-    if (!newGame.title || !newGame.date || !newGame.opponent || !newGame.team) {
-      setFeedback("error", "Please fill in title, opponent, date, and team.")
+    if (!newGame.title || !newGame.date || !newGame.opponent) {
+      setFeedback("error", "Please fill in title, opponent, and date.")
       return
     }
 
@@ -343,7 +333,7 @@ function AwayDayHub() {
         meetingTime: "",
         meetingPoint: "",
         venue: "",
-        team: "First Team",
+        team: "Squad",
         notes: ""
       })
       setFeedback("success", "Away game created.")
@@ -618,10 +608,7 @@ function AwayDayHub() {
                 onChange={(event) => setNewGame((prev) => ({ ...prev, team: event.target.value }))}
                 className="rounded-xl border border-slate-300 px-3 py-2.5 outline-none focus:border-cyan-500"
               >
-                <option value="First Team">First Team</option>
-                <option value="Reserve Team">Reserve Team</option>
-                <option value="Div 1">Div 1</option>
-                <option value="All Teams">All Teams</option>
+                <option value="Squad">Squad</option>
               </select>
               <input
                 type="date"
@@ -1052,7 +1039,7 @@ function AwayDayHub() {
                         <div key={player.id} className="rounded-xl border border-slate-200 p-3 flex flex-col md:flex-row md:items-center md:justify-between gap-2">
                           <div>
                             <p className="font-semibold text-slate-800">{getPlayerName(player)}</p>
-                            <p className="text-xs text-slate-500">{getTeamLabel(player.team)}</p>
+                            <p className="text-xs text-slate-500">Squad</p>
                           </div>
                           <div className="flex items-center gap-2 flex-wrap text-xs">
                             <span

@@ -4,8 +4,6 @@ import { useApp } from "../contexts/AppContext"
 import { collection, addDoc, updateDoc, deleteDoc, doc, onSnapshot } from "firebase/firestore"
 import { db } from "../firebase/config"
 
-const isDiv1Team = (team) => team === "Div 1" || team === "Others"
-
 function SeasonGoals() {
   const { fixtures } = useApp()
   const [goals, setGoals] = useState([])
@@ -16,7 +14,6 @@ function SeasonGoals() {
     category: "League",
     target: "",
     current: 0,
-    team: "First Team",
     description: ""
   })
 
@@ -46,7 +43,6 @@ function SeasonGoals() {
         category: "League",
         target: "",
         current: 0,
-        team: "First Team",
         description: ""
       })
     }
@@ -59,7 +55,6 @@ function SeasonGoals() {
       category: goal.category,
       target: goal.target,
       current: goal.current,
-      team: goal.team,
       description: goal.description || ""
     })
     setShowModal(true)
@@ -76,29 +71,12 @@ function SeasonGoals() {
     return Math.min(percentage, 100)
   }
 
-  // Calculate team stats from fixtures
-  const teamStats = {
-    "First Team": {
-      matches: fixtures.filter(f => f.team === "First Team" && f.status === "Completed").length,
-      wins: fixtures.filter(f => f.team === "First Team" && f.result === "Win").length,
-      goals: fixtures
-        .filter(f => f.team === "First Team" && f.scorers)
-        .reduce((sum, f) => sum + (f.scorers?.filter(s => s.team === "First Team").length || 0), 0)
-    },
-    "Reserve Team": {
-      matches: fixtures.filter(f => f.team === "Reserve Team" && f.status === "Completed").length,
-      wins: fixtures.filter(f => f.team === "Reserve Team" && f.result === "Win").length,
-      goals: fixtures
-        .filter(f => f.team === "Reserve Team" && f.scorers)
-        .reduce((sum, f) => sum + (f.scorers?.filter(s => s.team === "Reserve Team").length || 0), 0)
-    },
-    "Div 1": {
-      matches: fixtures.filter(f => isDiv1Team(f.team) && f.status === "Completed").length,
-      wins: fixtures.filter(f => isDiv1Team(f.team) && f.result === "Win").length,
-      goals: fixtures
-        .filter(f => isDiv1Team(f.team) && f.scorers)
-        .reduce((sum, f) => sum + (f.scorers?.filter(s => isDiv1Team(s.team)).length || 0), 0)
-    }
+  const squadStats = {
+    matches: fixtures.filter(f => f.status === "Completed").length,
+    wins: fixtures.filter(f => f.result === "Win").length,
+    goals: fixtures
+      .filter(f => f.scorers)
+      .reduce((sum, f) => sum + (f.scorers?.length || 0), 0)
   }
 
   const groupedGoals = {
@@ -127,7 +105,6 @@ function SeasonGoals() {
                   category: "League",
                   target: "",
                   current: 0,
-                  team: "First Team",
                   description: ""
                 })
                 setShowModal(true)
@@ -142,34 +119,32 @@ function SeasonGoals() {
         </div>
 
         {/* Team Performance Overview */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-          {["First Team", "Reserve Team", "Div 1"].map(team => (
-            <div key={team} className="bg-white rounded-2xl shadow-xl border border-gray-100 p-6">
-              <h3 className="text-lg font-bold text-gray-800 mb-4">{team}</h3>
+        <div className="grid grid-cols-1 md:grid-cols-1 gap-6 mb-8">
+            <div className="bg-white rounded-2xl shadow-xl border border-gray-100 p-6">
+              <h3 className="text-lg font-bold text-gray-800 mb-4">Squad</h3>
               <div className="space-y-3">
                 <div className="flex items-center justify-between">
                   <span className="text-sm text-gray-600">Matches Played</span>
-                  <span className="text-xl font-black text-blue-600">{teamStats[team].matches}</span>
+                  <span className="text-xl font-black text-blue-600">{squadStats.matches}</span>
                 </div>
                 <div className="flex items-center justify-between">
                   <span className="text-sm text-gray-600">Wins</span>
-                  <span className="text-xl font-black text-green-600">{teamStats[team].wins}</span>
+                  <span className="text-xl font-black text-green-600">{squadStats.wins}</span>
                 </div>
                 <div className="flex items-center justify-between">
                   <span className="text-sm text-gray-600">Win Rate</span>
                   <span className="text-xl font-black text-purple-600">
-                    {teamStats[team].matches > 0 
-                      ? Math.round((teamStats[team].wins / teamStats[team].matches) * 100)
+                    {squadStats.matches > 0 
+                      ? Math.round((squadStats.wins / squadStats.matches) * 100)
                       : 0}%
                   </span>
                 </div>
                 <div className="flex items-center justify-between">
                   <span className="text-sm text-gray-600">Goals Scored</span>
-                  <span className="text-xl font-black text-orange-600">{teamStats[team].goals}</span>
+                  <span className="text-xl font-black text-orange-600">{squadStats.goals}</span>
                 </div>
               </div>
             </div>
-          ))}
         </div>
 
         {/* Goals by Category */}
@@ -206,7 +181,6 @@ function SeasonGoals() {
                             <h3 className="text-lg font-bold text-gray-800">{goal.title}</h3>
                             {isComplete && <CheckCircle className="text-green-500" size={20} />}
                           </div>
-                          <p className="text-sm text-gray-600 mb-2">{goal.team}</p>
                           {goal.description && (
                             <p className="text-sm text-gray-500 italic">{goal.description}</p>
                           )}
@@ -357,19 +331,6 @@ function SeasonGoals() {
                   </select>
                 </div>
 
-                <div>
-                  <label className="block text-sm font-bold text-gray-700 mb-2">Team</label>
-                  <select
-                    value={formData.team}
-                    onChange={(e) => setFormData({ ...formData, team: e.target.value })}
-                    className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-purple-500 outline-none"
-                  >
-                    <option>First Team</option>
-                    <option>Reserve Team</option>
-                    <option>Div 1</option>
-                    <option>All Teams</option>
-                  </select>
-                </div>
               </div>
 
               <div className="grid grid-cols-2 gap-4">

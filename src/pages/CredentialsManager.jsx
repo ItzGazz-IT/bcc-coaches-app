@@ -8,18 +8,17 @@ import { db } from "../firebase/config"
 function CredentialsManager() {
   const { players, userRole } = useApp()
   const [searchTerm, setSearchTerm] = useState("")
-  const [filterTeam, setFilterTeam] = useState("All")
   const [copiedId, setCopiedId] = useState(null)
   const [message, setMessage] = useState({ type: "", text: "" })
   const [loadingId, setLoadingId] = useState(null)
   const [bulkLoading, setBulkLoading] = useState(false)
 
-  if (userRole !== "coach" && userRole !== "super-admin") {
+  if (userRole !== "super-admin") {
     return (
       <div className="flex-1 p-6 bg-gray-50 min-h-screen flex items-center justify-center">
         <div className="text-center">
           <AlertCircle className="mx-auto text-red-500 mb-3" size={48} />
-          <p className="text-gray-600 font-semibold">Coaches only</p>
+          <p className="text-gray-600 font-semibold">Super Admin only</p>
         </div>
       </div>
     )
@@ -31,8 +30,7 @@ function CredentialsManager() {
         player.firstName.toLowerCase().includes(searchTerm.toLowerCase()) ||
         player.lastName.toLowerCase().includes(searchTerm.toLowerCase()) ||
         (player.username && player.username.toLowerCase().includes(searchTerm.toLowerCase()))
-      const matchesTeam = filterTeam === "All" || player.team === filterTeam
-      return matchesSearch && matchesTeam
+      return matchesSearch
     })
     .sort((a, b) => (a.firstName + a.lastName).localeCompare(b.firstName + b.lastName))
 
@@ -119,8 +117,6 @@ function CredentialsManager() {
     }
   }
 
-  const teamOptions = ["All", ...new Set(players.map(p => p.team))]
-
   return (
     <div className="flex-1 p-4 md:p-6 bg-gray-50 min-h-screen overflow-y-auto">
       <div className="max-w-6xl mx-auto">
@@ -164,7 +160,7 @@ function CredentialsManager() {
 
         {/* Filters */}
         <div className="bg-white rounded-xl shadow-md p-4 md:p-6 mb-6 border border-gray-100">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-1 gap-4">
             <div>
               <label className="block text-sm font-semibold text-gray-700 mb-2">Search Players</label>
               <input
@@ -174,18 +170,6 @@ function CredentialsManager() {
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className="w-full px-4 py-2.5 border-2 border-gray-200 rounded-lg focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 outline-none transition-all"
               />
-            </div>
-            <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-2">Filter by Team</label>
-              <select
-                value={filterTeam}
-                onChange={(e) => setFilterTeam(e.target.value)}
-                className="w-full px-4 py-2.5 border-2 border-gray-200 rounded-lg focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 outline-none transition-all bg-white"
-              >
-                {teamOptions.map(team => (
-                  <option key={team} value={team}>{team}</option>
-                ))}
-              </select>
             </div>
           </div>
         </div>
@@ -197,7 +181,6 @@ function CredentialsManager() {
               <thead className="bg-gray-50 border-b border-gray-100">
                 <tr>
                   <th className="px-4 py-3 text-left text-xs font-bold text-gray-700 uppercase">Player</th>
-                  <th className="px-4 py-3 text-left text-xs font-bold text-gray-700 uppercase">Team</th>
                   <th className="px-4 py-3 text-left text-xs font-bold text-gray-700 uppercase">Username</th>
                   <th className="px-4 py-3 text-left text-xs font-bold text-gray-700 uppercase">Password</th>
                   <th className="px-4 py-3 text-left text-xs font-bold text-gray-700 uppercase">Phone</th>
@@ -207,7 +190,7 @@ function CredentialsManager() {
               <tbody className="divide-y divide-gray-100">
                 {filteredPlayers.length === 0 ? (
                   <tr>
-                    <td colSpan="6" className="px-4 py-8 text-center text-gray-500">
+                    <td colSpan="5" className="px-4 py-8 text-center text-gray-500">
                       No players found
                     </td>
                   </tr>
@@ -220,7 +203,6 @@ function CredentialsManager() {
                         </div>
                         <div className="text-xs text-gray-500">{player.position}</div>
                       </td>
-                      <td className="px-4 py-3 text-gray-700">{player.team}</td>
                       <td className="px-4 py-3">
                         <code className="bg-gray-100 px-2 py-1 rounded text-xs font-mono text-gray-800">
                           {player.username || "-"}
