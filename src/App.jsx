@@ -18,6 +18,7 @@ import Announcements from "./pages/Announcements"
 import NavSettings from "./pages/NavSettings"
 import AwayDayHub from "./pages/AwayDayHub"
 import HomeDayHub from "./pages/HomeDayHub"
+import GameDayHub from "./pages/GameDayHub"
 import Chat from "./pages/Chat"
 import Sidebar from "./components/Sidebar"
 import BottomNav from "./components/BottomNav"
@@ -47,7 +48,8 @@ export default function App() {
             ["injuries", InjuriesAvailability],
             ["nav-settings", NavSettings],
             ["away-day", AwayDayHub],
-            ["home-day", HomeDayHub]
+            ["home-day", HomeDayHub],
+            ["game-day", GameDayHub]
           ].map(([path, Page]) => (
             <Route
               key={path}

@@ -4,6 +4,15 @@ import { useApp } from "../contexts/AppContext"
 import NotificationBadge from "./NotificationBadge"
 import { useState, useEffect } from "react"
 
+const normalizePlayerNavIds = (ids = []) => {
+  const migrated = ids.flatMap((id) => {
+    if (id === "awayDay" || id === "homeDay") return ["gameDay"]
+    return [id]
+  })
+
+  return [...new Set(migrated)]
+}
+
 export default function BottomNav() {
   const location = useLocation()
   const navigate = useNavigate()
@@ -46,8 +55,7 @@ export default function BottomNav() {
   // Available player navigation items
   const availablePlayerItems = {
     availability: { path: "/injuries", label: "Injury or No Attendance", icon: Heart },
-    awayDay: { path: "/away-day", label: "Away Day", icon: CarFront },
-    homeDay: { path: "/home-day", label: "Home Day", icon: Home },
+    gameDay: { path: "/game-day", label: "Game Day", icon: ClipboardCheck },
     chat: { path: "/chat", label: "Chat", icon: MessageCircle },
     calendar: { path: "/calendar", label: "Calendar", icon: CalendarDays },
     announcements: { path: "/announcements", label: "Announcements", icon: Bell },
@@ -60,8 +68,8 @@ export default function BottomNav() {
       const savedMain = localStorage.getItem("playerNavMain")
       const savedMore = localStorage.getItem("playerNavMore")
       
-      const mainIds = savedMain ? JSON.parse(savedMain) : ["awayDay", "homeDay"]
-      const moreIds = savedMore ? JSON.parse(savedMore) : ["chat", "availability", "calendar", "announcements", "stats"]
+      const mainIds = normalizePlayerNavIds(savedMain ? JSON.parse(savedMain) : ["gameDay", "chat"])
+      const moreIds = normalizePlayerNavIds(savedMore ? JSON.parse(savedMore) : ["availability", "calendar", "announcements", "stats"])
       
       setPlayerNavMain(mainIds.map(id => availablePlayerItems[id]).filter(Boolean))
       setPlayerNavMore(moreIds.map(id => availablePlayerItems[id]).filter(Boolean))

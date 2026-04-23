@@ -122,8 +122,7 @@ export default function Sidebar() {
       title: "Team",
       items: [
         { path: "/chat", label: "Coach Chat", icon: MessageCircle },
-        { path: "/away-day", label: "Away Day Hub", icon: CarFront },
-        { path: "/home-day", label: "Home Day Hub", icon: Home },
+        { path: "/game-day", label: "Game Day", icon: ClipboardCheck },
         { path: "/fixtures", label: "Fixtures", icon: Trophy },
         { path: "/calendar", label: "Calendar", icon: CalendarDays },
         { path: "/injuries", label: "Injury or No Attendance", icon: Heart }
