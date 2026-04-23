@@ -1,5 +1,5 @@
 import { Link, useLocation, useNavigate } from "react-router-dom"
-import { LayoutDashboard, Users, Trophy, BarChart3, MoreHorizontal, Heart, CalendarDays, Target, ClipboardCheck, Bell, X, Settings, LogOut, Moon, Sun, CarFront, MessageCircle } from "lucide-react"
+import { LayoutDashboard, Users, Trophy, BarChart3, MoreHorizontal, Heart, CalendarDays, Target, ClipboardCheck, Bell, X, Settings, LogOut, Moon, Sun, CarFront, Home, MessageCircle, ShieldCheck } from "lucide-react"
 import { useApp } from "../contexts/AppContext"
 import NotificationBadge from "./NotificationBadge"
 import { useState, useEffect } from "react"
@@ -33,6 +33,8 @@ export default function BottomNav() {
 
   const coachMoreNav = [
     { path: "/away-day", label: "Away Day Hub", icon: CarFront },
+    { path: "/home-day", label: "Home Day Hub", icon: Home },
+    { path: "/deploy-readiness", label: "Readiness", icon: ShieldCheck },
     { path: "/chat", label: "Player Chat", icon: MessageCircle },
     { path: "/injuries", label: "Injuries", icon: Heart },
     { path: "/attendance", label: "Attendance", icon: ClipboardCheck },
@@ -45,9 +47,11 @@ export default function BottomNav() {
   const availablePlayerItems = {
     availability: { path: "/injuries", label: "Injury or No Attendance", icon: Heart },
     awayDay: { path: "/away-day", label: "Away Day", icon: CarFront },
+    homeDay: { path: "/home-day", label: "Home Day", icon: Home },
     chat: { path: "/chat", label: "Chat", icon: MessageCircle },
     calendar: { path: "/calendar", label: "Calendar", icon: CalendarDays },
-    announcements: { path: "/announcements", label: "Announcements", icon: Bell }
+    announcements: { path: "/announcements", label: "Announcements", icon: Bell },
+    stats: { path: "/player-stats", label: "My Stats", icon: BarChart3 }
   }
 
   // Load player nav preferences from localStorage
@@ -56,8 +60,8 @@ export default function BottomNav() {
       const savedMain = localStorage.getItem("playerNavMain")
       const savedMore = localStorage.getItem("playerNavMore")
       
-      const mainIds = savedMain ? JSON.parse(savedMain) : ["awayDay", "chat"]
-      const moreIds = savedMore ? JSON.parse(savedMore) : ["availability", "calendar", "announcements"]
+      const mainIds = savedMain ? JSON.parse(savedMain) : ["awayDay", "homeDay"]
+      const moreIds = savedMore ? JSON.parse(savedMore) : ["chat", "availability", "calendar", "announcements", "stats"]
       
       setPlayerNavMain(mainIds.map(id => availablePlayerItems[id]).filter(Boolean))
       setPlayerNavMore(moreIds.map(id => availablePlayerItems[id]).filter(Boolean))

@@ -4,7 +4,26 @@ import { useApp } from "../contexts/AppContext"
 import { addDoc, collection, doc, onSnapshot, orderBy, query, updateDoc } from "firebase/firestore"
 import { db } from "../firebase/config"
 
-const getTeamLabel = () => "All Teams"
+const RESERVE_KICKOFF = "13:45"
+const FIRST_TEAM_KICKOFF = "15:30"
+
+const getTeamIdFromKickoffTime = (timeValue, fallbackTeam = "") => {
+  if (timeValue === RESERVE_KICKOFF) return "reserve"
+  if (timeValue === FIRST_TEAM_KICKOFF) return "first"
+
+  const normalizedTeam = String(fallbackTeam || "").toLowerCase()
+  if (normalizedTeam.includes("reserve")) return "reserve"
+  if (normalizedTeam.includes("first")) return "first"
+
+  return "other"
+}
+
+const getTeamLabel = (teamValue, timeValue = "") => {
+  const teamId = getTeamIdFromKickoffTime(timeValue, teamValue)
+  if (teamId === "reserve") return "Reserve Team"
+  if (teamId === "first") return "First Team"
+  return "Team"
+}
 
 const isCoachUser = (role) => role === "coach" || role === "super-admin"
 
@@ -12,7 +31,10 @@ const getPlayerName = (player) => `${player?.firstName || ""} ${player?.lastName
 
 const normalizeText = (value) => String(value || "").trim().replace(/\s+/g, " ").toUpperCase()
 
-const buildAwayGameKey = (item) => [item?.date || "", normalizeText(item?.opponent || item?.title || "")].join("|")
+const buildAwayGameKey = (item) => {
+  const teamId = getTeamIdFromKickoffTime(item?.time, item?.team)
+  return [item?.date || "", normalizeText(item?.opponent || item?.title || ""), item?.time || "", teamId].join("|")
+}
 
 const getGameDisplayTitle = (game) => {
   if (game?.opponent) return `Away Day vs ${game.opponent}`
@@ -38,6 +60,18 @@ const getPlayerSelectionStatus = (lineup, playerId) => {
   if ((lineup.starters || []).includes(playerId)) return "Starting XI"
   if ((lineup.bench || []).includes(playerId)) return "Bench"
   return "Not selected"
+}
+
+const formatPlayerList = (players, ids) => {
+  const names = ids.slice(0, 4).map((id) => getPlayerName(players.find((player) => player.id === id)) || "Unknown")
+  if (ids.length > 4) names.push("...")
+  return names.join(", ")
+}
+
+const isPlayerSelectedForGame = (game, playerId) => {
+  if (!game || !playerId) return false
+  const lineups = getGameLineups(game)
+  return lineupTeams.some((team) => getPlayerSelectionStatus(lineups[team.id], playerId) !== "Not selected")
 }
 
 const pickPreferredGame = (currentGame, nextGame) => {
@@ -184,11 +218,11 @@ function AwayDayHub() {
     title: "",
     opponent: "",
     date: "",
-    time: "",
+    time: FIRST_TEAM_KICKOFF,
     meetingTime: "",
     meetingPoint: "",
     venue: "",
-    team: "Squad",
+    team: "first",
     notes: ""
   })
 
@@ -208,17 +242,28 @@ function AwayDayHub() {
       setGames(data)
 
       if (!selectedGameId && data.length > 0) {
-        const upcoming = data.find((game) => new Date(game.date) >= new Date(new Date().toDateString()))
-        setSelectedGameId((upcoming || data[0]).id)
+        const todayStart = new Date(new Date().toDateString())
+        const upcoming = data.filter((game) => new Date(game.date) >= todayStart)
+
+        if (userRole === "player" && currentPlayerId) {
+          const selectedUpcoming = upcoming.find((game) => isPlayerSelectedForGame(game, currentPlayerId))
+          const selectedAny = data.find((game) => isPlayerSelectedForGame(game, currentPlayerId))
+          setSelectedGameId((selectedUpcoming || selectedAny || upcoming[0] || data[0]).id)
+        } else {
+          setSelectedGameId((upcoming[0] || data[0]).id)
+        }
       }
 
       if (selectedGameId && !data.some((game) => game.id === selectedGameId)) {
-        setSelectedGameId(data[0]?.id || "")
+        const nextGame = userRole === "player" && currentPlayerId
+          ? data.find((game) => isPlayerSelectedForGame(game, currentPlayerId)) || data[0]
+          : data[0]
+        setSelectedGameId(nextGame?.id || "")
       }
     })
 
     return () => unsubscribe()
-  }, [selectedGameId])
+  }, [selectedGameId, userRole, currentPlayerId])
 
   const selectedGame = useMemo(() => games.find((game) => game.id === selectedGameId) || null, [games, selectedGameId])
   const visibleGames = useMemo(() => {
@@ -318,11 +363,11 @@ function AwayDayHub() {
           title: `Away Day vs ${fixture.opponent}`,
           opponent: fixture.opponent || "",
           date: fixture.date || "",
-          time: fixture.time || "",
+          time: fixture.time || FIRST_TEAM_KICKOFF,
           meetingTime: "",
           meetingPoint: "",
           venue: fixture.venue || "",
-          team: "Squad",
+          team: getTeamIdFromKickoffTime(fixture.time, fixture.team || "first"),
           notes: fixture.competition ? `Auto-created from fixture (${fixture.competition})` : "Auto-created from fixture",
           attendance: {},
           transportOffers: {},
@@ -406,8 +451,10 @@ function AwayDayHub() {
 
     setSaving(true)
     try {
+      const normalizedTeam = getTeamIdFromKickoffTime(newGame.time, newGame.team)
       const created = await addDoc(collection(db, "awayGames"), {
         ...newGame,
+        team: normalizedTeam,
         attendance: {},
         transportOffers: {},
         transportRequests: {},
@@ -426,11 +473,11 @@ function AwayDayHub() {
         title: "",
         opponent: "",
         date: "",
-        time: "",
+        time: FIRST_TEAM_KICKOFF,
         meetingTime: "",
         meetingPoint: "",
         venue: "",
-        team: "Squad",
+        team: "first",
         notes: ""
       })
       setFeedback("success", "Away game created.")
@@ -609,6 +656,28 @@ function AwayDayHub() {
       return
     }
 
+    const selectedIds = Array.from(new Set([...(teamLineup.starters || []), ...(teamLineup.bench || [])]))
+    const attendance = selectedGame.attendance || {}
+    const offers = selectedGame.transportOffers || {}
+    const requests = selectedGame.transportRequests || {}
+
+    const missingAvailability = selectedIds.filter((playerId) => !attendance[playerId]?.status)
+    if (missingAvailability.length > 0) {
+      setFeedback("error", `Cannot confirm lineup. Missing availability: ${formatPlayerList(players, missingAvailability)}.`)
+      return
+    }
+
+    const missingTransport = selectedIds.filter((playerId) => {
+      const status = attendance[playerId]?.status
+      if (status === "no") return false
+      return !offers[playerId] && !requests[playerId]
+    })
+
+    if (missingTransport.length > 0) {
+      setFeedback("error", `Cannot confirm lineup. Missing transport response: ${formatPlayerList(players, missingTransport)}.`)
+      return
+    }
+
     const payload = {
       ...teamLineup,
       publishedAt: new Date().toISOString(),
@@ -699,6 +768,19 @@ function AwayDayHub() {
   const canEditActiveLineup = canEditLineup && !activeLineupConfirmed
   const playerOffer = currentPlayerId ? selectedGame?.transportOffers?.[currentPlayerId] || null : null
   const playerRequest = currentPlayerId ? selectedGame?.transportRequests?.[currentPlayerId] || null : null
+  const selectedGameLineups = getGameLineups(selectedGame)
+  const playerSelectionStatuses = currentPlayerId
+    ? lineupTeams
+      .map((team) => ({
+        teamId: team.id,
+        teamLabel: team.label,
+        status: getPlayerSelectionStatus(selectedGameLineups[team.id], currentPlayerId)
+      }))
+      .filter((item) => item.status !== "Not selected")
+    : []
+  const playerSelectedForAwayGame = playerSelectionStatuses.length > 0
+  const playerAttendanceStatus = currentPlayerId ? selectedGame?.attendance?.[currentPlayerId]?.status || "" : ""
+  const hasPlayerAnsweredAvailability = Boolean(playerAttendanceStatus)
 
   const handleToggleManualLock = async () => {
     if (!selectedGame || !canManage) return
@@ -808,10 +890,18 @@ function AwayDayHub() {
               />
               <select
                 value={newGame.team}
-                onChange={(event) => setNewGame((prev) => ({ ...prev, team: event.target.value }))}
+                onChange={(event) => {
+                  const team = event.target.value
+                  setNewGame((prev) => ({
+                    ...prev,
+                    team,
+                    time: team === "reserve" ? RESERVE_KICKOFF : FIRST_TEAM_KICKOFF
+                  }))
+                }}
                 className="rounded-xl border border-slate-300 px-3 py-2.5 outline-none focus:border-cyan-500"
               >
-                <option value="Squad">Squad</option>
+                <option value="reserve">Reserve Team (13:45)</option>
+                <option value="first">First Team (15:30)</option>
               </select>
               <input
                 type="date"
@@ -822,7 +912,14 @@ function AwayDayHub() {
               <input
                 type="time"
                 value={newGame.time}
-                onChange={(event) => setNewGame((prev) => ({ ...prev, time: event.target.value }))}
+                onChange={(event) => {
+                  const nextTime = event.target.value
+                  setNewGame((prev) => ({
+                    ...prev,
+                    time: nextTime,
+                    team: getTeamIdFromKickoffTime(nextTime, prev.team)
+                  }))
+                }}
                 className="rounded-xl border border-slate-300 px-3 py-2.5 outline-none focus:border-cyan-500"
               />
               <input
@@ -892,7 +989,7 @@ function AwayDayHub() {
                   >
                     <p className="text-sm font-bold text-slate-800">{getGameDisplayTitle(game)}</p>
                     <p className="text-xs text-slate-500 mt-1">{game.date} {game.time ? `at ${game.time}` : ""}</p>
-                    <p className="text-xs font-semibold text-cyan-700 mt-1">{getTeamLabel(game.team)}</p>
+                    <p className="text-xs font-semibold text-cyan-700 mt-1">{getTeamLabel(game.team, game.time)}</p>
                   </button>
                 ))}
               </div>
@@ -921,7 +1018,7 @@ function AwayDayHub() {
                   <div className="text-sm text-slate-700 space-y-1">
                     <p className="inline-flex items-center gap-2"><CalendarDays size={16} /> {selectedGame.date} {selectedGame.time ? `at ${selectedGame.time}` : ""}</p>
                     <p className="inline-flex items-center gap-2"><MapPin size={16} /> {selectedGame.venue || "Venue not set"}</p>
-                    <p className="inline-flex items-center gap-2"><Users size={16} /> {getTeamLabel(selectedGame.team)}</p>
+                    <p className="inline-flex items-center gap-2"><Users size={16} /> {getTeamLabel(selectedGame.team, selectedGame.time)}</p>
                   </div>
                 </div>
                 {canManage && (
@@ -1002,20 +1099,36 @@ function AwayDayHub() {
 
               {userRole === "player" && currentPlayerId && (
                 <section className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+                  <div className="rounded-2xl border border-slate-200 bg-white shadow-sm p-4 lg:col-span-3">
+                    <h4 className="font-bold text-slate-800 mb-2">Selection and Confirmation</h4>
+                    {playerSelectedForAwayGame ? (
+                      <>
+                        <p className="text-sm text-slate-700">Coach selected you for this away game: {playerSelectionStatuses.map((item) => `${item.teamLabel} (${item.status})`).join(", ")}.</p>
+                        {!hasPlayerAnsweredAvailability && (
+                          <p className="mt-2 text-xs font-semibold text-amber-700 bg-amber-50 border border-amber-200 rounded px-2 py-1 inline-block">
+                            Action required: confirm availability and update lift offer/request below.
+                          </p>
+                        )}
+                      </>
+                    ) : (
+                      <p className="text-sm text-slate-600">You are not selected for this away game yet. Confirmation and lift options unlock once selected.</p>
+                    )}
+                  </div>
+
                   <div className="rounded-2xl border border-slate-200 bg-white shadow-sm p-4">
                     <h4 className="font-bold text-slate-800 mb-3 inline-flex items-center gap-2"><ClipboardCheck size={18} /> Attendance</h4>
                     <p className="text-xs text-slate-500 mb-3">Confirm availability for this away match.</p>
                     <div className="grid grid-cols-3 gap-2">
-                      <button onClick={() => handleAttendance("yes")} disabled={saving || submissionState.isLocked} className="rounded-lg bg-emerald-100 text-emerald-700 px-2 py-2 text-xs font-bold hover:bg-emerald-200 transition-colors disabled:opacity-50">Yes</button>
-                      <button onClick={() => handleAttendance("maybe")} disabled={saving || submissionState.isLocked} className="rounded-lg bg-amber-100 text-amber-700 px-2 py-2 text-xs font-bold hover:bg-amber-200 transition-colors disabled:opacity-50">Maybe</button>
-                      <button onClick={() => handleAttendance("no")} disabled={saving || submissionState.isLocked} className="rounded-lg bg-red-100 text-red-700 px-2 py-2 text-xs font-bold hover:bg-red-200 transition-colors disabled:opacity-50">No</button>
+                      <button onClick={() => handleAttendance("yes")} disabled={saving || submissionState.isLocked || !playerSelectedForAwayGame} className="rounded-lg bg-emerald-100 text-emerald-700 px-2 py-2 text-xs font-bold hover:bg-emerald-200 transition-colors disabled:opacity-50">Yes</button>
+                      <button onClick={() => handleAttendance("maybe")} disabled={saving || submissionState.isLocked || !playerSelectedForAwayGame} className="rounded-lg bg-amber-100 text-amber-700 px-2 py-2 text-xs font-bold hover:bg-amber-200 transition-colors disabled:opacity-50">Maybe</button>
+                      <button onClick={() => handleAttendance("no")} disabled={saving || submissionState.isLocked || !playerSelectedForAwayGame} className="rounded-lg bg-red-100 text-red-700 px-2 py-2 text-xs font-bold hover:bg-red-200 transition-colors disabled:opacity-50">No</button>
                     </div>
                     <p className="text-xs text-slate-600 mt-3">Current: <span className="font-bold uppercase">{selectedGame.attendance?.[currentPlayerId]?.status || "not set"}</span></p>
                     {submissionState.isLocked && <p className="mt-2 text-xs font-semibold text-red-600">Attendance updates are locked.</p>}
                   </div>
 
                   <form onSubmit={handleSaveOffer} className="rounded-2xl border border-slate-200 bg-white shadow-sm p-4">
-                    <h4 className="font-bold text-slate-800 mb-3 inline-flex items-center gap-2"><CarFront size={18} /> Offer Transport</h4>
+                    <h4 className="font-bold text-slate-800 mb-3 inline-flex items-center gap-2"><CarFront size={18} /> Can You Assist With Lifts?</h4>
                     <div className="space-y-2">
                       <input
                         type="number"
@@ -1039,13 +1152,13 @@ function AwayDayHub() {
                       />
                     </div>
                     <div className="mt-3 flex gap-2">
-                      <button type="submit" disabled={saving || submissionState.isLocked} className="flex-1 rounded-lg bg-cyan-600 text-white px-3 py-2 text-xs font-bold hover:bg-cyan-700 transition-colors disabled:opacity-50">Save Offer</button>
-                      <button type="button" onClick={() => handleClearEntry("offer")} disabled={saving || submissionState.isLocked} className="rounded-lg border border-slate-300 px-3 py-2 text-xs font-semibold text-slate-600 disabled:opacity-50">Clear</button>
+                      <button type="submit" disabled={saving || submissionState.isLocked || !playerSelectedForAwayGame} className="flex-1 rounded-lg bg-cyan-600 text-white px-3 py-2 text-xs font-bold hover:bg-cyan-700 transition-colors disabled:opacity-50">Save Offer</button>
+                      <button type="button" onClick={() => handleClearEntry("offer")} disabled={saving || submissionState.isLocked || !playerSelectedForAwayGame} className="rounded-lg border border-slate-300 px-3 py-2 text-xs font-semibold text-slate-600 disabled:opacity-50">Clear</button>
                     </div>
                   </form>
 
                   <form onSubmit={handleSaveRequest} className="rounded-2xl border border-slate-200 bg-white shadow-sm p-4">
-                    <h4 className="font-bold text-slate-800 mb-3 inline-flex items-center gap-2"><Bus size={18} /> Request Transport</h4>
+                    <h4 className="font-bold text-slate-800 mb-3 inline-flex items-center gap-2"><Bus size={18} /> Need A Lift? Request Transport</h4>
                     <div className="space-y-2">
                       <input
                         type="number"
@@ -1069,8 +1182,8 @@ function AwayDayHub() {
                       />
                     </div>
                     <div className="mt-3 flex gap-2">
-                      <button type="submit" disabled={saving || submissionState.isLocked} className="flex-1 rounded-lg bg-orange-500 text-white px-3 py-2 text-xs font-bold hover:bg-orange-600 transition-colors disabled:opacity-50">Save Request</button>
-                      <button type="button" onClick={() => handleClearEntry("request")} disabled={saving || submissionState.isLocked} className="rounded-lg border border-slate-300 px-3 py-2 text-xs font-semibold text-slate-600 disabled:opacity-50">Clear</button>
+                      <button type="submit" disabled={saving || submissionState.isLocked || !playerSelectedForAwayGame} className="flex-1 rounded-lg bg-orange-500 text-white px-3 py-2 text-xs font-bold hover:bg-orange-600 transition-colors disabled:opacity-50">Save Request</button>
+                      <button type="button" onClick={() => handleClearEntry("request")} disabled={saving || submissionState.isLocked || !playerSelectedForAwayGame} className="rounded-lg border border-slate-300 px-3 py-2 text-xs font-semibold text-slate-600 disabled:opacity-50">Clear</button>
                     </div>
                   </form>
                 </section>

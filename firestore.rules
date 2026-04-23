@@ -1,0 +1,72 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function signedIn() {
+      return request.auth != null;
+    }
+
+    function role() {
+      return signedIn() && request.auth.token.role is string ? request.auth.token.role : "";
+    }
+
+    function isCoach() {
+      return role() == "coach" || role() == "super-admin";
+    }
+
+    function isSuperAdmin() {
+      return role() == "super-admin";
+    }
+
+    function isPlayerForSelf(playerId) {
+      return role() == "player" && signedIn() && request.auth.uid == playerId;
+    }
+
+    // Public read for authenticated users by default.
+    match /{document=**} {
+      allow read: if signedIn();
+      allow write: if false;
+    }
+
+    // Core team data.
+    match /players/{playerId} {
+      allow read: if signedIn();
+      allow write: if isCoach();
+    }
+
+    match /fixtures/{fixtureId} {
+      allow read: if signedIn();
+      allow write: if isCoach();
+    }
+
+    match /awayGames/{gameId} {
+      allow read: if signedIn();
+      allow create, delete: if isCoach();
+      allow update: if isCoach();
+    }
+
+    match /homeDayPlans/{planId} {
+      allow read: if signedIn();
+      allow create, delete: if isCoach();
+      // Coaches can manage all fields.
+      allow update: if isCoach();
+    }
+
+    match /matchAnalyses/{analysisId} {
+      allow read: if signedIn();
+      allow write: if isSuperAdmin();
+    }
+
+    match /coaches/{coachId} {
+      allow read: if isCoach();
+      allow write: if isSuperAdmin();
+    }
+
+    match /credentials/{credentialId} {
+      allow read, write: if isSuperAdmin();
+    }
+
+    match /importSettings/{settingId} {
+      allow read, write: if isSuperAdmin();
+    }
+  }
+}

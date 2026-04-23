@@ -6,22 +6,86 @@ import { storage } from "../firebase/config"
 import { ref, uploadBytes, getDownloadURL, deleteObject } from "firebase/storage"
 import { useSearchParams } from "react-router-dom"
 
-const getDefaultKickoffTime = () => ""
+const RESERVE_KICKOFF = "13:45"
+const FIRST_TEAM_KICKOFF = "15:30"
 
-const getTeamLabel = () => "Squad"
+const getTeamIdFromKickoffTime = (timeValue, fallbackTeam = "") => {
+  if (timeValue === RESERVE_KICKOFF) return "reserve"
+  if (timeValue === FIRST_TEAM_KICKOFF) return "first"
+
+  const normalizedTeam = String(fallbackTeam || "").toLowerCase()
+  if (normalizedTeam.includes("reserve")) return "reserve"
+  if (normalizedTeam.includes("first")) return "first"
+
+  return "other"
+}
+
+const getDefaultKickoffTime = (teamValue = "first") => {
+  if (teamValue === "reserve") return RESERVE_KICKOFF
+  return FIRST_TEAM_KICKOFF
+}
+
+const getTeamLabel = (teamOrFixture, fallbackTeam = "") => {
+  const fixture = typeof teamOrFixture === "object" ? teamOrFixture : null
+  const teamId = fixture
+    ? getTeamIdFromKickoffTime(fixture.time, fixture.team)
+    : getTeamIdFromKickoffTime("", teamOrFixture || fallbackTeam)
+
+  if (teamId === "reserve") return "Reserve Team"
+  if (teamId === "first") return "First Team"
+  return "Team"
+}
 
 const getFixtureTime = (fixture) => fixture.time || getDefaultKickoffTime(fixture.team)
+
+const getTodayKey = () => {
+  const today = new Date()
+  const year = today.getFullYear()
+  const month = String(today.getMonth() + 1).padStart(2, "0")
+  const day = String(today.getDate()).padStart(2, "0")
+  return `${year}-${month}-${day}`
+}
+
+const isNotPlayedResult = (fixture) => String(fixture?.result || "").toLowerCase().trim() === "not played"
+
+const isValidDateKey = (dateValue) => /^\d{4}-\d{2}-\d{2}$/.test(String(dateValue || ""))
+
+const isUpcomingByDate = (fixture) => {
+  if (isNotPlayedResult(fixture)) {
+    return true
+  }
+
+  if (!isValidDateKey(fixture?.date)) {
+    return true
+  }
+
+  return fixture.date >= getTodayKey()
+}
+
+const isResultsByDate = (fixture) => {
+  if (isNotPlayedResult(fixture)) {
+    return false
+  }
+
+  if (!isValidDateKey(fixture?.date)) {
+    return false
+  }
+
+  return fixture.date < getTodayKey()
+}
 
 const groupFixtures = (fixtures) => {
   const groups = new Map()
 
   fixtures.forEach((fixture) => {
+    const teamId = getTeamIdFromKickoffTime(fixture.time, fixture.team)
     const key = [
       fixture.date,
       fixture.opponent,
       fixture.venue || "",
       fixture.homeAway || "",
-      fixture.competition || ""
+      fixture.competition || "",
+      teamId
     ].join("|")
 
     if (!groups.has(key)) {
@@ -38,10 +102,31 @@ const groupFixtures = (fixtures) => {
     groups.get(key).fixtures.push(fixture)
   })
 
-  return Array.from(groups.values()).sort((a, b) => new Date(a.date) - new Date(b.date))
+  return Array.from(groups.values()).sort((a, b) => {
+    const aHasDate = isValidDateKey(a.date)
+    const bHasDate = isValidDateKey(b.date)
+
+    if (aHasDate && bHasDate) {
+      return a.date.localeCompare(b.date)
+    }
+
+    if (aHasDate && !bHasDate) return 1
+    if (!aHasDate && bHasDate) return -1
+
+    return String(a.opponent || "").localeCompare(String(b.opponent || ""))
+  })
 }
 
-const getTeamSortKey = () => 1
+const getTeamSortKey = (teamOrFixture, fallbackTeam = "") => {
+  const fixture = typeof teamOrFixture === "object" ? teamOrFixture : null
+  const teamId = fixture
+    ? getTeamIdFromKickoffTime(fixture.time, fixture.team)
+    : getTeamIdFromKickoffTime("", teamOrFixture || fallbackTeam)
+
+  if (teamId === "reserve") return 1
+  if (teamId === "first") return 2
+  return 3
+}
 
 const sanitizeFileName = (name) => name.replace(/[^a-zA-Z0-9._-]/g, "_")
 
@@ -63,14 +148,15 @@ function Fixtures() {
   const [editingFixture, setEditingFixture] = useState(null)
   const [searchTerm, setSearchTerm] = useState("")
   const [activeTab, setActiveTab] = useState(searchParams.get("tab") === "results" ? "results" : "fixtures")
+  const [teamView, setTeamView] = useState("all")
   const [formData, setFormData] = useState({
     date: "",
-    time: getDefaultKickoffTime(),
+    time: getDefaultKickoffTime("first"),
     opponent: "",
     competition: "",
     venue: "",
     homeAway: "Home",
-    team: "Squad",
+    team: "first",
     result: "",
     score: ""
   })
@@ -91,11 +177,18 @@ function Fixtures() {
 
   const handleSubmit = async (e) => {
     e.preventDefault()
-    if (formData.date && formData.opponent) {
+    const normalizedResult = String(formData.result || "").trim()
+    const notPlayed = normalizedResult === "Not Played"
+
+    if (formData.opponent && (formData.date || notPlayed)) {
       const fixtureData = {
         ...formData,
-        team: "Squad",
-        status: formData.result ? "Completed" : "Upcoming"
+        date: notPlayed ? "" : formData.date,
+        time: notPlayed ? "" : formData.time,
+        result: normalizedResult,
+        score: notPlayed ? "" : formData.score,
+        team: getTeamIdFromKickoffTime(formData.time, formData.team),
+        status: notPlayed ? "Upcoming" : (isResultsByDate({ date: formData.date, result: normalizedResult }) ? "Completed" : "Upcoming")
       }
 
       if (editingFixture) {
@@ -108,12 +201,12 @@ function Fixtures() {
       setEditingFixture(null)
       setFormData({
         date: "",
-        time: getDefaultKickoffTime(),
+        time: getDefaultKickoffTime("first"),
         opponent: "",
         competition: "",
         venue: "",
         homeAway: "Home",
-        team: "Squad",
+        team: "first",
         result: "",
         score: ""
       })
@@ -126,12 +219,12 @@ function Fixtures() {
     setEditingFixture(fixture)
     setFormData({
       date: fixture.date,
-      time: fixture.time || getDefaultKickoffTime(),
+      time: fixture.time || getDefaultKickoffTime(getTeamIdFromKickoffTime("", fixture.team)),
       opponent: fixture.opponent,
       competition: fixture.competition || "",
       venue: fixture.venue || "",
       homeAway: fixture.homeAway || "Home",
-      team: "Squad",
+      team: getTeamIdFromKickoffTime(fixture.time, fixture.team),
       result: fixture.result || "",
       score: fixture.score || ""
     })
@@ -220,13 +313,33 @@ function Fixtures() {
                            fixture.competition?.toLowerCase().includes(searchTerm.toLowerCase())
       return matchesSearch
     })
-    .sort((a, b) => new Date(a.date) - new Date(b.date))
+    .sort((a, b) => {
+      const aHasDate = isValidDateKey(a.date)
+      const bHasDate = isValidDateKey(b.date)
 
-  const upcomingFixtures = filteredFixtures.filter(f => f.status === "Upcoming")
-  const completedFixtures = filteredFixtures.filter(f => f.status === "Completed")
+      if (aHasDate && bHasDate) {
+        return a.date.localeCompare(b.date)
+      }
+
+      if (aHasDate && !bHasDate) return 1
+      if (!aHasDate && bHasDate) return -1
+
+      return String(a.opponent || "").localeCompare(String(b.opponent || ""))
+    })
+
+  const upcomingFixtures = filteredFixtures.filter(isUpcomingByDate)
+  const completedFixtures = filteredFixtures.filter(isResultsByDate)
 
   const groupedUpcomingFixtures = groupFixtures(upcomingFixtures)
   const groupedCompletedFixtures = groupFixtures(completedFixtures)
+  const teamFilteredUpcomingFixtures = groupedUpcomingFixtures.filter((group) => {
+    if (teamView === "all") return true
+    return group.fixtures.some((fixture) => getTeamIdFromKickoffTime(fixture.time, fixture.team) === teamView)
+  })
+  const teamFilteredCompletedFixtures = groupedCompletedFixtures.filter((group) => {
+    if (teamView === "all") return true
+    return group.fixtures.some((fixture) => getTeamIdFromKickoffTime(fixture.time, fixture.team) === teamView)
+  })
 
   return (
     <div className="flex-1 p-4 md:p-6 bg-gray-50 min-h-screen overflow-y-auto">
@@ -246,12 +359,12 @@ function Fixtures() {
                   setEditingFixture(null)
                   setFormData({
                     date: "",
-                    time: getDefaultKickoffTime(),
+                    time: getDefaultKickoffTime("first"),
                     opponent: "",
                     competition: "",
                     venue: "",
                     homeAway: "Home",
-                    team: "Squad",
+                    team: "first",
                     result: "",
                     score: ""
                   })
@@ -310,19 +423,52 @@ function Fixtures() {
               Results
             </button>
           </div>
+          <div className="inline-flex bg-white border-2 border-gray-200 rounded-xl p-1">
+            <button
+              onClick={() => setTeamView("all")}
+              className={`px-3 py-2 rounded-lg text-sm font-bold transition-all ${
+                teamView === "all"
+                  ? "bg-slate-700 text-white"
+                  : "text-gray-600 hover:bg-gray-100"
+              }`}
+            >
+              All Teams
+            </button>
+            <button
+              onClick={() => setTeamView("reserve")}
+              className={`px-3 py-2 rounded-lg text-sm font-bold transition-all ${
+                teamView === "reserve"
+                  ? "bg-orange-500 text-white"
+                  : "text-gray-600 hover:bg-gray-100"
+              }`}
+            >
+              Reserve 13:45
+            </button>
+            <button
+              onClick={() => setTeamView("first")}
+              className={`px-3 py-2 rounded-lg text-sm font-bold transition-all ${
+                teamView === "first"
+                  ? "bg-blue-500 text-white"
+                  : "text-gray-600 hover:bg-gray-100"
+              }`}
+            >
+              First 15:30
+            </button>
+          </div>
         </div>
 
         {/* Fixtures List */}
         <div className="flex-1 overflow-y-auto space-y-6">
           {/* Upcoming Fixtures */}
-          {activeTab === "fixtures" && groupedUpcomingFixtures.length > 0 && (
+          {activeTab === "fixtures" && teamFilteredUpcomingFixtures.length > 0 && (
             <div className="bg-white rounded-2xl shadow-xl border border-gray-100 overflow-hidden">
               <div className="p-6 border-b border-gray-100 bg-gradient-to-r from-blue-50 to-white">
-                <h2 className="text-xl font-bold text-gray-800">Upcoming Fixtures ({groupedUpcomingFixtures.length})</h2>
+                <h2 className="text-xl font-bold text-gray-800">Upcoming Fixtures ({teamFilteredUpcomingFixtures.length})</h2>
               </div>
               <div className="p-6 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-4">
-                {groupedUpcomingFixtures.map(group => {
-                  const sortedFixtures = [...group.fixtures].sort((a, b) => getTeamSortKey(a.team) - getTeamSortKey(b.team))
+                {teamFilteredUpcomingFixtures.map(group => {
+                  const sortedFixtures = [...group.fixtures].sort((a, b) => getTeamSortKey(a) - getTeamSortKey(b))
+                  const hasNotPlayed = sortedFixtures.some(fixture => isNotPlayedResult(fixture))
                   return (
                     <div key={`${group.date}-${group.opponent}-${group.venue}-${group.homeAway}`} className="p-4 rounded-xl border-2 border-blue-200 bg-gradient-to-br from-blue-50 to-white hover:shadow-lg transition-all">
                       <div className="flex items-start justify-between gap-3">
@@ -334,7 +480,7 @@ function Fixtures() {
                                 return (
                                   <div key={teamFixture.id} className="flex items-center gap-2">
                                     <div className="bg-blue-500 text-white px-2.5 py-1 rounded-lg text-xs font-bold">
-                                      {getTeamLabel(teamFixture.team)}
+                                      {getTeamLabel(teamFixture)}
                                     </div>
                                     {kickoffTime && (
                                       <div className="bg-blue-100 text-blue-700 px-2.5 py-1 rounded-lg text-xs font-bold">
@@ -349,6 +495,11 @@ function Fixtures() {
                               }`}>
                                 {group.homeAway}
                               </div>
+                              {hasNotPlayed && (
+                                <div className="px-2.5 py-1 rounded-lg text-xs font-bold bg-amber-100 text-amber-700">
+                                  Not Played
+                                </div>
+                              )}
                             </div>
                           </div>
                           <h3 className="text-lg font-black text-gray-800 mb-2">
@@ -357,7 +508,7 @@ function Fixtures() {
                           <div className="grid grid-cols-1 gap-2 text-xs">
                             <div className="flex items-center gap-2 text-gray-600">
                               <Calendar size={16} className="text-blue-500" />
-                              <span className="font-semibold">{new Date(group.date).toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' })}</span>
+                              <span className="font-semibold">{isValidDateKey(group.date) ? new Date(group.date).toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' }) : 'Date not set'}</span>
                             </div>
                             {sortedFixtures.map(teamFixture => {
                               const kickoffTime = getFixtureTime(teamFixture)
@@ -414,14 +565,14 @@ function Fixtures() {
           )}
 
           {/* Completed Fixtures */}
-          {activeTab === "results" && groupedCompletedFixtures.length > 0 && (
+          {activeTab === "results" && teamFilteredCompletedFixtures.length > 0 && (
             <div className="bg-white rounded-2xl shadow-xl border border-gray-100 overflow-hidden">
               <div className="p-6 border-b border-gray-100 bg-gradient-to-r from-green-50 to-white">
-                <h2 className="text-xl font-bold text-gray-800">Results ({groupedCompletedFixtures.length})</h2>
+                <h2 className="text-xl font-bold text-gray-800">Results ({teamFilteredCompletedFixtures.length})</h2>
               </div>
               <div className="p-6 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-4">
-                {groupedCompletedFixtures.map(group => {
-                  const sortedFixtures = [...group.fixtures].sort((a, b) => getTeamSortKey(a.team) - getTeamSortKey(b.team))
+                {teamFilteredCompletedFixtures.map(group => {
+                  const sortedFixtures = [...group.fixtures].sort((a, b) => getTeamSortKey(a) - getTeamSortKey(b))
                   return (
                     <div key={`${group.date}-${group.opponent}-${group.venue}-${group.homeAway}-completed`} className="p-4 rounded-xl border-2 border-gray-200 bg-gradient-to-br from-white to-gray-50 hover:shadow-lg transition-all">
                       <div className="flex items-start justify-between gap-3">
@@ -434,7 +585,7 @@ function Fixtures() {
                                   <div key={teamFixture.id} className="space-y-2">
                                     <div className="flex items-center gap-2 flex-wrap">
                                       <div className="bg-gray-500 text-white px-2.5 py-1 rounded-lg text-xs font-bold">
-                                        {getTeamLabel(teamFixture.team)}
+                                        {getTeamLabel(teamFixture)}
                                       </div>
                                       {kickoffTime && (
                                         <div className="bg-gray-100 text-gray-700 px-2.5 py-1 rounded-lg text-xs font-bold">
@@ -564,7 +715,7 @@ function Fixtures() {
             </div>
           )}
 
-          {activeTab === "fixtures" && groupedUpcomingFixtures.length === 0 && (
+          {activeTab === "fixtures" && teamFilteredUpcomingFixtures.length === 0 && (
             <div className="bg-white rounded-2xl shadow-xl border border-gray-100 p-12 text-center">
               <Trophy className="mx-auto text-gray-300 mb-3" size={64} />
               <p className="text-gray-500 font-medium text-lg">No upcoming fixtures found</p>
@@ -572,7 +723,7 @@ function Fixtures() {
             </div>
           )}
 
-          {activeTab === "results" && groupedCompletedFixtures.length === 0 && (
+          {activeTab === "results" && teamFilteredCompletedFixtures.length === 0 && (
             <div className="bg-white rounded-2xl shadow-xl border border-gray-100 p-12 text-center">
               <Trophy className="mx-auto text-gray-300 mb-3" size={64} />
               <p className="text-gray-500 font-medium text-lg">No results found</p>
@@ -596,10 +747,9 @@ function Fixtures() {
             <form onSubmit={handleSubmit} className="p-6 space-y-5 overflow-y-auto flex-1">
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-bold text-gray-700 mb-2">Date *</label>
+                  <label className="block text-sm font-bold text-gray-700 mb-2">Date</label>
                   <input
                     type="date"
-                    required
                     value={formData.date}
                     onChange={(e) => setFormData({ ...formData, date: e.target.value })}
                     className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 outline-none transition-all appearance-none"
@@ -611,7 +761,11 @@ function Fixtures() {
                   <input
                     type="time"
                     value={formData.time}
-                    onChange={(e) => setFormData({ ...formData, time: e.target.value })}
+                    onChange={(e) => {
+                      const nextTime = e.target.value
+                      const inferredTeam = getTeamIdFromKickoffTime(nextTime, formData.team)
+                      setFormData({ ...formData, time: nextTime, team: inferredTeam })
+                    }}
                     className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 outline-none transition-all appearance-none"
                     style={{ colorScheme: 'light' }}
                   />
@@ -640,6 +794,20 @@ function Fixtures() {
                   >
                     <option>Home</option>
                     <option>Away</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-sm font-bold text-gray-700 mb-2">Team</label>
+                  <select
+                    value={formData.team}
+                    onChange={(e) => {
+                      const team = e.target.value
+                      setFormData({ ...formData, team, time: getDefaultKickoffTime(team) })
+                    }}
+                    className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-blue-500 outline-none bg-white"
+                  >
+                    <option value="reserve">Reserve Team (13:45)</option>
+                    <option value="first">First Team (15:30)</option>
                   </select>
                 </div>
               </div>
@@ -676,10 +844,11 @@ function Fixtures() {
                       onChange={(e) => setFormData({ ...formData, result: e.target.value })}
                       className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-blue-500 outline-none bg-white"
                     >
-                      <option value="">Not Played</option>
+                      <option value="">Select...</option>
                       <option>Win</option>
                       <option>Draw</option>
                       <option>Loss</option>
+                      <option>Not Played</option>
                     </select>
                   </div>
                   <div>

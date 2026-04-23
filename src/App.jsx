@@ -12,9 +12,12 @@ import InjuriesAvailability from "./pages/InjuriesAvailability"
 import Fixtures from "./pages/Fixtures"
 import PlayerStats from "./pages/PlayerStats"
 import SeasonGoals from "./pages/SeasonGoals"
+import StepoutImport from "./pages/StepoutImport"
+import DeployReadiness from "./pages/DeployReadiness"
 import Announcements from "./pages/Announcements"
 import NavSettings from "./pages/NavSettings"
 import AwayDayHub from "./pages/AwayDayHub"
+import HomeDayHub from "./pages/HomeDayHub"
 import Chat from "./pages/Chat"
 import Sidebar from "./components/Sidebar"
 import BottomNav from "./components/BottomNav"
@@ -33,6 +36,8 @@ export default function App() {
             ["credentials", CredentialsManager],
             ["fixtures", Fixtures],
             ["player-stats", PlayerStats],
+            ["stepout-import", StepoutImport],
+            ["deploy-readiness", DeployReadiness],
             ["season-goals", SeasonGoals],
             ["announcements", Announcements],
             ["calendar", Calendar],
@@ -41,7 +46,8 @@ export default function App() {
             ["attendance-admin", AttendanceAdmin],
             ["injuries", InjuriesAvailability],
             ["nav-settings", NavSettings],
-            ["away-day", AwayDayHub]
+            ["away-day", AwayDayHub],
+            ["home-day", HomeDayHub]
           ].map(([path, Page]) => (
             <Route
               key={path}

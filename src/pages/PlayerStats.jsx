@@ -1,10 +1,42 @@
 import { useState, useMemo } from "react"
-import { Trophy, Target, TrendingUp, Award, Users, Download, Printer, Star, AlertCircle } from "lucide-react"
+import { Users, Download, Printer, ChevronRight, X } from "lucide-react"
 import { useApp } from "../contexts/AppContext"
 
+const normalizeName = (value = "") => value.toLowerCase().replace(/\s+/g, " ").trim()
+
+const matchesPlayerByRef = (ref, player) => {
+  if (!ref || !player) return false
+
+  const playerId = String(player.id || "")
+  const playerName = normalizeName(`${player.firstName || ""} ${player.lastName || ""}`)
+
+  if (typeof ref === "string") {
+    const normalizedRef = normalizeName(ref)
+    return normalizedRef === playerId || normalizedRef === playerName
+  }
+
+  if (typeof ref === "number") {
+    return String(ref) === playerId
+  }
+
+  if (typeof ref === "object") {
+    const refId = ref.playerId || ref.id || ref.playerID || ref.player_id
+    if (refId && String(refId) === playerId) {
+      return true
+    }
+
+    const refName = ref.playerName || ref.name || `${ref.firstName || ""} ${ref.lastName || ""}`
+    if (refName && normalizeName(refName) === playerName) {
+      return true
+    }
+  }
+
+  return false
+}
+
 function PlayerStats() {
-  const { players, fixtures, userRole, currentPlayerId } = useApp()
-  const [selectedStat, setSelectedStat] = useState("goals")
+  const { players, fixtures, userRole, currentPlayerId, matchAnalyses } = useApp()
+  const [selectedPlayerId, setSelectedPlayerId] = useState(null)
 
   // Filter players based on role
   const displayPlayers = userRole === "player" && currentPlayerId
@@ -19,6 +51,24 @@ function PlayerStats() {
       stats[player.id] = {
         player,
         appearances: 0,
+        starts: 0,
+        eventsByAttribute: {},
+        eventsBySubAttribute: {},
+        eventsByAction: {},
+        eventsBySpecialAction: {},
+        eventsByBodyPart: {},
+        eventsByPeriod: {},
+        assists: 0,
+        shots: 0,
+        shotsOnTarget: 0,
+        shotsOffTarget: 0,
+        totalPasses: 0,
+        successfulPasses: 0,
+        unsuccessfulPasses: 0,
+        duelsWon: 0,
+        duelsLost: 0,
+        encountersWon: 0,
+        encountersLost: 0,
         goals: 0,
         yellowCards: 0,
         redCards: 0,
@@ -30,35 +80,43 @@ function PlayerStats() {
       // Count goals
       if (fixture.scorers) {
         fixture.scorers.forEach(scorer => {
-          if (scorer.playerId && stats[scorer.playerId]) {
-            stats[scorer.playerId].goals++
-            stats[scorer.playerId].appearances++
-          }
+          Object.values(stats).forEach(playerStat => {
+            if (matchesPlayerByRef(scorer, playerStat.player)) {
+              playerStat.goals++
+              playerStat.appearances++
+            }
+          })
         })
       }
 
       // Count yellow cards
       if (fixture.yellowCards) {
         fixture.yellowCards.forEach(card => {
-          if (card.playerId && stats[card.playerId]) {
-            stats[card.playerId].yellowCards++
-            if (!fixture.scorers?.some(s => s.playerId === card.playerId)) {
-              stats[card.playerId].appearances++
+          Object.values(stats).forEach(playerStat => {
+            if (matchesPlayerByRef(card, playerStat.player)) {
+              playerStat.yellowCards++
+              const alreadyScored = fixture.scorers?.some(scorer => matchesPlayerByRef(scorer, playerStat.player))
+              if (!alreadyScored) {
+                playerStat.appearances++
+              }
             }
-          }
+          })
         })
       }
 
       // Count red cards
       if (fixture.redCards) {
         fixture.redCards.forEach(card => {
-          if (card.playerId && stats[card.playerId]) {
-            stats[card.playerId].redCards++
-            if (!fixture.scorers?.some(s => s.playerId === card.playerId) &&
-                !fixture.yellowCards?.some(c => c.playerId === card.playerId)) {
-              stats[card.playerId].appearances++
+          Object.values(stats).forEach(playerStat => {
+            if (matchesPlayerByRef(card, playerStat.player)) {
+              playerStat.redCards++
+              const alreadyScored = fixture.scorers?.some(scorer => matchesPlayerByRef(scorer, playerStat.player))
+              const alreadyBooked = fixture.yellowCards?.some(yellow => matchesPlayerByRef(yellow, playerStat.player))
+              if (!alreadyScored && !alreadyBooked) {
+                playerStat.appearances++
+              }
             }
-          }
+          })
         })
       }
 
@@ -84,45 +142,120 @@ function PlayerStats() {
       }
     })
 
-    return Object.values(stats)
-  }, [displayPlayers, fixtures])
+    matchAnalyses.forEach(analysis => {
+      Object.entries(analysis.playerStats || {}).forEach(([playerId, importedStats]) => {
+        if (!stats[playerId]) {
+          return
+        }
 
-  const filteredStats = playerStats
-    .sort((a, b) => {
-      if (selectedStat === "goals") return b.goals - a.goals
-      if (selectedStat === "appearances") return b.appearances - a.appearances
-      if (selectedStat === "cards") return (b.yellowCards + b.redCards * 2) - (a.yellowCards + a.redCards * 2)
-      if (selectedStat === "cleanSheets") return b.cleanSheets - a.cleanSheets
-      return 0
+        // Apps means appearances. Stepout participation counts as an appearance.
+        stats[playerId].appearances += Number(importedStats.appearances || importedStats.starts || 0)
+        stats[playerId].starts += Number(importedStats.starts || 0)
+        stats[playerId].goals += Number(importedStats.attacking?.goals || 0)
+        stats[playerId].assists += Number(importedStats.attacking?.assists || 0)
+        stats[playerId].shots += Number(importedStats.attacking?.shots || 0)
+        stats[playerId].shotsOnTarget += Number(importedStats.attacking?.shotsOnTarget || 0)
+        stats[playerId].shotsOffTarget += Number(importedStats.attacking?.shotsOffTarget || 0)
+        stats[playerId].totalPasses += Number(importedStats.passing?.total || 0)
+        stats[playerId].successfulPasses += Number(importedStats.passing?.successful || 0)
+        stats[playerId].unsuccessfulPasses += Number(importedStats.passing?.unsuccessful || 0)
+        stats[playerId].duelsWon += Number(importedStats.defending?.duelsWon || 0)
+        stats[playerId].duelsLost += Number(importedStats.defending?.duelsLost || 0)
+        stats[playerId].encountersWon += Number(importedStats.encounters?.won || 0)
+        stats[playerId].encountersLost += Number(importedStats.encounters?.lost || 0)
+        stats[playerId].yellowCards += Number(importedStats.discipline?.yellowCards || 0)
+        stats[playerId].redCards += Number(importedStats.discipline?.redCards || 0)
+
+        Object.entries(importedStats.eventsByAttribute || {}).forEach(([key, value]) => {
+          stats[playerId].eventsByAttribute[key] = (stats[playerId].eventsByAttribute[key] || 0) + Number(value || 0)
+        })
+
+        Object.entries(importedStats.eventsBySubAttribute || {}).forEach(([key, value]) => {
+          stats[playerId].eventsBySubAttribute[key] = (stats[playerId].eventsBySubAttribute[key] || 0) + Number(value || 0)
+        })
+
+        Object.entries(importedStats.eventsByAction || {}).forEach(([key, value]) => {
+          stats[playerId].eventsByAction[key] = (stats[playerId].eventsByAction[key] || 0) + Number(value || 0)
+        })
+
+        // Backward-compat fallback for older imports that do not have discipline totals.
+        if (!importedStats.discipline) {
+          const fallbackMaps = [
+            importedStats.eventsByAction || {},
+            importedStats.eventsBySubAttribute || {},
+            importedStats.eventsBySpecialAction || {}
+          ]
+
+          fallbackMaps.forEach((sourceMap) => {
+            Object.entries(sourceMap).forEach(([key, value]) => {
+              const lowerKey = key.toLowerCase()
+              const numericValue = Number(value || 0)
+              if (lowerKey.includes("yellow") || lowerKey.includes("book") || lowerKey.includes("caution")) {
+                stats[playerId].yellowCards += numericValue
+              }
+              if (lowerKey.includes("red card") || lowerKey.includes("sent off") || lowerKey.includes("second yellow")) {
+                stats[playerId].redCards += numericValue
+              }
+            })
+          })
+        }
+
+        Object.entries(importedStats.eventsBySpecialAction || {}).forEach(([key, value]) => {
+          stats[playerId].eventsBySpecialAction[key] = (stats[playerId].eventsBySpecialAction[key] || 0) + Number(value || 0)
+        })
+
+        Object.entries(importedStats.eventsByBodyPart || {}).forEach(([key, value]) => {
+          stats[playerId].eventsByBodyPart[key] = (stats[playerId].eventsByBodyPart[key] || 0) + Number(value || 0)
+        })
+
+        Object.entries(importedStats.eventsByPeriod || {}).forEach(([key, value]) => {
+          stats[playerId].eventsByPeriod[key] = (stats[playerId].eventsByPeriod[key] || 0) + Number(value || 0)
+        })
+      })
     })
 
-  const topScorers = [...playerStats]
-    .filter(s => s.goals > 0)
-    .sort((a, b) => b.goals - a.goals)
-    .slice(0, 5)
+    return Object.values(stats)
+  }, [displayPlayers, fixtures, matchAnalyses])
 
-  const mostAppearances = [...playerStats]
-    .filter(s => s.appearances > 0)
-    .sort((a, b) => b.appearances - a.appearances)
-    .slice(0, 5)
+  const allPlayerStats = useMemo(() => {
+    return [...playerStats].sort((a, b) => {
+      const leftName = `${a.player.firstName || ""} ${a.player.lastName || ""}`.trim()
+      const rightName = `${b.player.firstName || ""} ${b.player.lastName || ""}`.trim()
+      return leftName.localeCompare(rightName)
+    })
+  }, [playerStats])
 
-  const disciplineIssues = [...playerStats]
-    .filter(s => s.redCards > 0 || s.yellowCards > 2)
-    .sort((a, b) => (b.yellowCards + b.redCards * 3) - (a.yellowCards + a.redCards * 3))
-    .slice(0, 5)
+  const selectedPlayerStats = useMemo(() => {
+    if (!allPlayerStats.length) return null
+
+    if (!selectedPlayerId) return null
+
+    const selected = allPlayerStats.find((entry) => entry.player.id === selectedPlayerId)
+    return selected || null
+  }, [allPlayerStats, selectedPlayerId])
 
   const handleExport = () => {
     const csvContent = [
-      ["Player", "Squad", "Position", "Appearances", "Goals", "Yellow Cards", "Red Cards", "Clean Sheets"],
-      ...filteredStats.map(stat => [
+      ["Player", "Position", "Apps", "Starts", "Goals", "Assists", "Total Shots", "Shots On Target", "Shots Off Target", "Total Passes", "Successful Passes", "Unsuccessful Passes", "Duels Won", "Duels Lost", "Encounters Won", "Encounters Lost", "Yellow Card", "Red Card"],
+      ...allPlayerStats.map(stat => [
         `${stat.player.firstName} ${stat.player.lastName}`,
-        "Squad",
         stat.player.position,
         stat.appearances,
+        stat.starts,
         stat.goals,
+        stat.assists,
+        stat.shots,
+        stat.shotsOnTarget,
+        stat.shotsOffTarget,
+        stat.totalPasses,
+        stat.successfulPasses,
+        stat.unsuccessfulPasses,
+        stat.duelsWon,
+        stat.duelsLost,
+        stat.encountersWon,
+        stat.encountersLost,
         stat.yellowCards,
-        stat.redCards,
-        stat.cleanSheets
+        stat.redCards
       ])
     ].map(row => row.join(",")).join("\n")
 
@@ -138,9 +271,13 @@ function PlayerStats() {
     window.print()
   }
 
+  const totalGoals = allPlayerStats.reduce((sum, s) => sum + s.goals, 0)
+  const totalAssists = allPlayerStats.reduce((sum, s) => sum + s.assists, 0)
+  const totalCards = allPlayerStats.reduce((sum, s) => sum + s.yellowCards + s.redCards, 0)
+
   return (
     <div className="min-h-screen overflow-y-auto p-4 md:p-6 bg-gray-50 print:bg-white">
-      <div className="max-w-7xl mx-auto">
+      <div className="max-w-7xl mx-auto space-y-4">
         <div className="mb-4 md:mb-6 print:mb-4">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
             <div className="flex-1">
@@ -168,253 +305,134 @@ function PlayerStats() {
           </div>
         </div>
 
-        {/* Overview Cards */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8 print:mb-4">
-          <div className="bg-white rounded-2xl p-5 shadow-lg border border-gray-100 print:shadow-none">
-            <div className="flex items-center gap-3">
-              <div className="bg-gradient-to-br from-blue-500 to-blue-600 p-3 rounded-xl">
-                <Users className="text-white" size={24} />
-              </div>
-              <div>
-                <p className="text-xs font-bold text-gray-500 uppercase">Players</p>
-                <p className="text-2xl font-black text-blue-600">
-                  {filteredStats.filter(s => s.appearances > 0).length}
-                </p>
-              </div>
-            </div>
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-1 print:hidden">
+          <div className="bg-white rounded-xl border border-gray-100 px-4 py-3">
+            <p className="text-xs font-bold text-gray-500 uppercase">Players</p>
+            <p className="text-xl font-black text-blue-700">{allPlayerStats.length}</p>
           </div>
-
-          <div className="bg-white rounded-2xl p-5 shadow-lg border border-gray-100 print:shadow-none">
-            <div className="flex items-center gap-3">
-              <div className="bg-gradient-to-br from-green-500 to-green-600 p-3 rounded-xl">
-                <Target className="text-white" size={24} />
-              </div>
-              <div>
-                <p className="text-xs font-bold text-gray-500 uppercase">Total Goals</p>
-                <p className="text-2xl font-black text-green-600">
-                  {filteredStats.reduce((sum, s) => sum + s.goals, 0)}
-                </p>
-              </div>
-            </div>
+          <div className="bg-white rounded-xl border border-gray-100 px-4 py-3">
+            <p className="text-xs font-bold text-gray-500 uppercase">Goals</p>
+            <p className="text-xl font-black text-green-700">{totalGoals}</p>
           </div>
-
-          <div className="bg-white rounded-2xl p-5 shadow-lg border border-gray-100 print:shadow-none">
-            <div className="flex items-center gap-3">
-              <div className="bg-gradient-to-br from-yellow-500 to-yellow-600 p-3 rounded-xl">
-                <AlertCircle className="text-white" size={24} />
-              </div>
-              <div>
-                <p className="text-xs font-bold text-gray-500 uppercase">Yellow Cards</p>
-                <p className="text-2xl font-black text-yellow-600">
-                  {filteredStats.reduce((sum, s) => sum + s.yellowCards, 0)}
-                </p>
-              </div>
-            </div>
+          <div className="bg-white rounded-xl border border-gray-100 px-4 py-3">
+            <p className="text-xs font-bold text-gray-500 uppercase">Assists</p>
+            <p className="text-xl font-black text-indigo-700">{totalAssists}</p>
           </div>
-
-          <div className="bg-white rounded-2xl p-5 shadow-lg border border-gray-100 print:shadow-none">
-            <div className="flex items-center gap-3">
-              <div className="bg-gradient-to-br from-red-500 to-red-600 p-3 rounded-xl">
-                <AlertCircle className="text-white" size={24} />
-              </div>
-              <div>
-                <p className="text-xs font-bold text-gray-500 uppercase">Red Cards</p>
-                <p className="text-2xl font-black text-red-600">
-                  {filteredStats.reduce((sum, s) => sum + s.redCards, 0)}
-                </p>
-              </div>
-            </div>
+          <div className="bg-white rounded-xl border border-gray-100 px-4 py-3">
+            <p className="text-xs font-bold text-gray-500 uppercase">Cards</p>
+            <p className="text-xl font-black text-amber-700">{totalCards}</p>
           </div>
         </div>
 
-        {/* Top Performers */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8 print:mb-4">
-          {/* Top Scorers */}
-          <div className="bg-white rounded-2xl shadow-xl border border-gray-100 overflow-hidden print:shadow-none print:break-inside-avoid">
-            <div className="p-4 bg-gradient-to-r from-green-500 to-green-600 print:bg-green-600">
-              <h3 className="text-lg font-bold text-white flex items-center gap-2">
-                <Trophy size={20} />
-                Top Scorers
-              </h3>
-            </div>
-            <div className="p-4">
-              {topScorers.length > 0 ? (
-                <div className="space-y-3">
-                  {topScorers.map((stat, index) => (
-                    <div key={stat.player.id} className="flex items-center gap-3">
-                      <div className={`w-8 h-8 rounded-full flex items-center justify-center font-black text-sm ${
-                        index === 0 ? 'bg-yellow-400 text-yellow-900' :
-                        index === 1 ? 'bg-gray-300 text-gray-700' :
-                        index === 2 ? 'bg-orange-300 text-orange-900' :
-                        'bg-gray-100 text-gray-600'
-                      }`}>
-                        {index + 1}
-                      </div>
-                      <div className="flex-1">
-                        <p className="font-bold text-gray-800">
-                          {stat.player.firstName} {stat.player.lastName}
-                        </p>
-                        <p className="text-xs text-gray-500">{stat.player.position}</p>
-                      </div>
-                      <div className="text-right">
-                        <p className="text-2xl font-black text-green-600">{stat.goals}</p>
-                        <p className="text-xs text-gray-500">{stat.appearances} apps</p>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <p className="text-center py-8 text-gray-500">No goals scored yet</p>
-              )}
-            </div>
-          </div>
-
-          {/* Most Appearances */}
-          <div className="bg-white rounded-2xl shadow-xl border border-gray-100 overflow-hidden print:shadow-none print:break-inside-avoid">
-            <div className="p-4 bg-gradient-to-r from-blue-500 to-blue-600 print:bg-blue-600">
-              <h3 className="text-lg font-bold text-white flex items-center gap-2">
-                <Star size={20} />
-                Most Appearances
-              </h3>
-            </div>
-            <div className="p-4">
-              {mostAppearances.length > 0 ? (
-                <div className="space-y-3">
-                  {mostAppearances.map((stat, index) => (
-                    <div key={stat.player.id} className="flex items-center gap-3">
-                      <div className="w-8 h-8 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center font-black text-sm">
-                        {index + 1}
-                      </div>
-                      <div className="flex-1">
-                        <p className="font-bold text-gray-800">
-                          {stat.player.firstName} {stat.player.lastName}
-                        </p>
-                        <p className="text-xs text-gray-500">Squad</p>
-                      </div>
-                      <div className="text-2xl font-black text-blue-600">{stat.appearances}</div>
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <p className="text-center py-8 text-gray-500">No appearances yet</p>
-              )}
-            </div>
-          </div>
-
-          {/* Discipline Watch */}
-          <div className="bg-white rounded-2xl shadow-xl border border-gray-100 overflow-hidden print:shadow-none print:break-inside-avoid">
-            <div className="p-4 bg-gradient-to-r from-orange-500 to-orange-600 print:bg-orange-600">
-              <h3 className="text-lg font-bold text-white flex items-center gap-2">
-                <AlertCircle size={20} />
-                Discipline Watch
-              </h3>
-            </div>
-            <div className="p-4">
-              {disciplineIssues.length > 0 ? (
-                <div className="space-y-3">
-                  {disciplineIssues.map((stat, index) => (
-                    <div key={stat.player.id} className="flex items-center gap-3">
-                      <div className="w-8 h-8 rounded-full bg-orange-100 text-orange-600 flex items-center justify-center font-black text-sm">
-                        {index + 1}
-                      </div>
-                      <div className="flex-1">
-                        <p className="font-bold text-gray-800">
-                          {stat.player.firstName} {stat.player.lastName}
-                        </p>
-                        <p className="text-xs text-gray-500">{stat.player.position}</p>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        {stat.yellowCards > 0 && (
-                          <span className="bg-yellow-100 text-yellow-700 px-2 py-1 rounded text-xs font-bold">
-                            🟨 {stat.yellowCards}
-                          </span>
-                        )}
-                        {stat.redCards > 0 && (
-                          <span className="bg-red-100 text-red-700 px-2 py-1 rounded text-xs font-bold">
-                            🟥 {stat.redCards}
-                          </span>
-                        )}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <p className="text-center py-8 text-gray-500">Excellent discipline!</p>
-              )}
-            </div>
-          </div>
-        </div>
-
-        {/* Full Statistics Table */}
         <div className="bg-white rounded-2xl shadow-xl border border-gray-100 overflow-hidden print:shadow-none">
-          <div className="p-6 border-b border-gray-100 bg-gradient-to-r from-purple-50 to-white print:bg-white">
-            <div className="flex items-center justify-between">
-              <h2 className="text-xl font-bold text-gray-800">Detailed Statistics</h2>
-              <div className="flex gap-2 print:hidden">
-                {["goals", "appearances", "cards", "cleanSheets"].map(stat => (
-                  <button
-                    key={stat}
-                    onClick={() => setSelectedStat(stat)}
-                    className={`px-3 py-1.5 rounded-lg text-sm font-bold transition-all ${
-                      selectedStat === stat
-                        ? 'bg-purple-500 text-white'
-                        : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-                    }`}
-                  >
-                    {stat === "goals" ? "Goals" :
-                     stat === "appearances" ? "Apps" :
-                     stat === "cards" ? "Cards" : "Clean Sheets"}
-                  </button>
-                ))}
-              </div>
-            </div>
+          <div className="p-4 border-b border-gray-100 bg-gradient-to-r from-purple-50 to-white print:bg-white">
+            <h2 className="text-lg font-bold text-gray-800">All Players</h2>
+            <p className="text-xs text-gray-500 mt-1">Click View to open a player's full stats.</p>
           </div>
           <div className="overflow-x-auto">
             <table className="w-full">
               <thead className="bg-gray-50 print:bg-gray-100">
                 <tr>
-                  <th className="px-6 py-3 text-left text-xs font-bold text-gray-600 uppercase">Player</th>
-                  <th className="px-6 py-3 text-left text-xs font-bold text-gray-600 uppercase">Team</th>
-                  <th className="px-6 py-3 text-left text-xs font-bold text-gray-600 uppercase">Position</th>
-                  <th className="px-6 py-3 text-center text-xs font-bold text-gray-600 uppercase">Apps</th>
-                  <th className="px-6 py-3 text-center text-xs font-bold text-gray-600 uppercase">Goals</th>
-                  <th className="px-6 py-3 text-center text-xs font-bold text-gray-600 uppercase">🟨</th>
-                  <th className="px-6 py-3 text-center text-xs font-bold text-gray-600 uppercase">🟥</th>
-                  <th className="px-6 py-3 text-center text-xs font-bold text-gray-600 uppercase">Clean Sheets</th>
+                  <th className="px-4 py-3 text-left text-xs font-bold text-gray-600 uppercase">Player</th>
+                  <th className="px-4 py-3 text-left text-xs font-bold text-gray-600 uppercase">Pos</th>
+                  <th className="px-4 py-3 text-center text-xs font-bold text-gray-600 uppercase">Apps</th>
+                  <th className="px-4 py-3 text-center text-xs font-bold text-gray-600 uppercase">G</th>
+                  <th className="px-4 py-3 text-center text-xs font-bold text-gray-600 uppercase">A</th>
+                  <th className="px-4 py-3 text-center text-xs font-bold text-gray-600 uppercase">Passes (S/T)</th>
+                  <th className="px-4 py-3 text-center text-xs font-bold text-gray-600 uppercase">Shots (On/T)</th>
+                  <th className="px-4 py-3 text-center text-xs font-bold text-gray-600 uppercase">Duels (W/L)</th>
+                  <th className="px-4 py-3 text-center text-xs font-bold text-gray-600 uppercase">Cards</th>
+                  <th className="px-4 py-3 text-right text-xs font-bold text-gray-600 uppercase print:hidden">View</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-200">
-                {filteredStats.filter(s => s.appearances > 0 || s.goals > 0).map((stat, index) => (
-                  <tr key={stat.player.id} className={index % 2 === 0 ? 'bg-white' : 'bg-gray-50 print:bg-gray-50'}>
-                    <td className="px-6 py-4">
-                      <p className="font-bold text-gray-800">
+                {allPlayerStats.map((stat, index) => {
+                  const isSelected = selectedPlayerId === stat.player.id
+                  return (
+                  <tr
+                    key={stat.player.id}
+                    className={`${index % 2 === 0 ? 'bg-white' : 'bg-gray-50 print:bg-gray-50'} hover:bg-blue-50 ${isSelected ? 'ring-2 ring-inset ring-blue-200' : ''}`}
+                  >
+                    <td className="px-4 py-3">
+                      <p className="font-semibold text-gray-800 text-sm">
                         {stat.player.firstName} {stat.player.lastName}
                       </p>
                     </td>
-                    <td className="px-6 py-4 text-sm text-gray-600">Squad</td>
-                    <td className="px-6 py-4 text-sm text-gray-600">{stat.player.position}</td>
-                    <td className="px-6 py-4 text-center font-bold text-gray-800">{stat.appearances}</td>
-                    <td className="px-6 py-4 text-center">
-                      <span className="font-bold text-green-600">{stat.goals}</span>
+                    <td className="px-4 py-3 text-sm text-gray-600">{stat.player.position || '-'}</td>
+                    <td className="px-4 py-3 text-center font-bold text-gray-800 text-sm">{stat.appearances}</td>
+                    <td className="px-4 py-3 text-center font-bold text-green-700 text-sm">{stat.goals}</td>
+                    <td className="px-4 py-3 text-center font-bold text-indigo-700 text-sm">{stat.assists}</td>
+                    <td className="px-4 py-3 text-center font-semibold text-gray-800 text-sm">{stat.successfulPasses}/{stat.totalPasses}</td>
+                    <td className="px-4 py-3 text-center font-semibold text-gray-800 text-sm">{stat.shotsOnTarget}/{stat.shots}</td>
+                    <td className="px-4 py-3 text-center font-semibold text-gray-800 text-sm">{stat.duelsWon}/{stat.duelsLost}</td>
+                    <td className="px-4 py-3 text-center font-semibold text-gray-800 text-sm">{stat.yellowCards}/{stat.redCards}</td>
+                    <td className="px-4 py-3 text-right print:hidden">
+                      <button
+                        type="button"
+                        onClick={() => setSelectedPlayerId(stat.player.id)}
+                        className="inline-flex items-center gap-1 px-2 py-1 text-xs font-bold rounded bg-blue-100 text-blue-700 hover:bg-blue-200"
+                      >
+                        View
+                        <ChevronRight size={14} className="inline" />
+                      </button>
                     </td>
-                    <td className="px-6 py-4 text-center">
-                      <span className={`font-bold ${stat.yellowCards > 0 ? 'text-yellow-600' : 'text-gray-400'}`}>
-                        {stat.yellowCards}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4 text-center">
-                      <span className={`font-bold ${stat.redCards > 0 ? 'text-red-600' : 'text-gray-400'}`}>
-                        {stat.redCards}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4 text-center font-bold text-blue-600">{stat.cleanSheets}</td>
                   </tr>
-                ))}
+                )})}
               </tbody>
             </table>
           </div>
         </div>
+
+        {!selectedPlayerStats && (
+          <div className="bg-white rounded-2xl shadow-xl border border-gray-100 p-4 md:p-5 text-sm text-gray-600">
+            Select a player from the table above to view detailed stats.
+          </div>
+        )}
       </div>
+
+      {selectedPlayerStats && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 print:hidden" onClick={() => setSelectedPlayerId(null)}>
+          <div className="w-full max-w-4xl max-h-[90vh] overflow-y-auto rounded-2xl bg-white shadow-2xl" onClick={(event) => event.stopPropagation()}>
+            <div className="sticky top-0 z-10 flex items-center justify-between border-b border-gray-100 bg-white px-4 py-3">
+              <div>
+                <h3 className="text-lg font-black text-gray-800">
+                  {selectedPlayerStats.player.firstName} {selectedPlayerStats.player.lastName}
+                </h3>
+                <p className="text-xs text-gray-500">Player Details</p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setSelectedPlayerId(null)}
+                className="rounded-lg p-2 text-gray-500 hover:bg-gray-100 hover:text-gray-700"
+                aria-label="Close player details"
+              >
+                <X size={18} />
+              </button>
+            </div>
+
+            <div className="p-4 md:p-5">
+              <div className="mb-4 inline-flex items-center rounded bg-blue-100 px-2 py-1 text-xs font-bold text-blue-700">
+                {selectedPlayerStats.player.position || "No position"}
+              </div>
+
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-sm">
+                <div className="bg-gray-50 rounded-lg p-3"><p className="text-xs text-gray-500">Appearances</p><p className="font-black text-gray-800 text-lg">{selectedPlayerStats.appearances}</p></div>
+                <div className="bg-gray-50 rounded-lg p-3"><p className="text-xs text-gray-500">Starts</p><p className="font-black text-gray-800 text-lg">{selectedPlayerStats.starts}</p></div>
+                <div className="bg-gray-50 rounded-lg p-3"><p className="text-xs text-gray-500">Goals</p><p className="font-black text-green-700 text-lg">{selectedPlayerStats.goals}</p></div>
+                <div className="bg-gray-50 rounded-lg p-3"><p className="text-xs text-gray-500">Assists</p><p className="font-black text-indigo-700 text-lg">{selectedPlayerStats.assists}</p></div>
+
+                <div className="bg-gray-50 rounded-lg p-3"><p className="text-xs text-gray-500">Total Passes</p><p className="font-black text-gray-800 text-lg">{selectedPlayerStats.totalPasses}</p></div>
+                <div className="bg-gray-50 rounded-lg p-3"><p className="text-xs text-gray-500">Successful / Unsuccessful</p><p className="font-black text-gray-800 text-lg">{selectedPlayerStats.successfulPasses}/{selectedPlayerStats.unsuccessfulPasses}</p></div>
+                <div className="bg-gray-50 rounded-lg p-3"><p className="text-xs text-gray-500">Shots (On / Off)</p><p className="font-black text-gray-800 text-lg">{selectedPlayerStats.shots} ({selectedPlayerStats.shotsOnTarget}/{selectedPlayerStats.shotsOffTarget})</p></div>
+                <div className="bg-gray-50 rounded-lg p-3"><p className="text-xs text-gray-500">Cards (Y / R)</p><p className="font-black text-gray-800 text-lg">{selectedPlayerStats.yellowCards}/{selectedPlayerStats.redCards}</p></div>
+
+                <div className="bg-gray-50 rounded-lg p-3"><p className="text-xs text-gray-500">Duels Won / Lost</p><p className="font-black text-gray-800 text-lg">{selectedPlayerStats.duelsWon}/{selectedPlayerStats.duelsLost}</p></div>
+                <div className="bg-gray-50 rounded-lg p-3"><p className="text-xs text-gray-500">Encounters Won / Lost</p><p className="font-black text-gray-800 text-lg">{selectedPlayerStats.encountersWon}/{selectedPlayerStats.encountersLost}</p></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       <style>{`
         @media print {

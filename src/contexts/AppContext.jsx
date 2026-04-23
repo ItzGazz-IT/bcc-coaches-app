@@ -20,6 +20,7 @@ export const AppProvider = ({ children }) => {
   const [fitnessTests, setFitnessTests] = useState([])
   const [reviews, setReviews] = useState([])
   const [fixtures, setFixtures] = useState([])
+  const [matchAnalyses, setMatchAnalyses] = useState([])
   const [loading, setLoading] = useState(true)
   const [userRole, setUserRole] = useState(null) // 'super-admin', 'coach' or 'player'
   const [currentUser, setCurrentUser] = useState(null)
@@ -170,6 +171,19 @@ export const AppProvider = ({ children }) => {
 
     return () => unsubscribe()
   }, [userRole])
+
+  // Real-time listener for imported match analyses
+  useEffect(() => {
+    const unsubscribe = onSnapshot(collection(db, "matchAnalyses"), (snapshot) => {
+      const analysesData = snapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data()
+      }))
+      setMatchAnalyses(analysesData)
+    })
+
+    return () => unsubscribe()
+  }, [])
 
   // Calculate unread counts whenever data changes
   useEffect(() => {
@@ -444,6 +458,7 @@ export const AppProvider = ({ children }) => {
     updateReview,
     deleteReview,
     getPlayerReviews,
+    matchAnalyses,
     fixtures,
     addFixture,
     updateFixture,
