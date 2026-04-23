@@ -1,5 +1,5 @@
 import { useState, useMemo } from "react"
-import { Users, Download, Printer, ChevronRight, X } from "lucide-react"
+import { Users, Download, Printer, ChevronRight, X, BarChart3, ListOrdered } from "lucide-react"
 import { useApp } from "../contexts/AppContext"
 
 const normalizeName = (value = "") => value.toLowerCase().replace(/\s+/g, " ").trim()
@@ -36,7 +36,9 @@ const matchesPlayerByRef = (ref, player) => {
 
 function PlayerStats() {
   const { players, fixtures, userRole, currentPlayerId, matchAnalyses } = useApp()
-  const [selectedPlayerId, setSelectedPlayerId] = useState(null)
+  const isPlayerRole = userRole === "player"
+  const [selectedPlayerId, setSelectedPlayerId] = useState(isPlayerRole ? (currentPlayerId || null) : null)
+  const [selectedTab, setSelectedTab] = useState("overview")
 
   // Filter players based on role
   const displayPlayers = userRole === "player" && currentPlayerId
@@ -234,6 +236,66 @@ function PlayerStats() {
     return selected || null
   }, [allPlayerStats, selectedPlayerId])
 
+  // Per-game breakdown for the selected player
+  const perGameStats = useMemo(() => {
+    if (!selectedPlayerId) return []
+
+    const player = players.find((p) => p.id === selectedPlayerId)
+    if (!player) return []
+
+    const completedFixtures = fixtures.filter((f) => f.status === "Completed")
+
+    return completedFixtures
+      .map((fixture) => {
+        const goals = (fixture.scorers || []).filter((s) => matchesPlayerByRef(s, player)).length
+        const yellowCards = (fixture.yellowCards || []).filter((c) => matchesPlayerByRef(c, player)).length
+        const redCards = (fixture.redCards || []).filter((c) => matchesPlayerByRef(c, player)).length
+        const appeared = goals > 0 || yellowCards > 0 || redCards > 0
+
+        // Match analysis data for this fixture (by date + opponent)
+        const analysis = matchAnalyses.find((a) => {
+          const sameDate = a.date && fixture.date && a.date === fixture.date
+          const sameOpponent = a.opponent && fixture.opponent &&
+            a.opponent.toLowerCase().trim() === fixture.opponent.toLowerCase().trim()
+          return sameDate || sameOpponent
+        })
+        const analysisPlayerData = analysis?.playerStats?.[selectedPlayerId] || null
+
+        const extraGoals = analysisPlayerData?.attacking?.goals || 0
+        const extraAssists = analysisPlayerData?.attacking?.assists || 0
+        const extraShots = analysisPlayerData?.attacking?.shots || 0
+        const extraShotsOn = analysisPlayerData?.attacking?.shotsOnTarget || 0
+        const extraPasses = analysisPlayerData?.passing?.total || 0
+        const extraPassesSuccess = analysisPlayerData?.passing?.successful || 0
+        const extraDuelsWon = analysisPlayerData?.defending?.duelsWon || 0
+        const extraDuelsLost = analysisPlayerData?.defending?.duelsLost || 0
+        const hasAnyData = appeared || analysisPlayerData !== null
+
+        if (!hasAnyData) return null
+
+        return {
+          fixture,
+          goals: goals + extraGoals,
+          assists: extraAssists,
+          yellowCards: yellowCards + (analysisPlayerData?.discipline?.yellowCards || 0),
+          redCards: redCards + (analysisPlayerData?.discipline?.redCards || 0),
+          shots: extraShots,
+          shotsOnTarget: extraShotsOn,
+          totalPasses: extraPasses,
+          successfulPasses: extraPassesSuccess,
+          duelsWon: extraDuelsWon,
+          duelsLost: extraDuelsLost,
+          fromAnalysis: analysisPlayerData !== null
+        }
+      })
+      .filter(Boolean)
+      .sort((a, b) => {
+        const aDate = new Date(a.fixture.date || 0).getTime()
+        const bDate = new Date(b.fixture.date || 0).getTime()
+        return bDate - aDate
+      })
+  }, [selectedPlayerId, fixtures, matchAnalyses, players])
+
   const handleExport = () => {
     const csvContent = [
       ["Player", "Position", "Apps", "Starts", "Goals", "Assists", "Total Shots", "Shots On Target", "Shots Off Target", "Total Passes", "Successful Passes", "Unsuccessful Passes", "Duels Won", "Duels Lost", "Encounters Won", "Encounters Lost", "Yellow Card", "Red Card"],
@@ -369,7 +431,7 @@ function PlayerStats() {
                     <td className="px-4 py-3 text-right print:hidden">
                       <button
                         type="button"
-                        onClick={() => setSelectedPlayerId(stat.player.id)}
+                        onClick={() => { setSelectedPlayerId(stat.player.id); setSelectedTab("overview") }}
                         className="inline-flex items-center gap-1 px-2 py-1 text-xs font-bold rounded bg-blue-100 text-blue-700 hover:bg-blue-200"
                       >
                         View
@@ -391,48 +453,148 @@ function PlayerStats() {
       </div>
 
       {selectedPlayerStats && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 print:hidden" onClick={() => setSelectedPlayerId(null)}>
-          <div className="w-full max-w-4xl max-h-[90vh] overflow-y-auto rounded-2xl bg-white shadow-2xl" onClick={(event) => event.stopPropagation()}>
-            <div className="sticky top-0 z-10 flex items-center justify-between border-b border-gray-100 bg-white px-4 py-3">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 print:hidden" onClick={() => { setSelectedPlayerId(null); setSelectedTab("overview") }}>
+          <div className="w-full max-w-4xl max-h-[90vh] overflow-y-auto rounded-2xl bg-white shadow-2xl dark:bg-gray-900" onClick={(event) => event.stopPropagation()}>
+            {/* Header */}
+            <div className="sticky top-0 z-10 flex items-center justify-between border-b border-gray-100 dark:border-gray-800 bg-white dark:bg-gray-900 px-4 py-3">
               <div>
-                <h3 className="text-lg font-black text-gray-800">
+                <h3 className="text-lg font-black text-gray-800 dark:text-white">
                   {selectedPlayerStats.player.firstName} {selectedPlayerStats.player.lastName}
                 </h3>
-                <p className="text-xs text-gray-500">Player Details</p>
+                <span className="inline-flex items-center rounded bg-blue-100 dark:bg-blue-900/40 px-2 py-0.5 text-xs font-bold text-blue-700 dark:text-blue-300">
+                  {selectedPlayerStats.player.position || "No position"}
+                </span>
               </div>
               <button
                 type="button"
-                onClick={() => setSelectedPlayerId(null)}
-                className="rounded-lg p-2 text-gray-500 hover:bg-gray-100 hover:text-gray-700"
+                onClick={() => { setSelectedPlayerId(null); setSelectedTab("overview") }}
+                className="rounded-lg p-2 text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-gray-700"
                 aria-label="Close player details"
               >
                 <X size={18} />
               </button>
             </div>
 
+            {/* Tab bar */}
+            <div className="flex gap-1 border-b border-gray-100 dark:border-gray-800 px-4 pt-3 pb-0">
+              {[
+                { id: "overview", label: "Season Overview", icon: BarChart3 },
+                { id: "per-game", label: "Per Game", icon: ListOrdered }
+              ].map(({ id, label, icon: Icon }) => (
+                <button
+                  key={id}
+                  type="button"
+                  onClick={() => setSelectedTab(id)}
+                  className={`inline-flex items-center gap-2 px-4 py-2 text-sm font-semibold rounded-t-lg border-b-2 transition-colors ${
+                    selectedTab === id
+                      ? "border-primary text-primary dark:text-accent dark:border-accent"
+                      : "border-transparent text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
+                  }`}
+                >
+                  <Icon size={14} />
+                  {label}
+                </button>
+              ))}
+            </div>
+
             <div className="p-4 md:p-5">
-              <div className="mb-4 inline-flex items-center rounded bg-blue-100 px-2 py-1 text-xs font-bold text-blue-700">
-                {selectedPlayerStats.player.position || "No position"}
-              </div>
+              {/* ── OVERVIEW TAB ── */}
+              {selectedTab === "overview" && (
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-sm">
+                  <div className="bg-gray-50 dark:bg-gray-800 rounded-lg p-3"><p className="text-xs text-gray-500">Appearances</p><p className="font-black text-gray-800 dark:text-white text-lg">{selectedPlayerStats.appearances}</p></div>
+                  <div className="bg-gray-50 dark:bg-gray-800 rounded-lg p-3"><p className="text-xs text-gray-500">Starts</p><p className="font-black text-gray-800 dark:text-white text-lg">{selectedPlayerStats.starts}</p></div>
+                  <div className="bg-gray-50 dark:bg-gray-800 rounded-lg p-3"><p className="text-xs text-gray-500">Goals</p><p className="font-black text-green-700 text-lg">{selectedPlayerStats.goals}</p></div>
+                  <div className="bg-gray-50 dark:bg-gray-800 rounded-lg p-3"><p className="text-xs text-gray-500">Assists</p><p className="font-black text-indigo-700 text-lg">{selectedPlayerStats.assists}</p></div>
 
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-sm">
-                <div className="bg-gray-50 rounded-lg p-3"><p className="text-xs text-gray-500">Appearances</p><p className="font-black text-gray-800 text-lg">{selectedPlayerStats.appearances}</p></div>
-                <div className="bg-gray-50 rounded-lg p-3"><p className="text-xs text-gray-500">Starts</p><p className="font-black text-gray-800 text-lg">{selectedPlayerStats.starts}</p></div>
-                <div className="bg-gray-50 rounded-lg p-3"><p className="text-xs text-gray-500">Goals</p><p className="font-black text-green-700 text-lg">{selectedPlayerStats.goals}</p></div>
-                <div className="bg-gray-50 rounded-lg p-3"><p className="text-xs text-gray-500">Assists</p><p className="font-black text-indigo-700 text-lg">{selectedPlayerStats.assists}</p></div>
+                  <div className="bg-gray-50 dark:bg-gray-800 rounded-lg p-3"><p className="text-xs text-gray-500">Total Passes</p><p className="font-black text-gray-800 dark:text-white text-lg">{selectedPlayerStats.totalPasses}</p></div>
+                  <div className="bg-gray-50 dark:bg-gray-800 rounded-lg p-3"><p className="text-xs text-gray-500">Successful / Unsuccessful</p><p className="font-black text-gray-800 dark:text-white text-lg">{selectedPlayerStats.successfulPasses}/{selectedPlayerStats.unsuccessfulPasses}</p></div>
+                  <div className="bg-gray-50 dark:bg-gray-800 rounded-lg p-3"><p className="text-xs text-gray-500">Shots (On / Off)</p><p className="font-black text-gray-800 dark:text-white text-lg">{selectedPlayerStats.shots} ({selectedPlayerStats.shotsOnTarget}/{selectedPlayerStats.shotsOffTarget})</p></div>
+                  <div className="bg-gray-50 dark:bg-gray-800 rounded-lg p-3"><p className="text-xs text-gray-500">Cards (Y / R)</p><p className="font-black text-gray-800 dark:text-white text-lg">{selectedPlayerStats.yellowCards}/{selectedPlayerStats.redCards}</p></div>
 
-                <div className="bg-gray-50 rounded-lg p-3"><p className="text-xs text-gray-500">Total Passes</p><p className="font-black text-gray-800 text-lg">{selectedPlayerStats.totalPasses}</p></div>
-                <div className="bg-gray-50 rounded-lg p-3"><p className="text-xs text-gray-500">Successful / Unsuccessful</p><p className="font-black text-gray-800 text-lg">{selectedPlayerStats.successfulPasses}/{selectedPlayerStats.unsuccessfulPasses}</p></div>
-                <div className="bg-gray-50 rounded-lg p-3"><p className="text-xs text-gray-500">Shots (On / Off)</p><p className="font-black text-gray-800 text-lg">{selectedPlayerStats.shots} ({selectedPlayerStats.shotsOnTarget}/{selectedPlayerStats.shotsOffTarget})</p></div>
-                <div className="bg-gray-50 rounded-lg p-3"><p className="text-xs text-gray-500">Cards (Y / R)</p><p className="font-black text-gray-800 text-lg">{selectedPlayerStats.yellowCards}/{selectedPlayerStats.redCards}</p></div>
+                  <div className="bg-gray-50 dark:bg-gray-800 rounded-lg p-3"><p className="text-xs text-gray-500">Duels Won / Lost</p><p className="font-black text-gray-800 dark:text-white text-lg">{selectedPlayerStats.duelsWon}/{selectedPlayerStats.duelsLost}</p></div>
+                  <div className="bg-gray-50 dark:bg-gray-800 rounded-lg p-3"><p className="text-xs text-gray-500">Encounters Won / Lost</p><p className="font-black text-gray-800 dark:text-white text-lg">{selectedPlayerStats.encountersWon}/{selectedPlayerStats.encountersLost}</p></div>
+                </div>
+              )}
 
-                <div className="bg-gray-50 rounded-lg p-3"><p className="text-xs text-gray-500">Duels Won / Lost</p><p className="font-black text-gray-800 text-lg">{selectedPlayerStats.duelsWon}/{selectedPlayerStats.duelsLost}</p></div>
-                <div className="bg-gray-50 rounded-lg p-3"><p className="text-xs text-gray-500">Encounters Won / Lost</p><p className="font-black text-gray-800 text-lg">{selectedPlayerStats.encountersWon}/{selectedPlayerStats.encountersLost}</p></div>
-              </div>
+              {/* ── PER GAME TAB ── */}
+              {selectedTab === "per-game" && (
+                <div>
+                  {perGameStats.length === 0 ? (
+                    <div className="rounded-xl border border-dashed border-gray-300 dark:border-gray-700 p-6 text-center text-sm text-gray-500 dark:text-gray-400">
+                      No per-game data available yet. Stats appear once fixtures are marked as Completed or match analysis data is imported.
+                    </div>
+                  ) : (
+                    <div className="overflow-x-auto rounded-xl border border-gray-200 dark:border-gray-800">
+                      <table className="w-full text-sm">
+                        <thead className="bg-gray-50 dark:bg-gray-800">
+                          <tr>
+                            <th className="px-3 py-2 text-left text-xs font-bold text-gray-600 dark:text-gray-300 uppercase">Match</th>
+                            <th className="px-3 py-2 text-left text-xs font-bold text-gray-600 dark:text-gray-300 uppercase">Date</th>
+                            <th className="px-3 py-2 text-center text-xs font-bold text-gray-600 dark:text-gray-300 uppercase">Result</th>
+                            <th className="px-3 py-2 text-center text-xs font-bold text-green-600 uppercase">G</th>
+                            <th className="px-3 py-2 text-center text-xs font-bold text-indigo-600 uppercase">A</th>
+                            <th className="px-3 py-2 text-center text-xs font-bold text-gray-600 dark:text-gray-300 uppercase">Shots</th>
+                            <th className="px-3 py-2 text-center text-xs font-bold text-gray-600 dark:text-gray-300 uppercase">Passes S/T</th>
+                            <th className="px-3 py-2 text-center text-xs font-bold text-gray-600 dark:text-gray-300 uppercase">Duels W/L</th>
+                            <th className="px-3 py-2 text-center text-xs font-bold text-amber-600 uppercase">Y</th>
+                            <th className="px-3 py-2 text-center text-xs font-bold text-red-600 uppercase">R</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-gray-100 dark:divide-gray-800">
+                          {perGameStats.map((row) => {
+                            const fixture = row.fixture
+                            const resultColor =
+                              fixture.result === "Win"
+                                ? "text-emerald-600 font-bold"
+                                : fixture.result === "Loss"
+                                ? "text-rose-600 font-bold"
+                                : "text-gray-500"
+                            const formattedDate = fixture.date
+                              ? new Date(fixture.date).toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" })
+                              : "—"
+                            return (
+                              <tr key={fixture.id} className="hover:bg-gray-50 dark:hover:bg-gray-800/60">
+                                <td className="px-3 py-2 font-semibold text-gray-800 dark:text-white whitespace-nowrap">
+                                  {fixture.homeAway === "home" || fixture.homeAway === "Home" ? "H" : "A"} vs {fixture.opponent || "—"}
+                                </td>
+                                <td className="px-3 py-2 text-gray-500 dark:text-gray-400 whitespace-nowrap">{formattedDate}</td>
+                                <td className={`px-3 py-2 text-center ${resultColor}`}>
+                                  {fixture.score || fixture.result || "—"}
+                                </td>
+                                <td className="px-3 py-2 text-center font-bold text-green-700">{row.goals || "—"}</td>
+                                <td className="px-3 py-2 text-center font-bold text-indigo-700">{row.assists || "—"}</td>
+                                <td className="px-3 py-2 text-center text-gray-700 dark:text-gray-300">{row.shots > 0 ? `${row.shotsOnTarget}/${row.shots}` : "—"}</td>
+                                <td className="px-3 py-2 text-center text-gray-700 dark:text-gray-300">{row.totalPasses > 0 ? `${row.successfulPasses}/${row.totalPasses}` : "—"}</td>
+                                <td className="px-3 py-2 text-center text-gray-700 dark:text-gray-300">{row.duelsWon + row.duelsLost > 0 ? `${row.duelsWon}/${row.duelsLost}` : "—"}</td>
+                                <td className="px-3 py-2 text-center">
+                                  {row.yellowCards > 0 ? (
+                                    <span className="inline-block w-4 h-5 bg-yellow-400 rounded-sm text-[10px] font-black text-yellow-900 leading-5 text-center">{row.yellowCards}</span>
+                                  ) : "—"}
+                                </td>
+                                <td className="px-3 py-2 text-center">
+                                  {row.redCards > 0 ? (
+                                    <span className="inline-block w-4 h-5 bg-red-500 rounded-sm text-[10px] font-black text-white leading-5 text-center">{row.redCards}</span>
+                                  ) : "—"}
+                                </td>
+                              </tr>
+                            )
+                          })}
+                        </tbody>
+                      </table>
+                    </div>
+                  )}
+                  {perGameStats.some((r) => r.fromAnalysis) && (
+                    <p className="mt-3 text-xs text-gray-400 dark:text-gray-500">
+                      Detailed stats (shots, passes, duels) come from imported Stepout match analysis data.
+                    </p>
+                  )}
+                </div>
+              )}
             </div>
           </div>
         </div>
       )}
+
 
       <style>{`
         @media print {
