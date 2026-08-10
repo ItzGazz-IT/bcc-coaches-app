@@ -13,6 +13,7 @@ dist-ssr
 *.local
 .env
 .env.local
+.firebase/
 
 # Firebase service account (NEVER commit)
 scripts/firebase-service-account.json
