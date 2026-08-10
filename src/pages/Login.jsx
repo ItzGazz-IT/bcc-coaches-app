@@ -1,4 +1,4 @@
-import { useNavigate } from "react-router-dom"
+import { Link, useNavigate } from "react-router-dom"
 import { Lock, User, Shield, ArrowRight, AlertCircle, CheckCircle2, Users as UsersIcon, Crown } from "lucide-react"
 import { useState, useEffect } from "react"
 import { useApp } from "../contexts/AppContext"
@@ -244,7 +244,7 @@ export default function Login({ platformOnly = false }) {
 
         {/* Footer */}
         <p className="text-center text-white/70 text-xs sm:text-sm mt-4 sm:mt-6 font-medium drop-shadow-lg px-4">
-          © 2026 UNYRA
+          © 2026 UNYRA · <Link className="underline" to="/privacy">Privacy & POPIA</Link> · <Link className="underline" to="/terms">Terms</Link> · <a className="underline" href="mailto:support@kodeiq.online">Support</a>
         </p>
       </div>
     </div>

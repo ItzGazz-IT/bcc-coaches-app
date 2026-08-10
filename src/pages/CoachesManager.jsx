@@ -11,7 +11,6 @@ function CoachesManager() {
   const [editingCoach, setEditingCoach] = useState(null)
   const [message, setMessage] = useState({ type: "", text: "" })
   const [formData, setFormData] = useState({
-    username: "",
     password: "",
     fullName: "",
     email: "",
@@ -34,8 +33,7 @@ function CoachesManager() {
     if (coach) {
       setEditingCoach(coach)
       setFormData({
-        username: coach.username,
-        password: coach.password,
+        password: "",
         fullName: coach.fullName || "",
         email: coach.email || "",
         teamId: coach.teamId || ""
@@ -43,7 +41,6 @@ function CoachesManager() {
     } else {
       setEditingCoach(null)
       setFormData({
-        username: "",
         password: generatePassword(10),
         fullName: "",
         email: "",
@@ -56,45 +53,39 @@ function CoachesManager() {
   const handleSubmit = async (e) => {
     e.preventDefault()
     
-    if (!formData.username || !formData.password) {
-      setMessage({ type: "error", text: "Username and password are required" })
+    if (!formData.email || (!editingCoach && !formData.password)) {
+      setMessage({ type: "error", text: "Email and a temporary password are required" })
       return
     }
 
     try {
       if (editingCoach) {
         await updateCoach(editingCoach.id, {
-          username: formData.username,
-          password: formData.password,
           fullName: formData.fullName,
-          email: formData.email,
           teamId: formData.teamId,
           teamIds: formData.teamId ? [formData.teamId] : []
         })
         setMessage({ type: "success", text: "Coach updated successfully" })
       } else {
-        // Check if username already exists
-        const exists = coaches.some(c => c.username === formData.username)
+        const exists = coaches.some(c => (c.authEmail || c.email)?.toLowerCase() === formData.email.toLowerCase())
         if (exists) {
-          setMessage({ type: "error", text: "Username already exists" })
+          setMessage({ type: "error", text: "Email already exists" })
           return
         }
 
         await addCoach({
-          username: formData.username,
           password: formData.password,
           fullName: formData.fullName,
           email: formData.email,
           teamId: formData.teamId,
           teamIds: formData.teamId ? [formData.teamId] : []
         })
-        setMessage({ type: "success", text: "Coach added successfully" })
+        setMessage({ type: "success", text: "Coach account created successfully" })
       }
 
       setShowModal(false)
       setEditingCoach(null)
       setFormData({
-        username: "",
         password: "",
         fullName: "",
         email: "",
@@ -103,7 +94,7 @@ function CoachesManager() {
       setTimeout(() => setMessage({ type: "", text: "" }), 3000)
     } catch (error) {
       console.error("Error saving coach:", error)
-      setMessage({ type: "error", text: "Failed to save coach" })
+      setMessage({ type: "error", text: error?.message || "Failed to save coach" })
     }
   }
 
@@ -271,19 +262,19 @@ function CoachesManager() {
             <form onSubmit={handleSubmit} className="p-6 space-y-4">
               <div>
                 <label className="block text-sm font-semibold text-gray-700 mb-2">
-                  Username *
+                  Email *
                 </label>
                 <input
-                  type="text"
-                  value={formData.username}
-                  onChange={(e) => setFormData({...formData, username: e.target.value})}
-                  placeholder="coach.name"
+                  type="email"
+                  value={formData.email}
+                  onChange={(e) => setFormData({...formData, email: e.target.value})}
+                  placeholder="coach@club.co.za"
                   className="w-full px-4 py-2.5 border-2 border-gray-200 rounded-xl focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 outline-none transition-all"
-                  disabled={editingCoach && isSuperAdmin(editingCoach)}
+                  disabled={Boolean(editingCoach)}
                 />
               </div>
 
-              <div>
+              {!editingCoach && <div>
                 <label className="block text-sm font-semibold text-gray-700 mb-2">
                   Password *
                 </label>
@@ -302,7 +293,7 @@ function CoachesManager() {
                     Generate
                   </button>
                 </div>
-              </div>
+              </div>}
 
               <div>
                 <label className="block text-sm font-semibold text-gray-700 mb-2">
@@ -313,19 +304,6 @@ function CoachesManager() {
                   value={formData.fullName}
                   onChange={(e) => setFormData({...formData, fullName: e.target.value})}
                   placeholder="Coach's full name"
-                  className="w-full px-4 py-2.5 border-2 border-gray-200 rounded-xl focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 outline-none transition-all"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">
-                  Email
-                </label>
-                <input
-                  type="email"
-                  value={formData.email}
-                  onChange={(e) => setFormData({...formData, email: e.target.value})}
-                  placeholder="coach@example.com"
                   className="w-full px-4 py-2.5 border-2 border-gray-200 rounded-xl focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 outline-none transition-all"
                 />
               </div>

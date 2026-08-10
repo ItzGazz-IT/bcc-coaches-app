@@ -1,8 +1,9 @@
 import { createContext, useContext, useState, useEffect } from "react"
-import { db } from "../firebase/config"
+import { db, functions } from "../firebase/config"
 import { collection, documentId, getDoc, getDocs, addDoc, deleteDoc, deleteField, doc, onSnapshot, updateDoc, query, where, setDoc, arrayUnion, arrayRemove, writeBatch } from "firebase/firestore"
 import { onAuthStateChanged, signOut } from "firebase/auth"
 import { auth } from "../firebase/config"
+import { httpsCallable } from "firebase/functions"
 import { initializeNotifications, checkForNewReviews, checkForNewFitnessTests, checkForNewFixtures } from "../services/notificationService"
 
 const AppContext = createContext()
@@ -16,6 +17,10 @@ export const useApp = () => {
 }
 
 export const AppProvider = ({ children }) => {
+  const provisionAccount = httpsCallable(functions, "provisionAccount")
+  const createClubWithAdminCall = httpsCallable(functions, "createClubWithAdmin")
+  const deactivateAccountCall = httpsCallable(functions, "deactivateAccount")
+  const updateAccountAccessCall = httpsCallable(functions, "updateAccountAccess")
   const [players, setPlayers] = useState([])
   const [coaches, setCoaches] = useState([])
   const [guardians, setGuardians] = useState([])
@@ -434,8 +439,16 @@ export const AppProvider = ({ children }) => {
       if (!teamId) throw new Error("Select a team before adding a player.")
       const teamPlayerCount = players.filter(item => item.teamId === teamId).length
       if (teamPlayerCount >= 30) throw new Error("This team already has the maximum of 30 players.")
-      const playerRef = await addDoc(collection(db, "players"), { ...applyScope(withoutPassword(player)), authProvisioningStatus: "pending" })
-      await setDoc(doc(db, "announcementGroups", teamId), { teamId, clubId: player.clubId || currentClubId, memberIds: arrayUnion(playerRef.id), updatedAt: new Date().toISOString() }, { merge: true })
+      const result = await provisionAccount({
+        role: "player",
+        clubId: player.clubId || currentClubId,
+        email: player.email,
+        password: player.password,
+        displayName: `${player.firstName || ""} ${player.lastName || ""}`.trim(),
+        profile: { ...applyScope(withoutPassword(player)), teamId }
+      })
+      await setDoc(doc(db, "announcementGroups", teamId), { teamId, clubId: player.clubId || currentClubId, memberIds: arrayUnion(result.data.uid), updatedAt: new Date().toISOString() }, { merge: true })
+      return result.data
     } catch (error) {
       console.error("Error adding player:", error)
       throw error
@@ -445,6 +458,7 @@ export const AppProvider = ({ children }) => {
   const updatePlayer = async (id, updates) => {
     try {
       const existing = players.find(player => player.id === id)
+      if (updates.teamId && updates.teamId !== existing?.teamId) await updateAccountAccessCall({ uid: id, role: "player", access: { teamId: updates.teamId, teamIds: [updates.teamId] } })
       await updateDoc(doc(db, "players", id), withoutPassword(updates))
       if (updates.teamId && updates.teamId !== existing?.teamId) {
         if (existing?.teamId) await setDoc(doc(db, "announcementGroups", existing.teamId), { memberIds: arrayRemove(id), updatedAt: new Date().toISOString() }, { merge: true })
@@ -458,7 +472,7 @@ export const AppProvider = ({ children }) => {
   const deletePlayer = async (id) => {
     try {
       const existingPlayer = players.find(player => player.id === id)
-      await updateDoc(doc(db, "players", id), { archived: true, archivedAt: new Date().toISOString(), archivedReason: "Removed from active roster" })
+      await deactivateAccountCall({ uid: id, role: "player" })
       if (existingPlayer?.teamId) await setDoc(doc(db, "announcementGroups", existingPlayer.teamId), { memberIds: arrayRemove(id), updatedAt: new Date().toISOString() }, { merge: true })
       await recordAudit("archived", "players", id, { reason: "Removed from active roster" })
     } catch (error) {
@@ -697,14 +711,15 @@ export const AppProvider = ({ children }) => {
       const safeRole = userRole === "club-admin" ? "coach" : requestedRole
       const safeClubId = userRole === "club-admin" ? currentClubId : coachData.clubId
       if (!safeClubId) throw new Error("Every club staff account must be assigned to a club.")
-      await addDoc(collection(db, "coaches"), {
-        ...applyScope(withoutPassword(coachData)),
-        clubId: safeClubId,
+      const result = await provisionAccount({
         role: safeRole,
-        isAdmin: false,
-        authProvisioningStatus: "pending",
-        createdAt: new Date().toISOString()
+        clubId: safeClubId,
+        email: coachData.email,
+        password: coachData.password,
+        displayName: coachData.fullName,
+        profile: { ...applyScope(withoutPassword(coachData)), clubId: safeClubId, role: safeRole, isAdmin: false }
       })
+      return result.data
     } catch (error) {
       console.error("Error adding coach:", error)
       throw error
@@ -713,6 +728,8 @@ export const AppProvider = ({ children }) => {
 
   const updateCoach = async (id, updates) => {
     try {
+      const existing = coaches.find(coach => coach.id === id)
+      if (updates.teamId !== undefined || updates.teamIds !== undefined || updates.onboardingComplete !== undefined) await updateAccountAccessCall({ uid: id, role: existing?.role || "coach", access: { teamId: updates.teamId ?? existing?.teamId ?? "", teamIds: updates.teamIds ?? existing?.teamIds ?? [], onboardingComplete: updates.onboardingComplete ?? existing?.onboardingComplete ?? false } })
       await updateDoc(doc(db, "coaches", id), withoutPassword(updates))
     } catch (error) {
       console.error("Error updating coach:", error)
@@ -722,8 +739,7 @@ export const AppProvider = ({ children }) => {
 
   const deleteCoach = async (id) => {
     try {
-      await updateDoc(doc(db, "coaches", id), { archived: true, archivedAt: new Date().toISOString(), archivedReason: "Account removed" })
-      await recordAudit("archived", "coaches", id)
+      await deactivateAccountCall({ uid: id, role: coaches.find(coach => coach.id === id)?.role || "coach" })
     } catch (error) {
       console.error("Error deleting coach:", error)
       throw error
@@ -732,16 +748,15 @@ export const AppProvider = ({ children }) => {
 
   const addGuardian = async guardian => {
     try {
-      const guardianRef = await addDoc(collection(db, "guardians"), {
-        ...withoutPassword(guardian),
-        clubId: guardian.clubId || currentClubId,
+      const result = await provisionAccount({
         role: "guardian",
-        status: "active",
-        authProvisioningStatus: "pending",
-        createdAt: new Date().toISOString()
+        clubId: guardian.clubId || currentClubId,
+        email: guardian.email,
+        password: guardian.password,
+        displayName: guardian.fullName,
+        profile: { ...withoutPassword(guardian), clubId: guardian.clubId || currentClubId, role: "guardian", status: "active" }
       })
-      await recordAudit("created", "guardian", guardianRef.id, { fullName: guardian.fullName, playerIds: guardian.playerIds || [] })
-      return guardianRef
+      return result.data
     } catch (error) {
       console.error("Error adding guardian:", error)
       throw error
@@ -751,6 +766,8 @@ export const AppProvider = ({ children }) => {
   const updateGuardian = async (id, updates) => {
     try {
       const safeUpdates = withoutPassword(updates)
+      const existing = guardians.find(guardian => guardian.id === id)
+      if (updates.teamIds !== undefined || updates.playerIds !== undefined) await updateAccountAccessCall({ uid: id, role: "guardian", access: { teamIds: updates.teamIds ?? existing?.teamIds ?? [], playerIds: updates.playerIds ?? existing?.playerIds ?? [] } })
       await updateDoc(doc(db, "guardians", id), safeUpdates)
       await recordAudit("updated", "guardian", id, safeUpdates)
     } catch (error) {
@@ -761,8 +778,7 @@ export const AppProvider = ({ children }) => {
 
   const deleteGuardian = async id => {
     try {
-      await updateDoc(doc(db, "guardians", id), { archived: true, archivedAt: new Date().toISOString(), archivedReason: "Account removed" })
-      await recordAudit("archived", "guardians", id)
+      await deactivateAccountCall({ uid: id, role: "guardian" })
     } catch (error) {
       console.error("Error deleting guardian:", error)
       throw error
@@ -770,6 +786,7 @@ export const AppProvider = ({ children }) => {
   }
 
   const addClub = async (club) => addDoc(collection(db, "clubs"), { ...club, createdAt: new Date().toISOString() })
+  const createClubWithAdmin = async (club, admin) => (await createClubWithAdminCall({ club, admin })).data
   const updateClub = async (id, updates) => updateDoc(doc(db, "clubs", id), updates)
   const deleteSnapshot = async snapshot => {
     const documents = snapshot.docs
@@ -860,6 +877,7 @@ export const AppProvider = ({ children }) => {
     clubs,
     teams,
     addClub,
+    createClubWithAdmin,
     updateClub,
     deleteClub,
     addTeam,

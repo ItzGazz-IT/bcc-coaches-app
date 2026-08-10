@@ -3,7 +3,7 @@ import { UserPlus, Phone, Users, Shield, Trash2, Search, CheckCircle, Activity, 
 import { useApp } from "../contexts/AppContext"
 import { useSearchParams } from "react-router-dom"
 import { TableSkeleton } from "../components/Loading"
-import { generateUsername, generatePassword } from "../utils/credentialUtils"
+import { generatePassword } from "../utils/credentialUtils"
 import { getSport } from "../config/sports"
 
 function Players() {
@@ -15,6 +15,7 @@ function Players() {
     firstName: "",
     lastName: "",
     nickname: "",
+    email: "",
     phone: "",
     teamId: currentTeamId || "",
     position: "Midfielder",
@@ -27,6 +28,7 @@ function Players() {
   
   const [searchTerm, setSearchTerm] = useState("")
   const [showSuccess, setShowSuccess] = useState(false)
+  const [createdCredentials, setCreatedCredentials] = useState(null)
   const [showModal, setShowModal] = useState(false)
   const [editingPlayer, setEditingPlayer] = useState(null)
   const [formError, setFormError] = useState("")
@@ -44,28 +46,23 @@ function Players() {
   const handleSubmit = async (e) => {
     e.preventDefault()
     setFormError("")
-    if (formData.firstName && formData.lastName && formData.phone) {
+    if (formData.firstName && formData.lastName && formData.phone && (editingPlayer || formData.email)) {
       const playerData = { ...formData }
       
       // Auto-generate credentials if creating a new player
       if (!editingPlayer) {
-        // Generate username and password
-        playerData.username = generateUsername(formData.firstName, formData.lastName)
         playerData.password = generatePassword(10)
       } else if (editingPlayer && !formData.password) {
         // If editing and password is empty, remove it from the update
         delete playerData.password
       }
       
-      // If username is empty, remove it
-      if (!playerData.username) {
-        delete playerData.username
-        delete playerData.password
-      }
-      
       try {
         if (editingPlayer) await updatePlayer(editingPlayer.id, playerData)
-        else await addPlayer(playerData)
+        else {
+          const account = await addPlayer(playerData)
+          setCreatedCredentials({ email: account.email, password: playerData.password })
+        }
       } catch (error) {
         setFormError(error.message || "Could not save this player.")
         return
@@ -74,6 +71,7 @@ function Players() {
         firstName: "", 
         lastName: "", 
         nickname: "",
+        email: "",
         phone: "", 
         teamId: currentTeamId || "",
         position: "Midfielder",
@@ -94,6 +92,7 @@ function Players() {
       firstName: player.firstName,
       lastName: player.lastName,
       nickname: player.nickname || "",
+      email: player.authEmail || player.email || "",
       phone: player.phone,
       teamId: player.teamId || currentTeamId || "",
       position: player.position || "Midfielder",
@@ -143,7 +142,7 @@ function Players() {
             </div>
             {(userRole === "coach" || userRole === "club-admin" || userRole === "super-admin") && (
               <button
-                onClick={() => { setEditingPlayer(null); setFormError(""); setFormData({ firstName:"", lastName:"", nickname:"", phone:"", teamId:currentTeamId||availableTeams[0]?.id||"", position:getSport(availableTeams.find(team=>team.id===(currentTeamId||availableTeams[0]?.id))?.sportId).roles[0], emergencyContact:"", username:"", password:"" }); setShowModal(true) }}
+                onClick={() => { setEditingPlayer(null); setFormError(""); setCreatedCredentials(null); setFormData({ firstName:"", lastName:"", nickname:"", email:"", phone:"", teamId:currentTeamId||availableTeams[0]?.id||"", position:getSport(availableTeams.find(team=>team.id===(currentTeamId||availableTeams[0]?.id))?.sportId).roles[0], emergencyContact:"", username:"", password:"" }); setShowModal(true) }}
                 className="directory-add-button"
               >
                 <UserPlus size={18} />
@@ -162,7 +161,7 @@ function Players() {
         {showSuccess && (
           <div className="mb-4 bg-green-50 border border-green-200 rounded-xl p-4 flex items-center gap-3 animate-fade-in">
             <CheckCircle className="text-green-600" size={24} />
-            <p className="font-semibold text-green-800">Player added successfully!</p>
+            <div><p className="font-semibold text-green-800">Player account created successfully.</p>{createdCredentials && <p className="mt-1 text-xs text-green-800">Login: <strong>{createdCredentials.email}</strong> · Temporary password: <strong>{createdCredentials.password}</strong></p>}</div>
           </div>
         )}
 
@@ -352,6 +351,21 @@ function Players() {
                     onChange={(e) => setFormData({...formData, nickname: e.target.value})}
                     placeholder="e.g., Speedy"
                     className="w-full px-4 py-2.5 border-2 border-gray-200 rounded-xl focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 outline-none transition-all"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">
+                    Login Email {!editingPlayer && "*"}
+                  </label>
+                  <input
+                    type="email"
+                    required={!editingPlayer}
+                    disabled={Boolean(editingPlayer)}
+                    value={formData.email}
+                    onChange={(e) => setFormData({...formData, email: e.target.value})}
+                    placeholder="player@example.com"
+                    className="w-full px-4 py-2.5 border-2 border-gray-200 rounded-xl focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 outline-none transition-all disabled:bg-gray-100"
                   />
                 </div>
 

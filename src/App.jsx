@@ -20,6 +20,7 @@ import ClubsManagement from "./pages/ClubsManagement"
 import PlatformDirectory from "./pages/PlatformDirectory"
 import ParentsGuardians from "./pages/ParentsGuardians"
 import AdminControlCenter from "./pages/AdminControlCenter"
+import LegalNotice from "./pages/LegalNotice"
 import Sidebar from "./components/Sidebar"
 import BottomNav from "./components/BottomNav"
 
@@ -91,6 +92,8 @@ export default function App() {
         <Routes>
           <Route path="/" element={<Login />} />
           <Route path="/platform-login" element={<Login platformOnly />} />
+          <Route path="/privacy" element={<LegalNotice type="privacy" />} />
+          <Route path="/terms" element={<LegalNotice type="terms" />} />
 
           {[
             ["dashboard", Dashboard],
