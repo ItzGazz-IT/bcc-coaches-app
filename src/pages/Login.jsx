@@ -1,8 +1,8 @@
 import { useNavigate } from "react-router-dom"
-import { Lock, User, Shield, ArrowRight, AlertCircle, Users as UsersIcon, Crown } from "lucide-react"
+import { Lock, User, Shield, ArrowRight, AlertCircle, CheckCircle2, Users as UsersIcon, Crown } from "lucide-react"
 import { useState, useEffect } from "react"
 import { useApp } from "../contexts/AppContext"
-import { signInWithEmailAndPassword } from "firebase/auth"
+import { sendPasswordResetEmail, signInWithEmailAndPassword } from "firebase/auth"
 import { auth } from "../firebase/config"
 
 export default function Login({ platformOnly = false }) {
@@ -12,6 +12,8 @@ export default function Login({ platformOnly = false }) {
   const [password, setPassword] = useState("")
   const [selectedRole, setSelectedRole] = useState(platformOnly ? "platform-admin" : "coach")
   const [error, setError] = useState("")
+  const [resetMessage, setResetMessage] = useState("")
+  const [resettingPassword, setResettingPassword] = useState(false)
 
   // React Router can reuse this component when moving between the club and
   // platform login routes. Keep the selected login mode in sync with the route
@@ -19,6 +21,7 @@ export default function Login({ platformOnly = false }) {
   useEffect(() => {
     setSelectedRole(platformOnly ? "platform-admin" : "coach")
     setError("")
+    setResetMessage("")
   }, [platformOnly])
 
   useEffect(() => {
@@ -45,6 +48,33 @@ export default function Login({ platformOnly = false }) {
     } catch (loginError) {
       console.error("Authentication failed:", loginError.code)
       setError("Invalid email or password.")
+    }
+  }
+
+  const handleForgotPassword = async () => {
+    const email = username.trim()
+    setError("")
+    setResetMessage("")
+    if (!email) {
+      setError("Enter your email address first, then select Forgot password.")
+      return
+    }
+
+    setResettingPassword(true)
+    try {
+      await sendPasswordResetEmail(auth, email)
+      setResetMessage("If an account exists for this email, a password-reset link has been sent. Check your inbox and spam folder.")
+    } catch (resetError) {
+      console.error("Password reset failed:", resetError.code)
+      if (resetError.code === "auth/invalid-email") {
+        setError("Enter a valid email address.")
+      } else if (resetError.code === "auth/user-not-found") {
+        setResetMessage("If an account exists for this email, a password-reset link has been sent. Check your inbox and spam folder.")
+      } else {
+        setError("We could not send the reset email. Check your connection and try again.")
+      }
+    } finally {
+      setResettingPassword(false)
     }
   }
 
@@ -102,6 +132,13 @@ export default function Login({ platformOnly = false }) {
               <div className="bg-red-50 border-2 border-red-200 rounded-lg sm:rounded-xl p-3 sm:p-4 mb-4 sm:mb-6 flex items-start gap-2 sm:gap-3">
                 <AlertCircle className="text-red-500 flex-shrink-0 mt-0.5" size={18} />
                 <p className="text-xs sm:text-sm font-semibold text-red-700">{error}</p>
+              </div>
+            )}
+
+            {resetMessage && (
+              <div className="bg-emerald-50 border-2 border-emerald-200 rounded-lg sm:rounded-xl p-3 sm:p-4 mb-4 sm:mb-6 flex items-start gap-2 sm:gap-3" role="status">
+                <CheckCircle2 className="text-emerald-600 flex-shrink-0 mt-0.5" size={18} />
+                <p className="text-xs sm:text-sm font-semibold text-emerald-800">{resetMessage}</p>
               </div>
             )}
 
@@ -175,6 +212,16 @@ export default function Login({ platformOnly = false }) {
                     autoComplete="current-password"
                     className="w-full pl-10 sm:pl-12 pr-3 sm:pr-4 py-3 sm:py-3.5 border-2 border-gray-200 rounded-lg sm:rounded-xl focus:border-secondary focus:ring-4 focus:ring-secondary/20 outline-none transition-all text-sm font-medium bg-gray-50 focus:bg-white"
                   />
+                </div>
+                <div className="mt-2 flex justify-end">
+                  <button
+                    type="button"
+                    onClick={handleForgotPassword}
+                    disabled={resettingPassword}
+                    className="text-xs font-bold text-secondary hover:text-primary disabled:cursor-not-allowed disabled:opacity-60"
+                  >
+                    {resettingPassword ? "Sending reset link…" : "Forgot password?"}
+                  </button>
                 </div>
               </div>
 
