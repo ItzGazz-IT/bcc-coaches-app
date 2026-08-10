@@ -1,25 +1,24 @@
 import { useState, useEffect } from "react"
-import { Bell, Plus, Edit, Trash2, X, AlertCircle, Info, CheckCircle, Trophy } from "lucide-react"
+import { Bell, Plus, Edit, Trash2, X, AlertCircle, Info, CheckCircle, Trophy, Users, Megaphone } from "lucide-react"
 import { collection, addDoc, updateDoc, deleteDoc, doc, onSnapshot, serverTimestamp } from "firebase/firestore"
 import { db } from "../firebase/config"
 import { useApp } from "../contexts/AppContext"
 
 function Announcements() {
-  const { userRole, markAsSeen } = useApp()
+  const { userRole, markAsSeen, lastSeen, teams, players, currentClubId, currentTeamId } = useApp()
+  const clubTeams = teams.filter(team => team.clubId === currentClubId)
   const [announcements, setAnnouncements] = useState([])
+  const [groups, setGroups] = useState([])
+  const [selectedGroup, setSelectedGroup] = useState(userRole === "club-admin" ? "all" : currentTeamId)
   const [showModal, setShowModal] = useState(false)
   const [editingAnnouncement, setEditingAnnouncement] = useState(null)
   const [formData, setFormData] = useState({
     title: "",
     message: "",
     type: "info",
-    priority: "normal"
+    priority: "normal",
+    teamId: currentTeamId || ""
   })
-
-  // Mark announcements as seen when component mounts
-  useEffect(() => {
-    markAsSeen("announcements")
-  }, [])
 
   useEffect(() => {
     const unsubscribe = onSnapshot(
@@ -35,17 +34,28 @@ function Announcements() {
           const timeB = b.timestamp?.seconds || 0
           return timeB - timeA
         })
-        setAnnouncements(announcementsData)
+        setAnnouncements(announcementsData.filter(item => item.clubId === currentClubId && (userRole === "club-admin" || item.teamId === currentTeamId)))
       }
     )
     return () => unsubscribe()
-  }, [])
+  }, [currentClubId, currentTeamId, userRole])
+
+  useEffect(() => {
+    const unsubscribe = onSnapshot(collection(db, "announcementGroups"), snapshot => {
+      setGroups(snapshot.docs.map(item => ({ id: item.id, ...item.data() })).filter(group => group.clubId === currentClubId && (userRole === "club-admin" || group.teamId === currentTeamId)))
+    })
+    return () => unsubscribe()
+  }, [currentClubId, currentTeamId, userRole])
+
+  useEffect(() => { if (userRole !== "club-admin") setSelectedGroup(currentTeamId) }, [currentTeamId, userRole])
 
   const handleSubmit = async (e) => {
     e.preventDefault()
     if (formData.title && formData.message) {
       const dataToSave = {
         ...formData,
+        clubId: currentClubId,
+        groupId: formData.teamId,
         timestamp: serverTimestamp()
       }
 
@@ -61,7 +71,8 @@ function Announcements() {
         title: "",
         message: "",
         type: "info",
-        priority: "normal"
+        priority: "normal",
+        teamId: currentTeamId || ""
       })
     }
   }
@@ -73,6 +84,7 @@ function Announcements() {
       message: announcement.message,
       type: announcement.type,
       priority: announcement.priority
+      ,teamId: announcement.teamId || ""
     })
     setShowModal(true)
   }
@@ -138,11 +150,14 @@ function Announcements() {
     return date.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })
   }
 
-  const urgentAnnouncements = announcements.filter(a => a.priority === "high")
-  const normalAnnouncements = announcements.filter(a => a.priority === "normal")
+  const displayedAnnouncements = announcements.filter(item => selectedGroup === "all" || item.teamId === selectedGroup)
+  const isUnread = item => (item.timestamp?.toMillis?.() || item.timestamp?.seconds * 1000 || 0) > (lastSeen?.announcements || 0)
+  const urgentAnnouncements = displayedAnnouncements.filter(a => a.priority === "high")
+  const normalAnnouncements = displayedAnnouncements.filter(a => a.priority === "normal")
+  const selectGroup = groupId => { setSelectedGroup(groupId); if (groupId !== "all") setFormData(current => ({ ...current, teamId: groupId })); markAsSeen("announcements") }
 
   return (
-    <div className="flex-1 p-4 md:p-6 bg-gray-50 h-screen overflow-auto">
+    <div className="announcements-page flex-1 p-4 md:p-8 h-screen overflow-auto">
       <div className="max-w-5xl mx-auto">
         <div className="mb-4 md:mb-6">
           <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3">
@@ -152,7 +167,7 @@ function Announcements() {
               </h1>
               <p className="text-sm md:text-base text-gray-600 hidden md:block">Team updates and news</p>
             </div>
-            {(userRole === "coach" || userRole === "super-admin") && (
+            {(userRole === "coach" || userRole === "club-admin") && (
               <button
                 onClick={() => {
                   setEditingAnnouncement(null)
@@ -160,11 +175,12 @@ function Announcements() {
                     title: "",
                     message: "",
                     type: "info",
-                    priority: "normal"
+                    priority: "normal",
+                    teamId: selectedGroup === "all" ? "" : (selectedGroup || currentTeamId || "")
                   })
                   setShowModal(true)
                 }}
-                className="flex items-center justify-center gap-2 bg-gradient-to-r from-indigo-500 to-indigo-600 text-white px-5 py-3 rounded-xl font-bold hover:from-indigo-600 hover:to-indigo-700 transition-all w-full md:w-auto"
+                className="unyra-primary-action w-full md:w-auto"
               >
                 <Plus size={20} />
                 New Announcement
@@ -173,17 +189,25 @@ function Announcements() {
           </div>
         </div>
 
-        {announcements.length === 0 ? (
+        <section className="announcement-groups">
+          <div className="announcement-groups-head"><div><span className="eyebrow">Audience directory</span><h2>Announcement groups</h2></div><p>{groups.length} team {groups.length === 1 ? "group" : "groups"}</p></div>
+          <div className="announcement-group-grid">
+            {userRole === "club-admin" && <button onClick={() => selectGroup("all")} className={selectedGroup === "all" ? "active" : ""}><span className="group-icon"><Megaphone size={18} /></span><div><strong>All groups</strong><small>{announcements.length} announcements</small></div>{announcements.filter(isUnread).length > 0 && <b className="group-unread">{announcements.filter(isUnread).length} new</b>}</button>}
+            {groups.map(group => { const team = clubTeams.find(item => item.id === group.teamId); const memberCount = group.memberIds?.length ?? players.filter(player => player.teamId === group.teamId).length; const groupPosts = announcements.filter(item => item.teamId === group.teamId); const unread = groupPosts.filter(isUnread).length; return <button key={group.id} onClick={() => selectGroup(group.teamId)} className={selectedGroup === group.teamId ? "active" : ""}><span className="group-icon"><Users size={18} /></span><div><strong>{group.name || `${team?.name || "Team"} Announcements`}</strong><small>{memberCount} members · {groupPosts.length} posts</small></div>{unread > 0 && <b className="group-unread">{unread} new</b>}</button> })}
+          </div>
+        </section>
+
+        {displayedAnnouncements.length === 0 ? (
           <div className="bg-white rounded-2xl shadow-xl border border-gray-100 p-12 text-center">
             <Bell className="mx-auto text-gray-300 mb-4" size={64} />
             <h3 className="text-xl font-bold text-gray-800 mb-2">No Announcements Yet</h3>
             <p className="text-gray-500 mb-6">Create your first squad announcement to get started</p>
-            <button
-              onClick={() => setShowModal(true)}
-              className="bg-gradient-to-r from-indigo-500 to-indigo-600 text-white px-6 py-3 rounded-xl font-bold hover:from-indigo-600 hover:to-indigo-700 transition-all"
+            {(userRole === "coach" || userRole === "club-admin") && <button
+              onClick={() => { setFormData(current => ({ ...current, teamId: selectedGroup === "all" ? "" : (selectedGroup || currentTeamId || "") })); setShowModal(true) }}
+              className="unyra-primary-action"
             >
               Create Announcement
-            </button>
+            </button>}
           </div>
         ) : (
           <div className="space-y-6">
@@ -204,10 +228,10 @@ function Announcements() {
                         <div className="flex items-center gap-3 flex-1">
                           {getTypeIcon(announcement.type)}
                           <div className="flex-1">
-                            <h3 className="font-bold text-lg">{announcement.title}</h3>
+                            <h3 className="font-bold text-lg">{announcement.title}{isUnread(announcement) && <span className="announcement-new">New</span>}</h3>
                           </div>
                         </div>
-                        <div className="flex items-center gap-2">
+                        {(userRole === "coach" || userRole === "club-admin") && <div className="flex items-center gap-2">
                           <button
                             onClick={() => handleEdit(announcement)}
                             className="p-2 hover:bg-white/20 rounded-lg transition-colors"
@@ -220,7 +244,7 @@ function Announcements() {
                           >
                             <Trash2 size={16} />
                           </button>
-                        </div>
+                        </div>}
                       </div>
                       <div className="p-4">
                         <p className="text-gray-700 whitespace-pre-wrap">{announcement.message}</p>
@@ -248,10 +272,10 @@ function Announcements() {
                         <div className="flex items-center gap-3 flex-1">
                           {getTypeIcon(announcement.type)}
                           <div className="flex-1">
-                            <h3 className="font-bold text-lg">{announcement.title}</h3>
+                            <h3 className="font-bold text-lg">{announcement.title}{isUnread(announcement) && <span className="announcement-new">New</span>}</h3>
                           </div>
                         </div>
-                        {(userRole === "coach" || userRole === "super-admin") && (
+                        {(userRole === "coach" || userRole === "club-admin") && (
                           <div className="flex items-center gap-2">
                             <button
                               onClick={() => handleEdit(announcement)}
@@ -286,8 +310,8 @@ function Announcements() {
       {/* Add/Edit Modal */}
       {showModal && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4 md:p-6">
-          <div className="bg-white rounded-2xl shadow-2xl max-w-2xl w-full max-h-[85vh] overflow-hidden flex flex-col">
-            <div className="p-4 md:p-6 border-b border-gray-200 bg-gradient-to-r from-indigo-500 to-indigo-600 flex items-center justify-between">
+          <div className="unyra-dialog bg-white max-w-2xl w-full max-h-[85vh] overflow-hidden flex flex-col">
+            <div className="unyra-dialog-head p-4 md:p-6 flex items-center justify-between">
               <h2 className="text-xl md:text-2xl font-bold text-white">
                 {editingAnnouncement ? "Edit Announcement" : "New Announcement"}
               </h2>
@@ -313,6 +337,13 @@ function Announcements() {
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-bold text-gray-700 mb-2">Announcement group</label>
+                  <select value={formData.teamId} onChange={(e) => setFormData({ ...formData, teamId: e.target.value })} className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-indigo-500 outline-none" required disabled={userRole === "coach"}>
+                    <option value="">Choose a team group</option>
+                    {clubTeams.filter(team => userRole === "club-admin" || team.id === currentTeamId).map(team => <option key={team.id} value={team.id}>{team.name} Announcements</option>)}
+                  </select>
+                </div>
                 <div>
                   <label className="block text-sm font-bold text-gray-700 mb-2">Type</label>
                   <select
@@ -356,7 +387,7 @@ function Announcements() {
               <div className="flex gap-3 pt-4">
                 <button
                   type="submit"
-                  className="flex-1 bg-gradient-to-r from-indigo-500 to-indigo-600 text-white py-3 rounded-xl font-bold hover:from-indigo-600 hover:to-indigo-700 transition-all"
+                  className="unyra-dialog-submit flex-1"
                 >
                   {editingAnnouncement ? "Update" : "Post Announcement"}
                 </button>

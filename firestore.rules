@@ -9,56 +9,185 @@ service cloud.firestore {
       return signedIn() && request.auth.token.role is string ? request.auth.token.role : "";
     }
 
-    function isCoach() {
-      return role() == "coach" || role() == "super-admin";
+    function isStaff() {
+      return role() == "coach" || role() == "club-admin" || role() == "super-admin";
     }
 
     function isSuperAdmin() {
       return role() == "super-admin";
     }
 
+    function isClubAdmin() {
+      return role() == "club-admin";
+    }
+
     function isPlayerForSelf(playerId) {
       return role() == "player" && signedIn() && request.auth.uid == playerId;
     }
 
-    // Public read for authenticated users by default.
+    function sameClub(data) {
+      return isSuperAdmin() || (data.clubId is string && request.auth.token.clubId == data.clubId);
+    }
+
+    function assignedToTeam(teamId) {
+      return request.auth.token.teamIds is list && request.auth.token.teamIds.hasAny([teamId]);
+    }
+
+    function canManageTeamData(data) {
+      return signedIn() && sameClub(data) && (
+        isSuperAdmin() || isClubAdmin() || (role() == "coach" && assignedToTeam(data.teamId))
+      );
+    }
+
+    function canReadTeamData(data) {
+      return signedIn() && sameClub(data) && (
+        isSuperAdmin() || isClubAdmin() ||
+        (role() == "coach" && assignedToTeam(data.teamId)) ||
+        (role() == "player" && request.auth.token.teamId == data.teamId) ||
+        (role() == "guardian" && request.auth.token.teamIds is list && request.auth.token.teamIds.hasAny([data.teamId]))
+      );
+    }
+
+    // Deny collections that do not have an explicit rule below.
     match /{document=**} {
-      allow read: if signedIn();
-      allow write: if false;
+      allow read, write: if false;
     }
 
     // Core team data.
     match /players/{playerId} {
-      allow read: if signedIn();
-      allow write: if isCoach();
+      allow read: if isPlayerForSelf(playerId) || (role() == "guardian" && request.auth.token.playerIds is list && request.auth.token.playerIds.hasAny([playerId])) || canReadTeamData(resource.data);
+      allow create: if canManageTeamData(request.resource.data) && !("password" in request.resource.data);
+      allow update: if canManageTeamData(resource.data) && canManageTeamData(request.resource.data) && !("password" in request.resource.data);
+      allow delete: if canManageTeamData(resource.data);
     }
 
     match /fixtures/{fixtureId} {
-      allow read: if signedIn();
-      allow write: if isCoach();
+      allow read: if canReadTeamData(resource.data);
+      allow create: if canManageTeamData(request.resource.data);
+      allow delete: if canManageTeamData(resource.data);
+      allow update: if (canManageTeamData(resource.data) && canManageTeamData(request.resource.data)) || (
+        (role() == "player" || role() == "guardian") &&
+        resource.data.availabilityLocked != true &&
+        ((role() == "player" && request.auth.token.teamId == resource.data.teamId) || (role() == "guardian" && request.auth.token.teamIds.hasAny([resource.data.teamId]))) &&
+        request.resource.data.diff(resource.data).affectedKeys().hasOnly(["availabilityResponses", "updatedAt"]) &&
+        request.resource.data.get("availabilityResponses", {}).diff(resource.data.get("availabilityResponses", {})).affectedKeys().hasOnly(role() == "player" ? [request.auth.uid] : request.auth.token.playerIds)
+      );
+    }
+
+    match /injuries/{injuryId} {
+      allow read: if canReadTeamData(resource.data);
+      allow create: if canManageTeamData(request.resource.data) || (
+        role() == "player" && request.resource.data.playerId == request.auth.uid && request.resource.data.teamId == request.auth.token.teamId
+      ) || (
+        role() == "guardian" && request.auth.token.playerIds.hasAny([request.resource.data.playerId]) && request.auth.token.teamIds.hasAny([request.resource.data.teamId])
+      );
+      allow update: if (canManageTeamData(resource.data) && canManageTeamData(request.resource.data)) || (
+        role() == "player" && resource.data.playerId == request.auth.uid && request.resource.data.playerId == request.auth.uid && request.resource.data.teamId == resource.data.teamId
+      ) || (
+        role() == "guardian" && request.auth.token.playerIds.hasAny([resource.data.playerId]) && request.resource.data.playerId == resource.data.playerId && request.resource.data.teamId == resource.data.teamId
+      );
+      allow delete: if canManageTeamData(resource.data);
+    }
+
+    match /guardians/{guardianId} {
+      allow read: if (role() == "guardian" && request.auth.uid == guardianId) || (isStaff() && sameClub(resource.data) && (role() != "coach" || request.auth.token.teamIds.hasAny(resource.data.teamIds)));
+      allow create: if !("password" in request.resource.data) && (isSuperAdmin() || isClubAdmin() || role() == "coach" && request.auth.token.teamIds.hasAny(request.resource.data.teamIds)) && sameClub(request.resource.data);
+      allow update: if !("password" in request.resource.data) && sameClub(resource.data) && sameClub(request.resource.data) && (isSuperAdmin() || isClubAdmin() || role() == "coach" && request.auth.token.teamIds.hasAny(resource.data.teamIds) && request.auth.token.teamIds.hasAny(request.resource.data.teamIds));
+      allow delete: if sameClub(resource.data) && (isSuperAdmin() || isClubAdmin() || role() == "coach" && request.auth.token.teamIds.hasAny(resource.data.teamIds));
+    }
+
+    match /clubs/{clubId} {
+      allow read: if signedIn() && (isSuperAdmin() || request.auth.token.clubId == clubId);
+      allow create, update, delete: if isSuperAdmin();
+    }
+
+    match /teams/{teamId} {
+      allow read: if canReadTeamData(resource.data);
+      allow create: if canManageTeamData(request.resource.data);
+      allow update: if canManageTeamData(resource.data) && canManageTeamData(request.resource.data);
+      allow delete: if canManageTeamData(resource.data);
+    }
+
+    match /announcements/{itemId} {
+      allow read: if canReadTeamData(resource.data);
+      allow create: if canManageTeamData(request.resource.data);
+      allow update: if canManageTeamData(resource.data) && canManageTeamData(request.resource.data);
+      allow delete: if canManageTeamData(resource.data);
+    }
+
+    match /fitnessTests/{itemId} {
+      allow read: if canReadTeamData(resource.data);
+      allow create: if canManageTeamData(request.resource.data);
+      allow update: if canManageTeamData(resource.data) && canManageTeamData(request.resource.data);
+      allow delete: if canManageTeamData(resource.data);
+    }
+
+    match /reviews/{itemId} {
+      allow read: if canReadTeamData(resource.data);
+      allow create: if canManageTeamData(request.resource.data);
+      allow update: if canManageTeamData(resource.data) && canManageTeamData(request.resource.data);
+      allow delete: if canManageTeamData(resource.data);
+    }
+
+    match /seasonGoals/{itemId} {
+      allow read: if canReadTeamData(resource.data);
+      allow create: if canManageTeamData(request.resource.data);
+      allow update: if canManageTeamData(resource.data) && canManageTeamData(request.resource.data);
+      allow delete: if canManageTeamData(resource.data);
+    }
+
+    match /sessions/{itemId} {
+      allow read: if canReadTeamData(resource.data);
+      allow create: if canManageTeamData(request.resource.data);
+      allow update: if canManageTeamData(resource.data) && canManageTeamData(request.resource.data);
+      allow delete: if canManageTeamData(resource.data);
+    }
+
+    match /announcementGroups/{teamId} {
+      allow read: if canReadTeamData(resource.data);
+      allow create: if canManageTeamData(request.resource.data);
+      allow update: if canManageTeamData(resource.data) && canManageTeamData(request.resource.data);
+      allow delete: if canManageTeamData(resource.data);
+    }
+
+    match /auditLogs/{auditId} {
+      allow read: if canManageTeamData(resource.data);
+      allow create: if canManageTeamData(request.resource.data);
+      allow update, delete: if false;
     }
 
     match /awayGames/{gameId} {
-      allow read: if signedIn();
-      allow create, delete: if isCoach();
-      allow update: if isCoach();
+      allow read: if canReadTeamData(resource.data);
+      allow create: if canManageTeamData(request.resource.data);
+      allow update: if canManageTeamData(resource.data) && canManageTeamData(request.resource.data);
+      allow delete: if canManageTeamData(resource.data);
     }
 
     match /homeDayPlans/{planId} {
-      allow read: if signedIn();
-      allow create, delete: if isCoach();
-      // Coaches can manage all fields.
-      allow update: if isCoach();
+      allow read: if canReadTeamData(resource.data);
+      allow create: if canManageTeamData(request.resource.data);
+      allow update: if canManageTeamData(resource.data) && canManageTeamData(request.resource.data);
+      allow delete: if canManageTeamData(resource.data);
     }
 
     match /matchAnalyses/{analysisId} {
-      allow read: if signedIn();
-      allow write: if isSuperAdmin();
+      allow read: if canReadTeamData(resource.data);
+      allow create: if canManageTeamData(request.resource.data);
+      allow update: if canManageTeamData(resource.data) && canManageTeamData(request.resource.data);
+      allow delete: if canManageTeamData(resource.data);
+    }
+
+    match /clubMessages/{messageId} {
+      allow read: if canReadTeamData(resource.data);
+      allow create: if canReadTeamData(request.resource.data) && request.resource.data.senderUid == request.auth.uid;
+      allow update, delete: if request.auth.uid == resource.data.senderUid || canManageTeamData(resource.data);
     }
 
     match /coaches/{coachId} {
-      allow read: if isCoach();
-      allow write: if isSuperAdmin();
+      allow read: if isStaff() && (isSuperAdmin() || sameClub(resource.data));
+      allow create: if isSuperAdmin() && !("password" in request.resource.data);
+      allow update: if isSuperAdmin() && !("password" in request.resource.data);
+      allow delete: if isSuperAdmin();
     }
 
     match /credentials/{credentialId} {

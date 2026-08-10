@@ -1,87 +1,55 @@
-import logo from "../assets/bcc-logo.png"
 import { useNavigate } from "react-router-dom"
-import { Lock, User, Shield, ArrowRight, AlertCircle, Users as UsersIcon } from "lucide-react"
+import { Lock, User, Shield, ArrowRight, AlertCircle, Users as UsersIcon, Crown } from "lucide-react"
 import { useState, useEffect } from "react"
 import { useApp } from "../contexts/AppContext"
-import { collection, onSnapshot } from "firebase/firestore"
-import { db } from "../firebase/config"
+import { signInWithEmailAndPassword } from "firebase/auth"
+import { auth } from "../firebase/config"
 
-export default function Login() {
+export default function Login({ platformOnly = false }) {
   const navigate = useNavigate()
-  const { setUserRole, setCurrentUser, setCurrentPlayerId, players } = useApp()
-  const [coaches, setCoaches] = useState([])
+  const { authReady, userRole, currentUserProfile } = useApp()
   const [username, setUsername] = useState("")
   const [password, setPassword] = useState("")
-  const [selectedRole, setSelectedRole] = useState("coach")
+  const [selectedRole, setSelectedRole] = useState(platformOnly ? "platform-admin" : "coach")
   const [error, setError] = useState("")
-  const [coachesLoaded, setCoachesLoaded] = useState(false)
 
-  // Load coaches from Firestore
+  // React Router can reuse this component when moving between the club and
+  // platform login routes. Keep the selected login mode in sync with the route
+  // instead of retaining the previous route's role.
   useEffect(() => {
-    const unsubscribe = onSnapshot(collection(db, "coaches"), (snapshot) => {
-      const coachesData = snapshot.docs.map(doc => ({
-        id: doc.id,
-        ...doc.data()
-      }))
-      setCoaches(coachesData)
-      setCoachesLoaded(true)
-    }, (error) => {
-      console.error("Error loading coaches:", error)
-      setCoachesLoaded(true)
-    })
+    setSelectedRole(platformOnly ? "platform-admin" : "coach")
+    setError("")
+  }, [platformOnly])
 
-    return () => unsubscribe()
-  }, [])
+  useEffect(() => {
+    if (!authReady || !userRole) return
+    navigate(userRole === "super-admin" || userRole === "club-admin" && !currentUserProfile?.onboardingComplete ? "/clubs" : "/dashboard", { replace: true })
+  }, [authReady, userRole, currentUserProfile, navigate])
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault()
     setError("")
 
-    if (selectedRole === "coach") {
-      // Check coach credentials against Firestore coaches
-      const coach = coaches.find(c => c.username === username && c.password === password)
-      
-      if (coach) {
-        const expiryDate = new Date()
-        expiryDate.setDate(expiryDate.getDate() + 7) // 7 days from now
-        
-        // Determine if this coach is Gareth (Super Admin)
-        const userRole = coach.username === "Gareth" ? "super-admin" : "coach"
-        
-        localStorage.setItem("bcc-user", username)
-        localStorage.setItem("bcc-role", userRole)
-        localStorage.setItem("bcc-login-expiry", expiryDate.toISOString())
-        setUserRole(userRole)
-        setCurrentUser(username)
-        setCurrentPlayerId(null)
-        navigate("/dashboard")
-      } else {
-        setError("Invalid coach username or password")
+    try {
+      const credential = await signInWithEmailAndPassword(auth, username.trim(), password)
+      const token = await credential.user.getIdTokenResult(true)
+      const role = token.claims.role
+      const expectedRole = selectedRole === "platform-admin" ? "super-admin" : selectedRole
+      const staffRoles = ["coach", "club-admin"]
+      const roleMatches = expectedRole === "coach" ? staffRoles.includes(role) : role === expectedRole
+      if (!roleMatches) {
+        await auth.signOut()
+        setError("This account does not have access to the selected portal.")
+        return
       }
-    } else {
-      // Check player credentials
-      const player = players.find(p => p.username === username && p.password === password)
-      
-      if (player) {
-        const expiryDate = new Date()
-        expiryDate.setDate(expiryDate.getDate() + 7) // 7 days from now
-        
-        localStorage.setItem("bcc-user", username)
-        localStorage.setItem("bcc-role", "player")
-        localStorage.setItem("bcc-player-id", player.id)
-        localStorage.setItem("bcc-login-expiry", expiryDate.toISOString())
-        setUserRole("player")
-        setCurrentUser(username)
-        setCurrentPlayerId(player.id)
-        navigate("/dashboard")
-      } else {
-        setError("Invalid player username or password. Contact your coach if you don't have login credentials.")
-      }
+    } catch (loginError) {
+      console.error("Authentication failed:", loginError.code)
+      setError("Invalid email or password.")
     }
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-[#0B2558] via-[#0D2E6B] to-[#0D4C92] p-4 sm:p-6 relative overflow-hidden flex items-center">
+    <div className="login-screen dashboard-login min-h-screen p-4 sm:p-6 relative overflow-hidden flex items-center">
       {/* Animated background elements */}
       <div className="absolute inset-0 overflow-hidden">
         <div className="absolute -top-40 -left-40 w-96 h-96 bg-[#0D4C92]/30 rounded-full blur-3xl animate-pulse"></div>
@@ -96,30 +64,35 @@ export default function Login() {
       {/* Grid pattern */}
       <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.05)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.05)_1px,transparent_1px)] bg-[size:60px_60px] opacity-30"></div>
 
-      <div className="max-w-md w-full mx-auto relative z-10">
+      <div className="login-layout max-w-5xl w-full mx-auto relative z-10 grid lg:grid-cols-[1.05fr_.95fr] gap-10 items-center">
         {/* Logo and Header */}
-        <div className="text-center mb-6 sm:mb-8">
+        <div className="login-brand text-center lg:text-left mb-6 sm:mb-8">
           <div className="bg-white/10 backdrop-blur-xl rounded-2xl sm:rounded-3xl p-4 sm:p-6 inline-block mb-3 sm:mb-4 shadow-2xl border border-white/20 animate-float">
-            <img src={logo} alt="BCC Logo" className="w-16 h-16 sm:w-24 sm:h-24 mx-auto" />
+            <img src="/unyra-logo.png" alt="UNYRA logo" className="w-20 h-20 sm:w-28 sm:h-28 mx-auto lg:mx-0 rounded-2xl object-contain" />
           </div>
-          <h1 className="text-2xl sm:text-4xl font-black text-white mb-1 sm:mb-2 drop-shadow-lg px-4">
-            BCC Team Portal
+          <p className="hidden lg:block text-cyan-300 text-xs font-black tracking-[.28em] uppercase mb-5">The operating system for modern clubs</p>
+          <h1 className="text-4xl sm:text-6xl font-black text-white mb-3 tracking-[-.05em] leading-[.95] px-4 lg:px-0">
+            UNYRA
           </h1>
-          <p className="text-sm sm:text-base text-white/80 font-medium px-4">
-            Seniors & Reserves Management
+          <p className="text-sm sm:text-lg text-white/70 font-medium px-4 lg:px-0 max-w-lg">
+            {platformOnly ? "Platform Administration" : "Clubs, Coaches & Players Portal"}
           </p>
         </div>
 
         {/* Main login card */}
-        <div className="bg-white/95 backdrop-blur-xl rounded-xl sm:rounded-2xl shadow-2xl overflow-hidden border border-white/20">
+        <div className="login-card bg-white rounded-2xl overflow-hidden">
           <div className="bg-gradient-to-r from-primary to-secondary p-4 sm:p-6">
             <div className="flex items-center gap-3">
               <div className="bg-white/20 backdrop-blur-lg rounded-lg sm:rounded-xl p-2 sm:p-2.5">
                 <Shield className="text-white" size={20} />
               </div>
               <div>
-                <h2 className="text-lg sm:text-xl font-bold text-white">Sign In</h2>
-                <p className="text-white/80 text-xs sm:text-sm">Access your account</p>
+                <h2 className="text-lg sm:text-xl font-bold text-white">
+                  {platformOnly ? "Platform Admin Sign In" : "Club Sign In"}
+                </h2>
+                <p className="text-white/80 text-xs sm:text-sm">
+                  Access your account
+                </p>
               </div>
             </div>
           </div>
@@ -134,11 +107,11 @@ export default function Login() {
 
             <form onSubmit={handleSubmit} className="space-y-4 sm:space-y-5">
               {/* Role Selection */}
-              <div>
+              {!platformOnly && <div>
                 <label className="block text-xs sm:text-sm font-bold text-gray-700 mb-2 sm:mb-3">
                   I am a
                 </label>
-                <div className="grid grid-cols-2 gap-2 sm:gap-3">
+                <div className="grid grid-cols-3 gap-2 sm:gap-3">
                   <button
                     type="button"
                     onClick={() => setSelectedRole("coach")}
@@ -149,8 +122,9 @@ export default function Login() {
                     }`}
                   >
                     <Shield className={`mx-auto mb-1.5 sm:mb-2 ${selectedRole === "coach" ? 'text-secondary' : 'text-gray-400'}`} size={20} />
-                    <div className={`text-xs sm:text-sm font-bold ${selectedRole === "coach" ? 'text-secondary' : 'text-gray-600'}`}>Coach</div>
+                    <div className={`text-[10px] sm:text-xs font-bold ${selectedRole === "coach" ? 'text-secondary' : 'text-gray-600'}`}>Club Staff</div>
                   </button>
+                  <button type="button" onClick={() => setSelectedRole("guardian")} className={`p-3 sm:p-4 rounded-lg sm:rounded-xl border-2 transition-all ${selectedRole === "guardian" ? 'border-secondary bg-secondary/10 shadow-lg' : 'border-gray-200 hover:border-gray-300'}`}><Shield className={`mx-auto mb-1.5 sm:mb-2 ${selectedRole === "guardian" ? 'text-secondary' : 'text-gray-400'}`} size={20}/><div className={`text-[10px] sm:text-xs font-bold ${selectedRole === "guardian" ? 'text-secondary' : 'text-gray-600'}`}>Parent</div></button>
                   <button
                     type="button"
                     onClick={() => setSelectedRole("player")}
@@ -161,23 +135,24 @@ export default function Login() {
                     }`}
                   >
                     <UsersIcon className={`mx-auto mb-1.5 sm:mb-2 ${selectedRole === "player" ? 'text-secondary' : 'text-gray-400'}`} size={20} />
-                    <div className={`text-xs sm:text-sm font-bold ${selectedRole === "player" ? 'text-secondary' : 'text-gray-600'}`}>Player</div>
+                    <div className={`text-[10px] sm:text-xs font-bold ${selectedRole === "player" ? 'text-secondary' : 'text-gray-600'}`}>Player</div>
                   </button>
                 </div>
-              </div>
+              </div>}
 
               {/* Username input */}
               <div className="relative group">
                 <label className="block text-xs sm:text-sm font-bold text-gray-700 mb-1.5 sm:mb-2">
-                  Username
+                  Email
                 </label>
                 <div className="relative">
                   <User className="absolute left-3 sm:left-4 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-secondary transition-colors" size={16} />
                   <input
-                    type="text"
+                    type="email"
                     value={username}
                     onChange={(e) => setUsername(e.target.value)}
-                    placeholder="Enter your username"
+                    placeholder="Enter your email"
+                    autoComplete="email"
                     required
                     className="w-full pl-10 sm:pl-12 pr-3 sm:pr-4 py-3 sm:py-3.5 border-2 border-gray-200 rounded-lg sm:rounded-xl focus:border-secondary focus:ring-4 focus:ring-secondary/20 outline-none transition-all text-sm font-medium bg-gray-50 focus:bg-white"
                   />
@@ -197,6 +172,7 @@ export default function Login() {
                     onChange={(e) => setPassword(e.target.value)}
                     placeholder="Enter your password"
                     required
+                    autoComplete="current-password"
                     className="w-full pl-10 sm:pl-12 pr-3 sm:pr-4 py-3 sm:py-3.5 border-2 border-gray-200 rounded-lg sm:rounded-xl focus:border-secondary focus:ring-4 focus:ring-secondary/20 outline-none transition-all text-sm font-medium bg-gray-50 focus:bg-white"
                   />
                 </div>
@@ -207,16 +183,21 @@ export default function Login() {
                 type="submit"
                 className="w-full bg-gradient-to-r from-secondary to-accent text-white py-3.5 sm:py-4 rounded-lg sm:rounded-xl font-bold shadow-lg hover:shadow-2xl hover:scale-[1.02] transition-all duration-300 mt-6 sm:mt-8 inline-flex items-center justify-center gap-2 group text-sm sm:text-base"
               >
-                <span>Sign In</span>
+                <span>{authReady ? "Sign In" : "Checking session…"}</span>
                 <ArrowRight size={18} className="group-hover:translate-x-1 transition-transform" />
               </button>
             </form>
+            {!platformOnly ? (
+              <button onClick={() => navigate('/platform-login')} className="w-full mt-5 text-xs font-semibold text-purple-700 hover:text-purple-900 flex items-center justify-center gap-1"><Crown size={14} /> Platform administrator sign in</button>
+            ) : (
+              <button onClick={() => navigate('/')} className="w-full mt-5 text-xs font-semibold text-gray-600 hover:text-gray-900">Return to club sign in</button>
+            )}
           </div>
         </div>
 
         {/* Footer */}
         <p className="text-center text-white/70 text-xs sm:text-sm mt-4 sm:mt-6 font-medium drop-shadow-lg px-4">
-          © 2026 BCC Football Seniors. Designed By Gareth Van Den Aardweg
+          © 2026 UNYRA
         </p>
       </div>
     </div>

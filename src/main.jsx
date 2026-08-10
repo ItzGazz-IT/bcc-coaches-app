@@ -3,6 +3,10 @@ import ReactDOM from "react-dom/client"
 import App from "./App"
 import "./index.css"
 
+// The application uses a single, consistent light visual system.
+document.documentElement.classList.remove('dark')
+localStorage.removeItem('team-manager-dark-mode')
+
 class RootErrorBoundary extends React.Component {
   constructor(props) {
     super(props)
@@ -40,8 +44,8 @@ class RootErrorBoundary extends React.Component {
 if ('serviceWorker' in navigator) {
   if (import.meta.env.PROD) {
     window.addEventListener('load', () => {
-      navigator.serviceWorker.register('/bcc-coaches-app/sw.js', {
-        scope: '/bcc-coaches-app/'
+      navigator.serviceWorker.register('/sw.js', {
+        scope: '/'
       }).then(registration => {
         console.log('SW registered:', registration);
       }).catch(error => {

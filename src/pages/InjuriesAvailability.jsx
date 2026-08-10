@@ -1,16 +1,27 @@
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { UserPlus, AlertTriangle, CheckCircle, Clock, Edit, Trash2, Search, UserCheck, X, Heart } from "lucide-react"
 import { useApp } from "../contexts/AppContext"
 
 function InjuriesAvailability() {
-  const { players, injuries, addInjury, updateInjury, deleteInjury, getPlayerInjuryStatus, userRole, currentPlayerId } = useApp()
+  const { players, injuries, addInjury, updateInjury, deleteInjury, userRole, currentPlayerId, teams, currentClubId, currentTeamId } = useApp()
+  const availableTeams = teams.filter(team => team.clubId === currentClubId && (userRole === "club-admin" || team.id === currentTeamId))
+  const playerTeamId = players.find(player => player.id === currentPlayerId)?.teamId || ""
+  const isFamilyView = userRole === "player" || userRole === "guardian"
+  const [selectedTeamId, setSelectedTeamId] = useState(isFamilyView ? playerTeamId : currentTeamId || "")
+  const teamPlayers = players.filter(player => player.teamId === selectedTeamId)
+
+  useEffect(() => {
+    if (isFamilyView && playerTeamId) setSelectedTeamId(playerTeamId)
+    else if (!availableTeams.some(team => team.id === selectedTeamId)) setSelectedTeamId(availableTeams[0]?.id || "")
+  }, [teams, players, currentClubId, currentTeamId, userRole, selectedTeamId, playerTeamId, isFamilyView])
 
   const [formData, setFormData] = useState({
     playerId: "",
     type: "injury",
     description: "",
     expectedReturn: "",
-    notes: ""
+    notes: "",
+    teamId: currentTeamId || ""
   })
 
   const [editingId, setEditingId] = useState(null)
@@ -18,26 +29,31 @@ function InjuriesAvailability() {
   const [filterStatus, setFilterStatus] = useState("all")
   const [showModal, setShowModal] = useState(false)
   const [showSuccess, setShowSuccess] = useState(false)
+  const [submitError, setSubmitError] = useState("")
+  const [saving, setSaving] = useState(false)
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault()
     if (formData.playerId && formData.description) {
-      if (editingId) {
-        updateInjury(editingId, formData)
-        setEditingId(null)
-      } else {
-        addInjury(formData)
+      const record = {
+        ...formData,
+        status: formData.type === "injury" ? "injured" : "unavailable"
       }
-      setFormData({
-        playerId: "",
-        type: "injury",
-        description: "",
-        expectedReturn: "",
-        notes: ""
-      })
-      setShowModal(false)
-      setShowSuccess(true)
-      setTimeout(() => setShowSuccess(false), 3000)
+      setSaving(true)
+      setSubmitError("")
+      try {
+        if (editingId) await updateInjury(editingId, record)
+        else await addInjury(record)
+        setEditingId(null)
+        setFormData({ playerId: "", type: "injury", description: "", expectedReturn: "", notes: "", teamId: selectedTeamId })
+        setShowModal(false)
+        setShowSuccess(true)
+        setTimeout(() => setShowSuccess(false), 3000)
+      } catch (error) {
+        setSubmitError(error?.message || "The report could not be saved. Please try again.")
+      } finally {
+        setSaving(false)
+      }
     }
   }
 
@@ -72,9 +88,10 @@ function InjuriesAvailability() {
   const filteredInjuries = injuries.filter(injury => {
     const player = players.find(p => p.id === injury.playerId)
     if (!player) return false
+    if (player.teamId !== selectedTeamId) return false
 
     // For players, only show their own injuries
-    if (userRole === "player" && currentPlayerId && injury.playerId !== currentPlayerId) {
+    if (isFamilyView && currentPlayerId && injury.playerId !== currentPlayerId) {
       return false
     }
 
@@ -89,7 +106,7 @@ function InjuriesAvailability() {
   })
 
   // Get set of valid player IDs
-  const validPlayerIds = new Set(players.map(p => p.id))
+  const validPlayerIds = new Set(teamPlayers.map(p => p.id))
   
   // Only count injuries for players that still exist
   const validInjuries = injuries.filter(i => validPlayerIds.has(i.playerId))
@@ -103,7 +120,7 @@ function InjuriesAvailability() {
       .filter(i => i.status === 'injured' || i.status === 'unavailable')
       .map(i => i.playerId)
   )
-  const availableCount = players.length - unavailablePlayerIds.size
+  const availableCount = teamPlayers.length - unavailablePlayerIds.size
   const recoveredCount = validInjuries.filter(i => i.status === 'recovered').length
 
   return (
@@ -113,29 +130,36 @@ function InjuriesAvailability() {
           <div className="flex items-start md:items-center justify-between gap-3">
             <div className="flex-1">
               <h1 className="text-2xl md:text-4xl font-black bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent mb-1">
-                {userRole === "player" ? "Injury or No Attendance" : "Injuries"}
+                Injury / Absence
               </h1>
               <p className="text-sm md:text-base text-gray-600 hidden md:block">
-                {userRole === "player" ? "Track your injury and absence status" : "Player health and availability"}
+                Report and manage player injuries and absences
               </p>
             </div>
-            <button
+            <div className="flex flex-col sm:flex-row gap-3 min-w-[220px]">
+            {!isFamilyView && <select value={selectedTeamId} onChange={(e) => setSelectedTeamId(e.target.value)} className="unyra-field" aria-label="Select team">
+              <option value="">Choose a team</option>
+              {availableTeams.map(team => <option key={team.id} value={team.id}>{team.name}</option>)}
+            </select>}
+            <button disabled={!selectedTeamId}
               onClick={() => {
                 setShowModal(true)
                 setEditingId(null)
                 setFormData({
-                  playerId: userRole === "player" && currentPlayerId ? currentPlayerId : "",
+                  playerId: isFamilyView && currentPlayerId ? currentPlayerId : "",
                   type: "injury",
                   description: "",
                   expectedReturn: "",
-                  notes: ""
+                  notes: "",
+                  teamId: selectedTeamId
                 })
               }}
-              className="bg-gradient-to-r from-red-500 to-orange-600 text-white px-6 py-3 rounded-xl font-bold shadow-lg hover:shadow-xl hover:scale-[1.02] transition-all duration-300 inline-flex items-center gap-2"
+              className="unyra-primary-action inline-flex items-center justify-center gap-2"
             >
               <Heart size={20} />
-              {userRole === "player" ? "Update My Status" : "Report Injury"}
+              {isFamilyView ? "Report Injury / Absence" : "Add Injury / Absence"}
             </button>
+            </div>
           </div>
         </div>
 
@@ -179,7 +203,7 @@ function InjuriesAvailability() {
                 <Clock className="text-white" size={20} />
               </div>
               <div>
-                <p className="text-xs font-bold text-gray-500 uppercase">Unavailable</p>
+                <p className="text-xs font-bold text-gray-500 uppercase">Absent</p>
                 <p className="text-2xl font-black text-amber-600">{unavailableCount}</p>
               </div>
             </div>
@@ -201,14 +225,14 @@ function InjuriesAvailability() {
         {/* Injuries List */}
         <div className="bg-white rounded-2xl shadow-xl border border-gray-100">
           <div className="p-6 border-b border-gray-100">
-            <h2 className="text-xl font-bold text-gray-800 mb-4">{userRole === "player" ? "My Injury or No Attendance" : "Player Status"}</h2>
+            <h2 className="text-xl font-bold text-gray-800 mb-4">{isFamilyView ? (userRole === "guardian" ? "Child Injuries / Absences" : "My Injuries / Absences") : "Player Injuries / Absences"}</h2>
 
             <div className="flex gap-3">
               <div className="relative flex-1">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
                 <input
                   type="text"
-                  placeholder="Search players or injuries..."
+                  placeholder="Search players, injuries or absences..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                   className="w-full pl-10 pr-4 py-2.5 border-2 border-gray-200 rounded-xl focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 outline-none transition-all"
@@ -220,9 +244,9 @@ function InjuriesAvailability() {
                 onChange={(e) => setFilterStatus(e.target.value)}
                 className="px-4 py-2.5 border-2 border-gray-200 rounded-xl focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 outline-none transition-all bg-white"
               >
-                <option value="all">All Status</option>
+                <option value="all">All statuses</option>
                 <option value="injured">Injured</option>
-                <option value="unavailable">Unavailable</option>
+                <option value="unavailable">Absent</option>
                 <option value="recovered">Recovered</option>
               </select>
             </div>
@@ -232,8 +256,8 @@ function InjuriesAvailability() {
             {filteredInjuries.length === 0 ? (
               <div className="text-center py-12">
                 <CheckCircle className="mx-auto text-green-300 mb-3" size={48} />
-                <p className="text-gray-500 font-medium">{userRole === "player" ? "No active Injury or No Attendance entries" : "All players are available"}</p>
-                <p className="text-gray-400 text-sm mt-1">{userRole === "player" ? "You have not reported any injuries or absences" : "No injuries or unavailability reported"}</p>
+                <p className="text-gray-500 font-medium">{isFamilyView ? "No active injuries or absences" : "All players are available"}</p>
+                <p className="text-gray-400 text-sm mt-1">{isFamilyView ? "No injury or absence has been reported" : "No injuries or absences reported"}</p>
               </div>
             ) : (
               <div className="space-y-3">
@@ -258,7 +282,7 @@ function InjuriesAvailability() {
                           }`}>
                             {getStatusIcon(injury.status)}
                             {injury.status === 'recovered' ? 'Recovered' :
-                             injury.type === 'injury' ? 'Injured' : 'Unavailable'}
+                             injury.type === 'injury' ? 'Injured' : 'Absent'}
                           </span>
                           <span className="px-2 py-1 rounded text-xs font-bold bg-indigo-100 text-indigo-700">
                             Squad
@@ -304,7 +328,7 @@ function InjuriesAvailability() {
                           <Edit size={16} className="text-blue-600" />
                         </button>
 
-                        {(userRole === "coach" || userRole === "super-admin") && (
+                        {(userRole === "coach" || userRole === "club-admin") && (
                           <button
                             onClick={() => deleteInjury(injury.id)}
                             className="p-2 hover:bg-red-100 rounded-lg transition-colors"
@@ -332,7 +356,7 @@ function InjuriesAvailability() {
                     <Heart className="text-white" size={22} />
                   </div>
                   <h2 className="text-xl font-bold text-gray-800">
-                    {editingId ? 'Edit Status' : 'Report Injury/Availability'}
+                    {editingId ? 'Edit Injury / Absence' : 'Report Injury / Absence'}
                   </h2>
                 </div>
                 <button
@@ -354,7 +378,8 @@ function InjuriesAvailability() {
               </div>
 
               <form onSubmit={handleSubmit} className="p-6 space-y-4 overflow-y-auto flex-1">
-                {(userRole === "coach" || userRole === "super-admin") ? (
+                {submitError && <div className="rounded-xl border border-red-200 bg-red-50 p-3 text-sm font-semibold text-red-700">{submitError}</div>}
+                {(userRole === "coach" || userRole === "club-admin") ? (
                   <div>
                     <label className="block text-sm font-semibold text-gray-700 mb-2">
                       Player *
@@ -366,9 +391,9 @@ function InjuriesAvailability() {
                       className="w-full px-4 py-2.5 border-2 border-gray-200 rounded-xl focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 outline-none transition-all bg-white"
                     >
                       <option value="">Select Player</option>
-                      {players.map(player => (
+                      {teamPlayers.map(player => (
                         <option key={player.id} value={player.id}>
-                          {player.firstName} {player.lastName} (Squad)
+                          {player.firstName} {player.lastName}
                         </option>
                       ))}
                     </select>
@@ -383,7 +408,7 @@ function InjuriesAvailability() {
 
                 <div>
                   <label className="block text-sm font-semibold text-gray-700 mb-2">
-                    Type
+                    Report type
                   </label>
                   <select
                     value={formData.type}
@@ -391,9 +416,7 @@ function InjuriesAvailability() {
                     className="w-full px-4 py-2.5 border-2 border-gray-200 rounded-xl focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 outline-none transition-all bg-white"
                   >
                     <option value="injury">Injury</option>
-                    <option value="illness">Illness</option>
-                    <option value="personal">Personal Leave</option>
-                    <option value="other">Other</option>
+                    <option value="absence">Absence</option>
                   </select>
                 </div>
 
@@ -406,7 +429,7 @@ function InjuriesAvailability() {
                     required
                     value={formData.description}
                     onChange={(e) => setFormData({...formData, description: e.target.value})}
-                    placeholder="e.g., Sprained ankle, Food poisoning"
+                    placeholder="e.g., Sprained ankle or unavailable for work"
                     className="w-full px-4 py-2.5 border-2 border-gray-200 rounded-xl focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 outline-none transition-all"
                   />
                 </div>
@@ -457,10 +480,11 @@ function InjuriesAvailability() {
                   </button>
                   <button
                     type="submit"
+                    disabled={saving}
                     className="flex-1 bg-gradient-to-r from-red-500 to-orange-600 text-white px-6 py-3 rounded-xl font-bold shadow-lg hover:shadow-xl hover:scale-[1.02] transition-all duration-300 inline-flex items-center justify-center gap-2"
                   >
                     <Heart size={18} />
-                    {editingId ? 'Update' : 'Report'}
+                    {saving ? 'Saving…' : editingId ? 'Update' : 'Report'}
                   </button>
                 </div>
               </form>

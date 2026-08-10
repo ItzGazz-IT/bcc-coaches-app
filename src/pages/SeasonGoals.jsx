@@ -5,7 +5,10 @@ import { collection, addDoc, updateDoc, deleteDoc, doc, onSnapshot } from "fireb
 import { db } from "../firebase/config"
 
 function SeasonGoals() {
-  const { fixtures } = useApp()
+  const { fixtures, teams, currentClubId, currentTeamId, userRole } = useApp()
+  const availableTeams = teams.filter(team => team.clubId === currentClubId && (userRole === "club-admin" || team.id === currentTeamId))
+  const [selectedTeamId, setSelectedTeamId] = useState(currentTeamId || "")
+  const currentTeam = availableTeams.find(team => team.id === selectedTeamId)
   const [goals, setGoals] = useState([])
   const [showModal, setShowModal] = useState(false)
   const [editingGoal, setEditingGoal] = useState(null)
@@ -14,8 +17,15 @@ function SeasonGoals() {
     category: "League",
     target: "",
     current: 0,
-    description: ""
+    description: "",
+    teamId: currentTeamId || ""
   })
+
+  useEffect(() => {
+    if (!availableTeams.some(team => team.id === selectedTeamId)) {
+      setSelectedTeamId(availableTeams[0]?.id || "")
+    }
+  }, [teams, currentClubId, currentTeamId, userRole, selectedTeamId])
 
   useEffect(() => {
     const unsubscribe = onSnapshot(collection(db, "seasonGoals"), (snapshot) => {
@@ -23,19 +33,20 @@ function SeasonGoals() {
         id: doc.id,
         ...doc.data()
       }))
-      setGoals(goalsData)
+      setGoals(goalsData.filter(goal => goal.clubId === currentClubId && goal.teamId === selectedTeamId))
     })
     return () => unsubscribe()
-  }, [])
+  }, [currentClubId, selectedTeamId])
 
   const handleSubmit = async (e) => {
     e.preventDefault()
-    if (formData.title && formData.target) {
+    if (formData.title && formData.target && formData.teamId) {
       if (editingGoal) {
-        await updateDoc(doc(db, "seasonGoals", editingGoal.id), formData)
+        await updateDoc(doc(db, "seasonGoals", editingGoal.id), { ...formData, clubId: currentClubId })
       } else {
-        await addDoc(collection(db, "seasonGoals"), formData)
+        await addDoc(collection(db, "seasonGoals"), { ...formData, clubId: currentClubId, createdAt: new Date().toISOString() })
       }
+      setSelectedTeamId(formData.teamId)
       setShowModal(false)
       setEditingGoal(null)
       setFormData({
@@ -43,7 +54,8 @@ function SeasonGoals() {
         category: "League",
         target: "",
         current: 0,
-        description: ""
+        description: "",
+        teamId: formData.teamId
       })
     }
   }
@@ -55,7 +67,8 @@ function SeasonGoals() {
       category: goal.category,
       target: goal.target,
       current: goal.current,
-      description: goal.description || ""
+      description: goal.description || "",
+      teamId: goal.teamId || selectedTeamId
     })
     setShowModal(true)
   }
@@ -72,10 +85,10 @@ function SeasonGoals() {
   }
 
   const squadStats = {
-    matches: fixtures.filter(f => f.status === "Completed").length,
-    wins: fixtures.filter(f => f.result === "Win").length,
+    matches: fixtures.filter(f => (f.teamId || f.team) === selectedTeamId && f.status === "Completed").length,
+    wins: fixtures.filter(f => (f.teamId || f.team) === selectedTeamId && f.result === "Win").length,
     goals: fixtures
-      .filter(f => f.scorers)
+      .filter(f => (f.teamId || f.team) === selectedTeamId && f.scorers)
       .reduce((sum, f) => sum + (f.scorers?.length || 0), 0)
   }
 
@@ -93,11 +106,21 @@ function SeasonGoals() {
           <div className="flex items-start md:items-center justify-between gap-3">
             <div className="flex-1">
               <h1 className="text-2xl md:text-4xl font-black bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent mb-1">
-                Season Goals
+                Team Goals
               </h1>
-              <p className="text-sm md:text-base text-gray-600 hidden md:block">Track team objectives and progress</p>
+              <p className="text-sm md:text-base text-gray-600 hidden md:block">{currentTeam ? `Objectives for ${currentTeam.name}` : "Select a team to manage its objectives"}</p>
             </div>
-            <button
+            <div className="flex flex-col sm:flex-row gap-3 min-w-[220px]">
+              <select
+                value={selectedTeamId}
+                onChange={(e) => setSelectedTeamId(e.target.value)}
+                className="unyra-field"
+                aria-label="Select team"
+              >
+                <option value="">Choose a team</option>
+                {availableTeams.map(team => <option key={team.id} value={team.id}>{team.name}</option>)}
+              </select>
+            <button disabled={!selectedTeamId}
               onClick={() => {
                 setEditingGoal(null)
                 setFormData({
@@ -105,16 +128,18 @@ function SeasonGoals() {
                   category: "League",
                   target: "",
                   current: 0,
-                  description: ""
+                  description: "",
+                  teamId: selectedTeamId
                 })
                 setShowModal(true)
               }}
-              className="btn btn-purple flex items-center gap-2 text-sm flex-shrink-0"
+              className="unyra-primary-action flex items-center justify-center gap-2 text-sm flex-shrink-0"
             >
               <Plus size={18} />
               <span className="hidden sm:inline">Add Goal</span>
               <span className="sm:hidden">Add</span>
             </button>
+            </div>
           </div>
         </div>
 
@@ -290,20 +315,34 @@ function SeasonGoals() {
       {/* Add/Edit Goal Modal */}
       {showModal && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-6">
-          <div className="bg-white rounded-2xl shadow-2xl max-w-2xl w-full max-h-[85vh] overflow-hidden flex flex-col">
-            <div className="p-6 border-b border-gray-200 bg-gradient-to-r from-purple-500 to-purple-600 flex items-center justify-between">
-              <h2 className="text-2xl font-bold text-white">
+          <div className="unyra-dialog max-w-2xl w-full max-h-[85vh] overflow-hidden flex flex-col">
+            <div className="unyra-dialog-head flex items-center justify-between">
+              <h2 className="text-2xl font-bold">
                 {editingGoal ? "Edit Goal" : "Add New Goal"}
               </h2>
               <button
                 onClick={() => setShowModal(false)}
-                className="p-2 hover:bg-white/20 rounded-lg transition-colors"
+                className="p-2 hover:bg-black/5 rounded-lg transition-colors"
               >
-                <X size={24} className="text-white" />
+                <X size={24} />
               </button>
             </div>
 
             <form onSubmit={handleSubmit} className="p-6 space-y-5 overflow-y-auto flex-1">
+              <div>
+                <label className="block text-sm font-bold text-gray-700 mb-2">Team</label>
+                <select
+                  value={formData.teamId}
+                  onChange={(e) => setFormData({ ...formData, teamId: e.target.value })}
+                  className="unyra-field w-full"
+                  required
+                  disabled={userRole !== "club-admin"}
+                >
+                  <option value="">Choose which team</option>
+                  {availableTeams.map(team => <option key={team.id} value={team.id}>{team.name}</option>)}
+                </select>
+                <p className="mt-2 text-xs text-gray-500">This goal and its progress will belong only to the selected team.</p>
+              </div>
               <div>
                 <label className="block text-sm font-bold text-gray-700 mb-2">Goal Title</label>
                 <input
@@ -372,7 +411,7 @@ function SeasonGoals() {
               <div className="flex gap-3 pt-4">
                 <button
                   type="submit"
-                  className="btn btn-purple flex-1 text-sm md:text-base"
+                  className="unyra-dialog-submit flex-1 text-sm md:text-base"
                 >
                   {editingGoal ? "Update Goal" : "Add Goal"}
                 </button>

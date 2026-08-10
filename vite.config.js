@@ -8,38 +8,37 @@ export default defineConfig({
     react(),
     VitePWA({
       registerType: 'autoUpdate',
-      includeAssets: ['favicon.ico', 'robots.txt', 'apple-touch-icon.png'],
       manifest: {
-        name: 'BCC Coaches Portal',
-        short_name: 'BCC Coaches',
-        description: 'Team management portal for BCC coaches',
+        name: 'UNYRA',
+        short_name: 'UNYRA',
+        description: 'Team management portal for coaches and players',
         theme_color: '#4F46E5',
         background_color: '#ffffff',
         display: 'standalone',
         orientation: 'portrait',
-        scope: '/bcc-coaches-app/',
-        start_url: '/bcc-coaches-app/',
+        scope: '/',
+        start_url: '/',
         icons: [
           {
-            src: '/bcc-coaches-app/bcc-logo.png',
+            src: '/unyra-icon-192.png',
             sizes: '192x192',
             type: 'image/png',
             purpose: 'any'
           },
           {
-            src: '/bcc-coaches-app/bcc-logo.png',
+            src: '/unyra-icon-512.png',
             sizes: '512x512',
             type: 'image/png',
             purpose: 'any'
           },
           {
-            src: '/bcc-coaches-app/bcc-logo.png',
+            src: '/unyra-icon-192.png',
             sizes: '192x192',
             type: 'image/png',
             purpose: 'maskable'
           },
           {
-            src: '/bcc-coaches-app/bcc-logo.png',
+            src: '/unyra-icon-512.png',
             sizes: '512x512',
             type: 'image/png',
             purpose: 'maskable'
@@ -67,5 +66,5 @@ export default defineConfig({
       }
     })
   ],
-  base: '/bcc-coaches-app/',
+  base: '/',
 })

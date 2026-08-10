@@ -1,10 +1,9 @@
-import { CalendarDays, Users, ClipboardCheck, Heart, UserPlus, AlertCircle, CheckCircle, Trophy, Target, BarChart3 } from "lucide-react"
+import { CalendarDays, Users, ClipboardCheck, Heart, UserPlus, AlertCircle, CheckCircle, Trophy, Target, BarChart3, Building2, UserCog } from "lucide-react"
 import { useApp } from "../contexts/AppContext"
 import { Link } from "react-router-dom"
 import { useState, useEffect, useMemo } from "react"
 import { collection, query, orderBy, onSnapshot } from "firebase/firestore"
 import { db } from "../firebase/config"
-import logo from "../assets/bcc-logo.png"
 import { usePullToRefresh } from "../hooks/usePullToRefresh"
 import PullToRefreshIndicator from "../components/PullToRefreshIndicator"
 
@@ -40,8 +39,11 @@ function StatCard({ title, value, icon: Icon, gradient, delay = 0, to, subtitle 
   )
 }
 
+function AdminMetric({ label, value, detail, icon: Icon, to }) { return <Link to={to} className="admin-metric"><Icon size={19} /><div><span>{label}</span><strong>{value}</strong><small>{detail}</small></div></Link> }
+function EmptyDashboard({ text }) { return <p className="admin-empty">{text}</p> }
+
 export default function Dashboard() {
-  const { players, injuries, userRole, currentPlayerId, fixtures } = useApp()
+  const { players, injuries, userRole, currentPlayerId, fixtures, clubs, teams, coaches, currentClubId, currentTeamId } = useApp()
   const [sessions, setSessions] = useState([])
   const [refreshKey, setRefreshKey] = useState(0)
   
@@ -62,14 +64,14 @@ export default function Dashboard() {
         id: doc.id,
         ...doc.data()
       }))
-      setSessions(sessionsData)
+      setSessions(sessionsData.filter(session => !currentClubId || (session.clubId === currentClubId && (!currentTeamId || session.teamId === currentTeamId))))
     })
     return () => unsubscribe()
-  }, [])
+  }, [currentClubId, currentTeamId])
   
   // Get current player data if logged in as player
   const currentPlayer = useMemo(() => {
-    if (userRole === "player" && currentPlayerId) {
+    if ((userRole === "player" || userRole === "guardian") && currentPlayerId) {
       return players.find(p => p.id === currentPlayerId)
     }
     return null
@@ -154,48 +156,24 @@ export default function Dashboard() {
       }
     }
     
-    // Fallback to default training schedule (Tue, Wed, Thu at 18:30)
-    const currentDay = today.getDay()
-    let daysToAdd = 0
-    
-    if (currentDay === 0 || currentDay === 1) { // Sunday or Monday
-      daysToAdd = 2 - currentDay // Next Tuesday
-    } else if (currentDay === 2) { // Tuesday
-      daysToAdd = 0 // Today
-    } else if (currentDay === 3) { // Wednesday
-      daysToAdd = 0 // Today
-    } else if (currentDay === 4) { // Thursday
-      daysToAdd = 0 // Today
-    } else { // Friday or Saturday
-      daysToAdd = (9 - currentDay) % 7 // Next Tuesday
-    }
-    
-    const nextDate = new Date(today)
-    nextDate.setDate(today.getDate() + daysToAdd)
-    
-    return {
-      day: nextDate.toLocaleDateString('en-US', { weekday: 'long' }),
-      date: nextDate.toLocaleDateString('en-GB', { day: '2-digit', month: 'short' }),
-      time: '18:30',
-      type: 'Training'
-    }
+    return null
   }
 
   const nextTraining = getNextTrainingSession()
 
   // Render player-specific dashboard
-  if (userRole === "player" && currentPlayer) {
+  if ((userRole === "player" || userRole === "guardian") && currentPlayer) {
     return (
-      <div className="flex-1 p-4 md:p-6 bg-gray-50 dark:bg-gray-950 min-h-screen overflow-y-auto">
+      <div className="dashboard-page flex-1 p-4 md:p-8 min-h-screen overflow-y-auto">
         <PullToRefreshIndicator isPulling={isPulling} pullDistance={pullDistance} />
         <div className="max-w-7xl mx-auto">
           {/* Mobile Logo Header */}
           <div className="md:hidden mb-4 bg-white rounded-xl shadow-sm p-4 border border-gray-100">
             <div className="flex items-center gap-3">
-              <img src={logo} alt="BCC Logo" className="w-12 h-12" />
+              <img src="/unyra-logo.png" alt="UNYRA logo" className="w-12 h-12 rounded-xl object-contain" />
               <div>
                 <h2 className="text-lg font-black bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">
-                  BCC Player Portal
+                  Player Portal
                 </h2>
                 <p className="text-xs text-gray-500">Welcome, {currentPlayer.firstName}</p>
               </div>
@@ -224,11 +202,7 @@ export default function Dashboard() {
                 </h2>
               </div>
               <div className="space-y-3 flex-grow">
-                <div className="bg-green-50 rounded-xl p-4 border border-green-100">
-                  <p className="text-green-800 font-bold text-lg">{nextTraining.day}, {nextTraining.date}</p>
-                  <p className="text-green-600 text-sm mt-1">{nextTraining.time} - {nextTraining.type}</p>
-                  <p className="text-green-500 text-xs mt-2">BCC Grounds</p>
-                </div>
+                {nextTraining ? <div className="bg-green-50 rounded-xl p-4 border border-green-100"><p className="text-green-800 font-bold text-lg">{nextTraining.day}, {nextTraining.date}</p><p className="text-green-600 text-sm mt-1">{nextTraining.time} - {nextTraining.type}</p></div> : <p className="text-gray-400 text-sm text-center py-4">No sessions scheduled</p>}
               </div>
             </div>
 
@@ -257,7 +231,7 @@ export default function Dashboard() {
             </Link>
 
             {/* Away Day Hub Shortcut */}
-            <Link to="/away-day" className="bg-white rounded-2xl shadow-xl p-6 border border-gray-100 hover:shadow-2xl transition-all duration-300 flex flex-col cursor-pointer hover:-translate-y-1">
+            <Link to="/match-day" className="bg-white rounded-2xl shadow-xl p-6 border border-gray-100 hover:shadow-2xl transition-all duration-300 flex flex-col cursor-pointer hover:-translate-y-1">
               <div className="flex items-center gap-3 mb-5">
                 <div className="bg-gradient-to-br from-purple-500 to-indigo-600 p-3 rounded-xl shadow-lg">
                   <Trophy className="text-white" size={24} />
@@ -280,7 +254,7 @@ export default function Dashboard() {
             </Link>
 
             {/* Upcoming Fixtures */}
-            <Link to="/fixtures" className="bg-white rounded-2xl shadow-xl p-6 border border-gray-100 hover:shadow-2xl transition-all duration-300 flex flex-col cursor-pointer hover:-translate-y-1">
+            <Link to="/match-day" className="bg-white rounded-2xl shadow-xl p-6 border border-gray-100 hover:shadow-2xl transition-all duration-300 flex flex-col cursor-pointer hover:-translate-y-1">
               <div className="flex items-center gap-3 mb-5">
                 <div className="bg-gradient-to-br from-orange-500 to-red-600 p-3 rounded-xl shadow-lg">
                   <Trophy className="text-white" size={24} />
@@ -356,15 +330,15 @@ export default function Dashboard() {
                 </h2>
               </div>
               <div className="grid grid-cols-2 gap-3">
-                <Link to="/away-day" className="bg-gradient-to-br from-purple-50 to-purple-100 hover:from-purple-100 hover:to-purple-200 rounded-xl p-4 border border-purple-200 transition-all">
+                <Link to="/match-day" className="bg-gradient-to-br from-purple-50 to-purple-100 hover:from-purple-100 hover:to-purple-200 rounded-xl p-4 border border-purple-200 transition-all">
                   <Trophy className="text-purple-600 mb-2" size={20} />
                   <p className="text-sm font-bold text-purple-800">Away Day Hub</p>
                 </Link>
                 <Link to="/chat" className="bg-gradient-to-br from-blue-50 to-blue-100 hover:from-blue-100 hover:to-blue-200 rounded-xl p-4 border border-blue-200 transition-all">
                   <ClipboardCheck className="text-blue-600 mb-2" size={20} />
-                  <p className="text-sm font-bold text-blue-800">Coach Chat</p>
+                  <p className="text-sm font-bold text-blue-800">Club Chat</p>
                 </Link>
-                <Link to="/fixtures" className="bg-gradient-to-br from-orange-50 to-orange-100 hover:from-orange-100 hover:to-orange-200 rounded-xl p-4 border border-orange-200 transition-all">
+                <Link to="/match-day" className="bg-gradient-to-br from-orange-50 to-orange-100 hover:from-orange-100 hover:to-orange-200 rounded-xl p-4 border border-orange-200 transition-all">
                   <Trophy className="text-orange-600 mb-2" size={20} />
                   <p className="text-sm font-bold text-orange-800">Fixtures</p>
                 </Link>
@@ -380,18 +354,31 @@ export default function Dashboard() {
     )
   }
 
+  if (userRole === "club-admin") {
+    const club = clubs.find(item => item.id === currentClubId)
+    const clubTeams = teams.filter(item => item.clubId === currentClubId)
+    const clubStaff = coaches.filter(item => item.clubId === currentClubId && item.role === "coach")
+    const upcomingFixtures = fixtures.filter(item => item.status === "Upcoming" && item.date && new Date(item.date) >= new Date()).sort((a,b) => new Date(a.date) - new Date(b.date))
+    return <div className="dashboard-page flex-1 p-4 md:p-8 min-h-screen overflow-y-auto"><PullToRefreshIndicator isPulling={isPulling} pullDistance={pullDistance} /><div className="max-w-7xl mx-auto space-y-6">
+      <header className="admin-dashboard-head"><div><span className="eyebrow">Club administration</span><h1>{club?.name || "Club dashboard"}</h1><p>Club-wide oversight across every team, coach and player.</p></div><Link to="/clubs" className="admin-dashboard-action"><Building2 size={17} /> Manage teams</Link></header>
+      <section className="admin-metric-grid"><AdminMetric label="Teams" value={clubTeams.length} detail="Across enabled sports" icon={Building2} to="/clubs" /><AdminMetric label="Players" value={totalPlayers} detail={`${Math.max(0,clubTeams.length * 30 - totalPlayers)} roster places open`} icon={Users} to="/players" /><AdminMetric label="Coaches" value={clubStaff.length} detail="Team staff accounts" icon={UserCog} to="/coaches" /><AdminMetric label="Unavailable" value={unavailablePlayerIds.size} detail="Injured or unavailable" icon={Heart} to="/injuries" /></section>
+      <section className="admin-dashboard-grid"><div className="admin-panel"><header><div><span>Club structure</span><h2>Teams and capacity</h2></div><Link to="/clubs">Manage</Link></header><div className="admin-team-list">{clubTeams.map(team => { const count=players.filter(player=>player.teamId===team.id).length; return <div key={team.id}><div><strong>{team.name}</strong><span>{team.sportId} · {count}/30 players</span></div><div className="admin-capacity"><i style={{width:`${Math.min(100,count/30*100)}%`}} /></div></div>})}{!clubTeams.length && <EmptyDashboard text="No teams created" />}</div></div><div className="admin-panel"><header><div><span>Operations</span><h2>Upcoming fixtures</h2></div><Link to="/fixtures">View fixtures</Link></header><div className="admin-fixture-list">{upcomingFixtures.slice(0,5).map(item => <div key={item.id}><time>{new Date(item.date).toLocaleDateString("en-GB",{day:"2-digit",month:"short"})}</time><div><strong>{item.teamName || clubTeams.find(team=>team.id===(item.teamId||item.team))?.name || "Team"} vs {item.opponent}</strong><span>{[item.homeAway,item.venue,item.time].filter(Boolean).join(" · ")}</span></div></div>)}{!upcomingFixtures.length && <EmptyDashboard text="No fixtures scheduled" />}</div></div></section>
+      <section className="admin-quick-grid"><Link to="/attendance-admin"><ClipboardCheck /><strong>Manage attendance</strong><span>Record attendance by team</span></Link><Link to="/coaches"><UserCog /><strong>Staff accounts</strong><span>Coaches and assignments</span></Link><Link to="/announcements"><AlertCircle /><strong>Club announcements</strong><span>Communicate across the club</span></Link><Link to="/calendar"><CalendarDays /><strong>Club calendar</strong><span>{sessions.length ? `${sessions.length} saved sessions` : "No sessions scheduled"}</span></Link></section>
+    </div></div>
+  }
+
   // Render coach dashboard
   return (
-    <div className="flex-1 p-4 md:p-6 bg-gray-50 dark:bg-gray-950 min-h-screen overflow-y-auto">
+    <div className="dashboard-page flex-1 p-4 md:p-8 min-h-screen overflow-y-auto">
       <PullToRefreshIndicator isPulling={isPulling} pullDistance={pullDistance} />
       <div className="max-w-7xl mx-auto">
         {/* Mobile Logo Header */}
         <div className="md:hidden mb-4 bg-white rounded-xl shadow-sm p-4 border border-gray-100">
           <div className="flex items-center gap-3">
-            <img src={logo} alt="BCC Logo" className="w-12 h-12" />
+            <img src="/unyra-logo.png" alt="UNYRA logo" className="w-12 h-12 rounded-xl object-contain" />
             <div>
               <h2 className="text-lg font-black bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">
-                BCC Coaches Portal
+                Coach Portal
               </h2>
               <p className="text-xs text-gray-500">Team Management Dashboard</p>
             </div>
@@ -402,7 +389,7 @@ export default function Dashboard() {
           <h1 className="text-2xl md:text-4xl font-black bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent mb-1">
             Dashboard
           </h1>
-          <p className="text-sm md:text-base text-gray-600">BCC Team Management</p>
+          <p className="text-sm md:text-base text-gray-600">Team Management</p>
         </div>
 
         <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-4 gap-3 md:gap-4 mb-6">
@@ -454,11 +441,7 @@ export default function Dashboard() {
               </h2>
             </div>
             <div className="space-y-3 flex-grow">
-              <div className="bg-green-50 rounded-xl p-4 border border-green-100">
-                <p className="text-green-800 font-bold text-lg">{nextTraining.day}, {nextTraining.date}</p>
-                <p className="text-green-600 text-sm mt-1">{nextTraining.time} - {nextTraining.type}</p>
-                <p className="text-green-500 text-xs mt-2">BCC Grounds</p>
-              </div>
+              {nextTraining ? <div className="bg-green-50 rounded-xl p-4 border border-green-100"><p className="text-green-800 font-bold text-lg">{nextTraining.day}, {nextTraining.date}</p><p className="text-green-600 text-sm mt-1">{nextTraining.time} - {nextTraining.type}</p></div> : <p className="text-gray-400 text-sm text-center py-4">No sessions scheduled</p>}
             </div>
             <div className="mt-5 pt-4 border-t border-gray-100">
               <span className="text-sm text-green-600 font-semibold flex items-center gap-1">
@@ -493,7 +476,7 @@ export default function Dashboard() {
             </div>
           </Link>
 
-          <Link to="/fixtures" className="bg-white rounded-2xl shadow-xl p-6 border border-gray-100 hover:shadow-2xl transition-all duration-300 flex flex-col cursor-pointer hover:-translate-y-1">
+          <Link to="/match-day" className="bg-white rounded-2xl shadow-xl p-6 border border-gray-100 hover:shadow-2xl transition-all duration-300 flex flex-col cursor-pointer hover:-translate-y-1">
             <div className="flex items-center gap-3 mb-5">
               <div className="bg-gradient-to-br from-purple-500 to-pink-600 p-3 rounded-xl shadow-lg">
                 <Trophy className="text-white" size={24} />
@@ -530,14 +513,7 @@ export default function Dashboard() {
               </h2>
             </div>
             <div className="space-y-3 flex-grow">
-              <div className="bg-indigo-50 rounded-xl p-4 border border-indigo-100">
-                <p className="text-xs text-indigo-600 mb-2 font-medium">Tue 18:30</p>
-                <p className="text-base font-bold text-indigo-800">Training</p>
-              </div>
-              <div className="bg-indigo-50 rounded-xl p-4 border border-indigo-100">
-                <p className="text-xs text-indigo-600 mb-2 font-medium">Wed 18:30</p>
-                <p className="text-base font-bold text-indigo-800">Training</p>
-              </div>
+              {sessions.slice(0,2).map(session => <div key={session.id} className="bg-indigo-50 rounded-xl p-4 border border-indigo-100"><p className="text-xs text-indigo-600 mb-2 font-medium">{new Date(session.date).toLocaleDateString("en-GB",{weekday:"short",day:"2-digit",month:"short"})}{session.time ? ` · ${session.time}` : ""}</p><p className="text-base font-bold text-indigo-800">{session.type || "Session"}</p></div>)}{!sessions.length && <p className="text-gray-400 text-sm text-center py-4">No sessions scheduled</p>}
             </div>
             <div className="mt-5 pt-4 border-t border-gray-100">
               <span className="text-sm text-indigo-600 font-semibold flex items-center gap-1">

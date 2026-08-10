@@ -1,0 +1,10 @@
+rules_version = '2';
+service firebase.storage {
+  match /b/{bucket}/o {
+    // Storage is not currently used by the application. Keep it closed until
+    // an explicit, role-scoped path policy is designed for a real feature.
+    match /{allPaths=**} {
+      allow read, write: if false;
+    }
+  }
+}

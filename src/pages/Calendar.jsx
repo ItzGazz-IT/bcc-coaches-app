@@ -154,7 +154,7 @@ const getProgramEventForDate = (date) => {
 }
 
 function Calendar() {
-  const { fixtures } = useApp()
+  const { fixtures, currentClubId, currentTeamId } = useApp()
   const [currentDate, setCurrentDate] = useState(new Date())
   const [selectedDay, setSelectedDay] = useState(null)
   const [sessions, setSessions] = useState([])
@@ -167,10 +167,10 @@ function Calendar() {
         id: doc.id,
         ...doc.data()
       }))
-      setSessions(sessionsData)
+      setSessions(sessionsData.filter(session => session.clubId === currentClubId && session.teamId === currentTeamId))
     })
     return () => unsubscribe()
-  }, [])
+  }, [currentClubId, currentTeamId])
 
   // Get sessions for a specific day
   const getScheduleForDay = (day) => {
@@ -212,10 +212,8 @@ function Calendar() {
       return allEvents
     }
 
-    // Otherwise, use the weekly training program.
-    const date = new Date(currentDate.getFullYear(), currentDate.getMonth(), day)
-    const programEvent = getProgramEventForDate(date)
-    return programEvent ? [programEvent] : []
+    // New teams start with a blank calendar. Only saved team sessions and fixtures appear.
+    return []
   }
 
   const monthNames = ["January", "February", "March", "April", "May", "June",

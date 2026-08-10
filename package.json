@@ -1,11 +1,13 @@
 {
-  "name": "bcc-app",
+  "name": "unyra",
   "version": "1.0.0",
   "type": "module",
   "scripts": {
     "dev": "vite",
     "dev:host": "vite --host",
     "build": "vite build",
+    "test": "node --test",
+    "auth:migrate": "node scripts/migrate-auth-users.cjs",
     "seed:fixtures-2026": "node scripts/seed-fixtures-2026.cjs",
     "seed:fixtures-reserves": "node scripts/seed-reserves-from-first-team.cjs"
   },
@@ -14,8 +16,7 @@
     "lucide-react": "^0.344.0",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
-    "react-router-dom": "^6.22.0",
-    "recharts": "^3.7.0"
+    "react-router-dom": "^6.22.0"
   },
   "optionalDependencies": {
     "dotenv": "^16.6.1",
@@ -32,7 +33,6 @@
     "postcss": "^8.4.0",
     "tailwindcss": "^3.4.0",
     "vite": "^5.0.0",
-    "vite-plugin-pwa": "^1.2.0",
-    "workbox-window": "^7.4.0"
+    "vite-plugin-pwa": "^1.2.0"
   }
 }

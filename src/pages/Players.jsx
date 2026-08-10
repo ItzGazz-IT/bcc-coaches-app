@@ -4,9 +4,11 @@ import { useApp } from "../contexts/AppContext"
 import { useSearchParams } from "react-router-dom"
 import { TableSkeleton } from "../components/Loading"
 import { generateUsername, generatePassword } from "../utils/credentialUtils"
+import { getSport } from "../config/sports"
 
 function Players() {
-  const { players, addPlayer, updatePlayer, deletePlayer, loading, userRole } = useApp()
+  const { players, addPlayer, updatePlayer, deletePlayer, loading, userRole, teams, currentTeamId, currentClubId } = useApp()
+  const availableTeams = teams.filter(team => team.clubId === currentClubId && (userRole === "club-admin" || team.id === currentTeamId))
   const [searchParams, setSearchParams] = useSearchParams()
   
   const [formData, setFormData] = useState({
@@ -14,17 +16,26 @@ function Players() {
     lastName: "",
     nickname: "",
     phone: "",
-    team: "Squad",
+    teamId: currentTeamId || "",
     position: "Midfielder",
     emergencyContact: "",
     username: "",
     password: ""
   })
+  const selectedTeam = teams.find(team => team.id === formData.teamId) || teams.find(team => team.id === currentTeamId)
+  const activeSport = getSport(selectedTeam?.sportId)
   
   const [searchTerm, setSearchTerm] = useState("")
   const [showSuccess, setShowSuccess] = useState(false)
   const [showModal, setShowModal] = useState(false)
   const [editingPlayer, setEditingPlayer] = useState(null)
+  const [formError, setFormError] = useState("")
+
+  useEffect(() => {
+    if (!editingPlayer && !activeSport.roles.includes(formData.position)) {
+      setFormData(current => ({ ...current, position: activeSport.roles[0] }))
+    }
+  }, [activeSport.id, editingPlayer])
 
   useEffect(() => {
     searchParams.get("team")
@@ -32,6 +43,7 @@ function Players() {
 
   const handleSubmit = async (e) => {
     e.preventDefault()
+    setFormError("")
     if (formData.firstName && formData.lastName && formData.phone) {
       const playerData = { ...formData }
       
@@ -51,17 +63,19 @@ function Players() {
         delete playerData.password
       }
       
-      if (editingPlayer) {
-        await updatePlayer(editingPlayer.id, playerData)
-      } else {
-        await addPlayer(playerData)
+      try {
+        if (editingPlayer) await updatePlayer(editingPlayer.id, playerData)
+        else await addPlayer(playerData)
+      } catch (error) {
+        setFormError(error.message || "Could not save this player.")
+        return
       }
       setFormData({ 
         firstName: "", 
         lastName: "", 
         nickname: "",
         phone: "", 
-        team: "Squad",
+        teamId: currentTeamId || "",
         position: "Midfielder",
         emergencyContact: "",
         username: "",
@@ -81,7 +95,7 @@ function Players() {
       lastName: player.lastName,
       nickname: player.nickname || "",
       phone: player.phone,
-      team: player.team || "Squad",
+      teamId: player.teamId || currentTeamId || "",
       position: player.position || "Midfielder",
       emergencyContact: player.emergencyContact || "",
       username: player.username || "",
@@ -104,7 +118,7 @@ function Players() {
     return matchesSearch
   })
 
-  if (userRole !== "coach" && userRole !== "super-admin") {
+  if (userRole !== "coach" && userRole !== "club-admin" && userRole !== "super-admin") {
     return (
       <div className="flex-1 p-6 bg-gray-50 min-h-screen flex items-center justify-center">
         <div className="text-center">
@@ -116,21 +130,21 @@ function Players() {
   }
 
   return (
-    <div className="flex-1 p-4 md:p-6 bg-gray-50 min-h-screen overflow-y-auto">
+    <div className="players-directory flex-1 p-4 md:p-8 min-h-screen overflow-y-auto">
       <div className="max-w-7xl mx-auto">
         {/* Header */}
-        <div className="mb-4 md:mb-6">
-          <div className="flex items-start md:items-center justify-between gap-3">
+        <div className="page-hero mb-5">
+          <div className="directory-page-head">
             <div className="flex-1">
-              <h1 className="text-2xl md:text-4xl font-black bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent mb-1">
+              <span className="eyebrow">Team setup</span><h1 className="text-3xl md:text-5xl font-black text-slate-950 mb-1">
                 Players
               </h1>
               <p className="text-sm md:text-base text-gray-600 hidden md:block">Manage your team roster</p>
             </div>
-            {(userRole === "coach" || userRole === "super-admin") && (
+            {(userRole === "coach" || userRole === "club-admin" || userRole === "super-admin") && (
               <button
-                onClick={() => setShowModal(true)}
-                className="btn btn-primary inline-flex items-center gap-2 text-sm flex-shrink-0"
+                onClick={() => { setEditingPlayer(null); setFormError(""); setFormData({ firstName:"", lastName:"", nickname:"", phone:"", teamId:currentTeamId||availableTeams[0]?.id||"", position:getSport(availableTeams.find(team=>team.id===(currentTeamId||availableTeams[0]?.id))?.sportId).roles[0], emergencyContact:"", username:"", password:"" }); setShowModal(true) }}
+                className="directory-add-button"
               >
                 <UserPlus size={18} />
                 <span className="hidden sm:inline">Add Player</span>
@@ -153,7 +167,7 @@ function Players() {
         )}
 
         {/* Stats Cards */}
-        <div className="grid grid-cols-2 lg:grid-cols-2 gap-3 mb-4">
+        <div className="directory-summary grid grid-cols-2 gap-3 mb-4">
           <div className="bg-white rounded-xl p-3 shadow-sm border border-gray-100">
             <div className="flex flex-col gap-1">
               <div className="flex items-center gap-2">
@@ -180,7 +194,7 @@ function Players() {
         </div>
 
         {/* Players List */}
-        <div className="bg-white rounded-xl shadow-sm border border-gray-100">
+        <div className="directory-surface bg-white rounded-xl shadow-sm border border-gray-100">
           <div className="p-4 border-b border-gray-100">
             <h2 className="text-lg md:text-xl font-bold text-gray-800 mb-3">Team Roster</h2>
             
@@ -210,7 +224,7 @@ function Players() {
                 {filteredPlayers.map(player => (
                   <div 
                     key={player.id} 
-                    className="flex flex-col sm:flex-row sm:items-center gap-3 p-3 border border-gray-200 rounded-lg hover:border-blue-300 hover:bg-blue-50/30 transition-all"
+                    className="directory-person-row flex flex-col sm:flex-row sm:items-center gap-3 p-3"
                   >
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 mb-1 flex-wrap">
@@ -228,7 +242,7 @@ function Players() {
                           </span>
                         )}
                         <span className="px-2 py-0.5 rounded text-xs font-bold bg-indigo-100 text-indigo-700">
-                          Squad
+                          {teams.find(team => team.id === player.teamId)?.name || "No team"}
                         </span>
                       </div>
                       <p className="text-sm text-gray-500 flex items-center gap-1.5">
@@ -238,7 +252,7 @@ function Players() {
                     </div>
                     
                     <div className="flex items-center gap-1.5 sm:gap-2">
-                      {(userRole === "coach" || userRole === "super-admin") && (
+                      {(userRole === "coach" || userRole === "club-admin" || userRole === "super-admin") && (
                         <>
                           <button
                             onClick={() => handleEdit(player)}
@@ -278,10 +292,10 @@ function Players() {
         {/* Add Player Modal */}
         {showModal && (
           <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-            <div className="bg-white rounded-2xl shadow-2xl max-w-2xl w-full max-h-[85vh] overflow-hidden flex flex-col">
-              <div className="sticky top-0 bg-white p-6 border-b border-gray-100 flex items-center justify-between">
+            <div className="unyra-dialog bg-white max-w-2xl w-full max-h-[85vh] overflow-hidden flex flex-col">
+              <div className="unyra-dialog-head sticky top-0 p-6 flex items-center justify-between">
                 <div className="flex items-center gap-3">
-                  <div className="bg-gradient-to-br from-blue-500 to-indigo-600 p-2.5 rounded-xl">
+                  <div className="bg-cyan-500 p-2.5 rounded-xl">
                     <UserPlus className="text-white" size={22} />
                   </div>
                   <h2 className="text-xl font-bold text-gray-800">
@@ -370,14 +384,16 @@ function Players() {
 
                 <div>
                   <label className="block text-sm font-semibold text-gray-700 mb-2">
-                    Squad
+                    Team
                   </label>
                   <select
-                    value={formData.team}
-                    onChange={(e) => setFormData({...formData, team: e.target.value})}
+                    value={formData.teamId}
+                    onChange={(e) => setFormData({...formData, teamId: e.target.value, position: getSport(teams.find(team => team.id === e.target.value)?.sportId).roles[0]})}
                     className="w-full px-4 py-2.5 border-2 border-gray-200 rounded-xl focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 outline-none transition-all bg-white"
+                    required
                   >
-                    <option value="Squad">Squad</option>
+                    <option value="">Choose a team</option>
+                    {availableTeams.map(team => <option key={team.id} value={team.id}>{team.name}</option>)}
                   </select>
                 </div>
 
@@ -390,48 +406,13 @@ function Players() {
                     onChange={(e) => setFormData({...formData, position: e.target.value})}
                     className="w-full px-4 py-2.5 border-2 border-gray-200 rounded-xl focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 outline-none transition-all bg-white"
                   >
-                    <option value="Goalkeeper">Goalkeeper</option>
-                    <option value="Defender">Defender</option>
-                    <option value="Midfielder">Midfielder</option>
-                    <option value="Forward">Forward/Winger</option>
-                    <option value="Striker">Striker</option>
+                    {activeSport.roles.map(role => <option key={role} value={role}>{role}</option>)}
                   </select>
                 </div>
 
-                <div className="border-t pt-4 mt-2">
-                  <h3 className="text-sm font-bold text-gray-700 mb-3">Player Login Credentials (Optional)</h3>
-                  
-                  <div className="space-y-4">
-                    <div>
-                      <label className="block text-sm font-semibold text-gray-700 mb-2">
-                        Username
-                      </label>
-                      <input
-                        type="text"
-                        value={formData.username}
-                        onChange={(e) => setFormData({...formData, username: e.target.value})}
-                        placeholder="player.username"
-                        className="w-full px-4 py-2.5 border-2 border-gray-200 rounded-xl focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 outline-none transition-all"
-                      />
-                      <p className="text-xs text-gray-500 mt-1">Used for player login to the portal</p>
-                    </div>
+                <div className="player-login-module-note"><Shield size={18} /><div><strong>Player Login module</strong><p>Login access is prepared automatically and remains available for later activation.</p></div></div>
 
-                    <div>
-                      <label className="block text-sm font-semibold text-gray-700 mb-2">
-                        Password {editingPlayer && "(leave blank to keep current)"}
-                      </label>
-                      <input
-                        type="password"
-                        value={formData.password}
-                        onChange={(e) => setFormData({...formData, password: e.target.value})}
-                        placeholder="Enter password"
-                        className="w-full px-4 py-2.5 border-2 border-gray-200 rounded-xl focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 outline-none transition-all"
-                      />
-                      <p className="text-xs text-gray-500 mt-1">Minimum 6 characters recommended</p>
-                    </div>
-                  </div>
-                </div>
-
+                {formError && <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-semibold text-red-700">{formError}</div>}
                 <div className="flex gap-3 pt-4">
                   <button
                     type="button"
@@ -445,7 +426,7 @@ function Players() {
                   </button>
                   <button
                     type="submit"
-                    className="btn btn-primary flex-1 inline-flex items-center justify-center gap-2 text-sm md:text-base"
+                    className="unyra-dialog-submit flex-1 inline-flex items-center justify-center gap-2"
                   >
                     <UserPlus size={18} />
                     {editingPlayer ? "Update Player" : "Add Player"}

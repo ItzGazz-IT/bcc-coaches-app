@@ -5,7 +5,10 @@ import { collection, addDoc, onSnapshot, query, orderBy, deleteDoc, doc } from "
 import { db } from "../firebase/config"
 
 function Attendance() {
-  const { players, userRole } = useApp()
+  const { players, teams, userRole, currentClubId, currentTeamId } = useApp()
+  const availableTeams = teams.filter(team => team.clubId === currentClubId && (userRole === "club-admin" || team.id === currentTeamId))
+  const [selectedTeamId, setSelectedTeamId] = useState(currentTeamId || "")
+  const teamPlayers = players.filter(player => player.teamId === selectedTeamId)
   const [sessions, setSessions] = useState([])
   const [showModal, setShowModal] = useState(false)
   const [expandedSession, setExpandedSession] = useState(null)
@@ -13,10 +16,15 @@ function Attendance() {
     date: new Date().toISOString().split('T')[0],
     time: "18:00",
     type: "Training",
-    notes: ""
+    notes: "",
+    teamId: currentTeamId || ""
   })
   const [attendance, setAttendance] = useState({})
   const [showSuccess, setShowSuccess] = useState(false)
+
+  useEffect(() => {
+    if (!availableTeams.some(team => team.id === selectedTeamId)) setSelectedTeamId(availableTeams[0]?.id || "")
+  }, [teams, currentClubId, currentTeamId, userRole, selectedTeamId])
 
   // Load sessions from Firestore
   useEffect(() => {
@@ -26,23 +34,25 @@ function Attendance() {
         id: doc.id,
         ...doc.data()
       }))
-      setSessions(sessionsData)
+      setSessions(sessionsData.filter(session => session.clubId === currentClubId && session.teamId === selectedTeamId))
     })
     return () => unsubscribe()
-  }, [])
+  }, [currentClubId, selectedTeamId])
 
   const createSession = async () => {
-    if (!newSession.date) return
+    if (!newSession.date || !newSession.teamId) return
 
     // Initialize attendance for all players
     const initialAttendance = {}
-    players.forEach(player => {
+    teamPlayers.forEach(player => {
       initialAttendance[player.id] = "absent"
     })
 
     try {
       await addDoc(collection(db, "sessions"), {
         ...newSession,
+        clubId: currentClubId,
+        teamId: newSession.teamId,
         attendance: initialAttendance,
         createdAt: new Date().toISOString()
       })
@@ -51,7 +61,8 @@ function Attendance() {
         date: new Date().toISOString().split('T')[0],
         time: "18:00",
         type: "Training",
-        notes: ""
+        notes: "",
+        teamId: selectedTeamId
       })
       setShowModal(false)
       setShowSuccess(true)
@@ -204,16 +215,23 @@ function Attendance() {
               </h1>
               <p className="text-sm md:text-base text-gray-600 hidden md:block">Track training sessions</p>
             </div>
-            {(userRole === "coach" || userRole === "super-admin") && (
+            <div className="flex flex-col sm:flex-row gap-3 min-w-[220px]">
+              <select value={selectedTeamId} onChange={(e) => setSelectedTeamId(e.target.value)} className="unyra-field" aria-label="Select team">
+                <option value="">Choose a team</option>
+                {availableTeams.map(team => <option key={team.id} value={team.id}>{team.name}</option>)}
+              </select>
+            {(userRole === "coach" || userRole === "club-admin") && (
               <button
-                onClick={() => setShowModal(true)}
-                className="btn btn-primary inline-flex items-center gap-2 text-sm flex-shrink-0"
+                disabled={!selectedTeamId}
+                onClick={() => { setNewSession({ ...newSession, teamId: selectedTeamId }); setShowModal(true) }}
+                className="unyra-primary-action inline-flex items-center justify-center gap-2 text-sm flex-shrink-0"
               >
                 <Plus size={18} />
                 <span className="hidden sm:inline">New Session</span>
                 <span className="sm:hidden">Add</span>
               </button>
             )}
+            </div>
           </div>
         </div>
 
@@ -245,7 +263,7 @@ function Attendance() {
               </div>
               <div>
                 <p className="text-xs font-bold text-gray-500 uppercase">Active Players</p>
-                <p className="text-2xl font-black text-green-600">{players.length}</p>
+                <p className="text-2xl font-black text-green-600">{teamPlayers.length}</p>
               </div>
             </div>
           </div>
@@ -315,7 +333,7 @@ function Attendance() {
                           </div>
 
                           <div className="flex items-center gap-3">
-                            {(userRole === "coach" || userRole === "super-admin") && (
+                            {(userRole === "coach" || userRole === "club-admin") && (
                               <button
                                 onClick={(e) => {
                                   e.stopPropagation()
@@ -342,7 +360,7 @@ function Attendance() {
                         <div className="border-t border-gray-100 p-4 bg-gray-50">
                           <h4 className="font-bold text-gray-700 mb-3">Player Attendance</h4>
                           <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-                            {players.map(player => {
+                            {teamPlayers.map(player => {
                               const att = session.attendance?.[player.id]
                               const status = typeof att === 'object' ? att?.status : att
                               const timestamp = typeof att === 'object' ? att?.timestamp : null
@@ -446,6 +464,13 @@ function Attendance() {
               </div>
 
               <div className="p-6 space-y-4">
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">Team *</label>
+                  <select required value={newSession.teamId} onChange={(e) => setNewSession({ ...newSession, teamId: e.target.value })} className="unyra-field w-full" disabled={userRole !== "club-admin"}>
+                    <option value="">Choose which team</option>
+                    {availableTeams.map(team => <option key={team.id} value={team.id}>{team.name}</option>)}
+                  </select>
+                </div>
                 <div>
                   <label className="block text-sm font-semibold text-gray-700 mb-2">
                     Date *

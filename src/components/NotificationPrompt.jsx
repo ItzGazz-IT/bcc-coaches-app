@@ -22,7 +22,7 @@ export default function NotificationPrompt() {
     if (permission === 'granted') {
       new Notification('Notifications Enabled! 🎉', {
         body: "You'll now receive updates about reviews, fitness tests, fixtures and announcements",
-        icon: '/bcc-logo.png'
+        icon: '/unyra-icon-192.png'
       })
     }
   }

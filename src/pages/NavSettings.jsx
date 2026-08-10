@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react"
 import { useNavigate } from "react-router-dom"
 import { ChevronLeft, GripVertical } from "lucide-react"
-import { Heart, CalendarDays, Bell, ClipboardCheck, MessageCircle, BarChart3 } from "lucide-react"
+import { Heart, CalendarDays, Bell, ClipboardCheck, MessageCircle } from "lucide-react"
 
 const normalizePlayerNavIds = (ids = []) => {
   const migrated = ids.flatMap((id) => {
@@ -19,10 +19,9 @@ export default function NavSettings() {
   const availableItems = [
     { id: "gameDay", label: "Game Day", icon: ClipboardCheck, path: "/game-day" },
     { id: "chat", label: "Chat", icon: MessageCircle, path: "/chat" },
-    { id: "availability", label: "Injury or No Attendance", icon: Heart, path: "/injuries" },
+    { id: "availability", label: "Injury / Absence", icon: Heart, path: "/injuries" },
     { id: "calendar", label: "Calendar", icon: CalendarDays, path: "/calendar" },
-    { id: "announcements", label: "Announcements", icon: Bell, path: "/announcements" },
-    { id: "stats", label: "My Stats", icon: BarChart3, path: "/player-stats" }
+    { id: "announcements", label: "Announcements", icon: Bell, path: "/announcements" }
   ]
 
   // Load saved preferences or use defaults
@@ -33,7 +32,7 @@ export default function NavSettings() {
 
   const [selectedMore, setSelectedMore] = useState(() => {
     const saved = localStorage.getItem("playerNavMore")
-    return normalizePlayerNavIds(saved ? JSON.parse(saved) : ["availability", "calendar", "announcements", "stats"])
+    return normalizePlayerNavIds(saved ? JSON.parse(saved) : ["availability", "calendar", "announcements"])
   })
 
   const handleToggle = (itemId) => {

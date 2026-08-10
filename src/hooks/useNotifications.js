@@ -8,14 +8,14 @@ export function useNotifications() {
     }
   }, [])
 
-  const sendNotification = (title, body, icon = '/bcc-logo.png') => {
+  const sendNotification = (title, body, icon = '/unyra-icon-192.png') => {
     if ('Notification' in window && Notification.permission === 'granted') {
       const notification = new Notification(title, {
         body,
         icon,
-        badge: '/bcc-logo.png',
+        badge: '/unyra-icon-192.png',
         vibrate: [200, 100, 200],
-        tag: 'bcc-notification'
+        tag: 'team-manager-notification'
       })
 
       // Auto-close after 5 seconds

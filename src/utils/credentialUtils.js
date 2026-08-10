@@ -1,7 +1,9 @@
 // Utility functions for credential generation
 export const generateUsername = (firstName, lastName) => {
-  // Create username: firstname.lastname (lowercase)
-  return `${firstName.toLowerCase()}.${lastName.toLowerCase()}`.replace(/\s+/g, '')
+  // Create username: first initial.surname (lowercase)
+  const initial = String(firstName || '').trim().charAt(0).toLowerCase()
+  const surname = String(lastName || '').trim().toLowerCase().replace(/[^a-z0-9]/g, '')
+  return `${initial}.${surname}`
 }
 
 export const generatePassword = (length = 12) => {
@@ -30,7 +32,7 @@ export const generatePassword = (length = 12) => {
 }
 
 export const createWhatsAppMessage = (firstName, lastName, username, password, appUrl = '') => {
-  return `Hi ${firstName}, welcome to the BCC Team Portal! 🏆
+  return `Hi ${firstName}, welcome to UNYRA! 🏆
 
 Your login credentials:
 👤 Username: ${username}

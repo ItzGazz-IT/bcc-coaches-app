@@ -1,4 +1,4 @@
-// Notification service for BCC App
+// Notification service for UNYRA
 // Sends browser notifications for new reviews, fitness tests, fixtures, and announcements
 
 let previousCounts = {
@@ -26,8 +26,8 @@ const sendNotification = (title, body) => {
   if ('Notification' in window && Notification.permission === 'granted') {
     const notification = new Notification(title, {
       body,
-      icon: '/bcc-logo.png',
-      badge: '/bcc-logo.png',
+      icon: '/unyra-icon-192.png',
+      badge: '/unyra-icon-192.png',
       vibrate: [200, 100, 200],
       tag: Date.now().toString()
     })

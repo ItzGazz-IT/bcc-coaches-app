@@ -1,5 +1,5 @@
 import { Link, useLocation, useNavigate } from "react-router-dom"
-import { LayoutDashboard, Users, Trophy, BarChart3, MoreHorizontal, Heart, CalendarDays, Target, ClipboardCheck, Bell, X, Settings, LogOut, Moon, Sun, CarFront, Home, MessageCircle, ShieldCheck } from "lucide-react"
+import { LayoutDashboard, Users, Trophy, MoreHorizontal, Heart, CalendarDays, Target, ClipboardCheck, Bell, X, Settings, LogOut, CarFront, Home, MessageCircle, ShieldCheck } from "lucide-react"
 import { useApp } from "../contexts/AppContext"
 import NotificationBadge from "./NotificationBadge"
 import { useState, useEffect } from "react"
@@ -16,19 +16,13 @@ const normalizePlayerNavIds = (ids = []) => {
 export default function BottomNav() {
   const location = useLocation()
   const navigate = useNavigate()
-  const { userRole, setUserRole, setCurrentUser, setCurrentPlayerId, darkMode, toggleDarkMode, unreadCounts } = useApp()
+  const { userRole, logout, unreadCounts } = useApp()
   const [showMenu, setShowMenu] = useState(false)
   const [playerNavMain, setPlayerNavMain] = useState([])
   const [playerNavMore, setPlayerNavMore] = useState([])
 
-  const handleLogout = () => {
-    localStorage.removeItem("bcc-user")
-    localStorage.removeItem("bcc-role")
-    localStorage.removeItem("bcc-player-id")
-    localStorage.removeItem("bcc-login-expiry")
-    setUserRole(null)
-    setCurrentUser(null)
-    setCurrentPlayerId(null)
+  const handleLogout = async () => {
+    await logout()
     setShowMenu(false)
     navigate("/")
   }
@@ -36,16 +30,12 @@ export default function BottomNav() {
   const coachMainNav = [
     { path: "/dashboard", label: "Home", icon: LayoutDashboard },
     { path: "/players", label: "Players", icon: Users },
-    { path: "/fixtures", label: "Fixtures", icon: Trophy },
-    { path: "/player-stats", label: "Stats", icon: BarChart3 }
+    { path: "/match-day", label: "Match Day", icon: Trophy }
   ]
 
   const coachMoreNav = [
-    { path: "/away-day", label: "Away Day Hub", icon: CarFront },
-    { path: "/home-day", label: "Home Day Hub", icon: Home },
-    { path: "/deploy-readiness", label: "Readiness", icon: ShieldCheck },
-    { path: "/chat", label: "Player Chat", icon: MessageCircle },
-    { path: "/injuries", label: "Injuries", icon: Heart },
+    { path: "/chat", label: "Club Chat", icon: MessageCircle },
+    { path: "/injuries", label: "Injury / Absence", icon: Heart },
     { path: "/attendance", label: "Attendance", icon: ClipboardCheck },
     { path: "/season-goals", label: "Season Goals", icon: Target },
     { path: "/calendar", label: "Calendar", icon: CalendarDays },
@@ -54,22 +44,21 @@ export default function BottomNav() {
 
   // Available player navigation items
   const availablePlayerItems = {
-    availability: { path: "/injuries", label: "Injury or No Attendance", icon: Heart },
-    gameDay: { path: "/game-day", label: "Game Day", icon: ClipboardCheck },
+    availability: { path: "/injuries", label: "Injury / Absence", icon: Heart },
+    gameDay: { path: "/match-day", label: "Match Day", icon: ClipboardCheck },
     chat: { path: "/chat", label: "Chat", icon: MessageCircle },
     calendar: { path: "/calendar", label: "Calendar", icon: CalendarDays },
-    announcements: { path: "/announcements", label: "Announcements", icon: Bell },
-    stats: { path: "/player-stats", label: "My Stats", icon: BarChart3 }
+    announcements: { path: "/announcements", label: "Announcements", icon: Bell }
   }
 
   // Load player nav preferences from localStorage
   useEffect(() => {
-    if (userRole === "player") {
+    if (userRole === "player" || userRole === "guardian") {
       const savedMain = localStorage.getItem("playerNavMain")
       const savedMore = localStorage.getItem("playerNavMore")
       
       const mainIds = normalizePlayerNavIds(savedMain ? JSON.parse(savedMain) : ["gameDay", "chat"])
-      const moreIds = normalizePlayerNavIds(savedMore ? JSON.parse(savedMore) : ["availability", "calendar", "announcements", "stats"])
+      const moreIds = normalizePlayerNavIds(savedMore ? JSON.parse(savedMore) : ["availability", "calendar", "announcements"])
       
       setPlayerNavMain(mainIds.map(id => availablePlayerItems[id]).filter(Boolean))
       setPlayerNavMore(moreIds.map(id => availablePlayerItems[id]).filter(Boolean))
@@ -78,7 +67,7 @@ export default function BottomNav() {
 
   const playerMainNav = [
     { path: "/dashboard", label: "Home", icon: LayoutDashboard },
-    { path: "/fixtures", label: "Fixtures", icon: Trophy },
+    { path: "/match-day", label: "Match Day", icon: Trophy },
     ...playerNavMain
   ]
 
@@ -87,8 +76,10 @@ export default function BottomNav() {
     { path: "/nav-settings", label: "Customize Nav", icon: Settings }
   ]
 
-  const mainNav = userRole === "player" ? playerMainNav : coachMainNav
-  const moreNav = userRole === "player" ? playerMoreNav : coachMoreNav
+  const mainNav = userRole === "player" || userRole === "guardian" ? playerMainNav : coachMainNav
+  const moreNav = userRole === "player" || userRole === "guardian" ? playerMoreNav : coachMoreNav
+
+  if (userRole === "super-admin") return null
 
   return (
     <>
@@ -104,7 +95,7 @@ export default function BottomNav() {
             </div>
             <div className="p-4 grid grid-cols-3 gap-3">
               {moreNav.map(({ path, label, icon: Icon }) => {
-                const showBadge = path === "/announcements" && unreadCounts.total > 0
+                const showBadge = path === "/announcements" && unreadCounts.announcements > 0
                 return (
                   <Link
                     key={path}
@@ -118,23 +109,12 @@ export default function BottomNav() {
                   >
                     <Icon size={24} strokeWidth={location.pathname === path ? 2.5 : 2} />
                     <span className="text-xs font-medium mt-2 text-center">{label}</span>
-                    {showBadge && <NotificationBadge count={unreadCounts.total} />}
+                    {showBadge && <NotificationBadge count={unreadCounts.announcements} />}
                   </Link>
                 )
               })}
             </div>
             
-            {/* Dark Mode Toggle */}
-            <div className="p-4 border-t border-gray-200 dark:border-gray-700">
-              <button
-                onClick={toggleDarkMode}
-                className="w-full flex items-center justify-center gap-2 p-4 rounded-xl bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700 transition-all font-medium"
-              >
-                {darkMode ? <Sun size={20} /> : <Moon size={20} />}
-                <span>{darkMode ? 'Light Mode' : 'Dark Mode'}</span>
-              </button>
-            </div>
-
             {/* Logout Button */}
             <div className="px-4 pb-4">
               <button
@@ -150,11 +130,11 @@ export default function BottomNav() {
       )}
 
       {/* Bottom Navigation */}
-      <div className="md:hidden fixed bottom-0 left-0 right-0 bg-white dark:bg-gray-900 border-t border-gray-200 dark:border-gray-800 z-40 safe-area-inset-bottom">
+      <div className="mobile-dock md:hidden fixed bottom-0 left-0 right-0 z-40 safe-area-inset-bottom">
         <div className="grid grid-cols-5 gap-0">
           {mainNav.map(({ path, label, icon: Icon }) => {
             const isActive = location.pathname === path
-            const showBadge = path === "/announcements" && unreadCounts.total > 0
+            const showBadge = path === "/announcements" && unreadCounts.announcements > 0
             return (
               <Link
                 key={path}
@@ -169,7 +149,7 @@ export default function BottomNav() {
                 <span className={`text-[10px] mt-0.5 ${isActive ? 'font-bold' : 'font-medium'}`}>
                   {label}
                 </span>
-                {showBadge && <NotificationBadge count={unreadCounts.total} />}
+                {showBadge && <NotificationBadge count={unreadCounts.announcements} />}
               </Link>
             )
           })}
@@ -180,8 +160,8 @@ export default function BottomNav() {
             <MoreHorizontal size={22} strokeWidth={2} />
             <span className="text-[10px] mt-0.5 font-medium">More</span>
             {/* Show badge on More if announcements is in More menu */}
-            {moreNav.some(item => item.path === "/announcements") && unreadCounts.total > 0 && (
-              <NotificationBadge count={unreadCounts.total} />
+            {moreNav.some(item => item.path === "/announcements") && unreadCounts.announcements > 0 && (
+              <NotificationBadge count={unreadCounts.announcements} />
             )}
           </button>
         </div>

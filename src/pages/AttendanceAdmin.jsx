@@ -5,12 +5,18 @@ import { collection, query, orderBy, onSnapshot, doc, updateDoc } from "firebase
 import { db } from "../firebase/config"
 
 function AttendanceAdmin() {
-  const { players, userRole } = useApp()
+  const { players, teams, userRole, currentClubId, currentTeamId } = useApp()
+  const availableTeams = teams.filter(team => team.clubId === currentClubId && (userRole === "club-admin" || team.id === currentTeamId))
+  const [selectedTeamId, setSelectedTeamId] = useState(currentTeamId || "")
   const [sessions, setSessions] = useState([])
   const [selectedSession, setSelectedSession] = useState(null)
   const [attendance, setAttendance] = useState({})
   const [saving, setSaving] = useState(false)
   const [message, setMessage] = useState({ type: "", text: "" })
+
+  useEffect(() => {
+    if (!availableTeams.some(team => team.id === selectedTeamId)) setSelectedTeamId(availableTeams[0]?.id || "")
+  }, [teams, currentClubId, currentTeamId, userRole, selectedTeamId])
 
   // Load sessions from Firestore
   useEffect(() => {
@@ -20,10 +26,14 @@ function AttendanceAdmin() {
         id: doc.id,
         ...doc.data()
       }))
-      setSessions(sessionsData)
+      setSessions(sessionsData.filter(session => session.clubId === currentClubId && session.teamId === selectedTeamId))
     })
     return () => unsubscribe()
-  }, [])
+  }, [currentClubId, selectedTeamId])
+
+  useEffect(() => {
+    setSelectedSession(null)
+  }, [selectedTeamId])
 
   // Load attendance for selected session
   useEffect(() => {
@@ -49,7 +59,8 @@ function AttendanceAdmin() {
 
   const markAllAs = async (status) => {
     const updated = {}
-    players.forEach(player => {
+    const session = sessions.find(item => item.id === selectedSession)
+    players.filter(player => !session?.teamId || player.teamId === session.teamId).forEach(player => {
       updated[player.id] = {
         status: status,
         timestamp: new Date().toISOString()
@@ -81,18 +92,19 @@ function AttendanceAdmin() {
     }
   }
 
-  if (userRole !== "coach" && userRole !== "super-admin") {
+  if (userRole !== "coach" && userRole !== "club-admin") {
     return (
       <div className="flex-1 p-6 bg-gray-50 min-h-screen flex items-center justify-center">
         <div className="text-center">
           <AlertCircle className="mx-auto text-red-500 mb-3" size={48} />
-          <p className="text-gray-600 font-semibold">Coaches only</p>
+          <p className="text-gray-600 font-semibold">Club staff only</p>
         </div>
       </div>
     )
   }
 
   const selectedSessionData = sessions.find(s => s.id === selectedSession)
+  const sessionPlayers = players.filter(player => !selectedSessionData?.teamId || player.teamId === selectedSessionData.teamId)
 
   return (
     <div className="flex-1 p-4 md:p-6 bg-gray-50 min-h-screen overflow-y-auto">
@@ -102,6 +114,14 @@ function AttendanceAdmin() {
             Attendance Admin
           </h1>
           <p className="text-gray-600">Manage player attendance for sessions</p>
+        </div>
+
+        <div className="bg-white rounded-xl shadow-md p-6 mb-6 border border-gray-100">
+          <label className="block text-sm font-bold text-gray-700 mb-3">Team</label>
+          <select value={selectedTeamId} onChange={(e) => setSelectedTeamId(e.target.value)} className="unyra-field w-full">
+            <option value="">Choose a team</option>
+            {availableTeams.map(team => <option key={team.id} value={team.id}>{team.name}</option>)}
+          </select>
         </div>
 
         {message.text && (
@@ -172,7 +192,7 @@ function AttendanceAdmin() {
             <div className="bg-white rounded-xl shadow-md p-6 border border-gray-100">
               <p className="text-sm font-bold text-gray-700 mb-4">Individual Attendance</p>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 mb-6">
-                {players.map(player => {
+                {sessionPlayers.map(player => {
                   const att = attendance[player.id]
                   const status = att?.status || "absent"
 
